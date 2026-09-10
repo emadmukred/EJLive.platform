@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>EJLive.Monitor.Legacy</AssemblyName>
+    <RootNamespace>EJLive.Monitor</RootNamespace>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
+    <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\EJLive.Shared\LightUiTheme.cs" Link="Linked\LightUiTheme.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="App.config" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,50 @@
+<Window x:Class="EJLive.Installer.InstallerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2003/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2003/xaml"
+        Title="EJLive Unified Installer v1.0" Height="450" Width="600"
+        WindowStartupLocation="CenterScreen" Background="#F5F5F5">
+    <Grid Margin="20">
+        <StackPanel>
+            <TextBlock Text="Welcome to EJLive System Installation" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#2C3E50"/>
+            
+            <TextBlock Text="Please select the installation mode:" FontSize="16" Margin="0,0,0,10"/>
+            
+            <Border BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="5" Padding="15" Background="White">
+                <StackPanel>
+                    <RadioButton x:Name="rbClient" Content="EJLive Client (Install on ATM)" FontSize="14" IsChecked="True" Margin="0,5"/>
+                    <TextBlock Text="Installs monitoring services, journal sync, and remote control modules for NCR, GRG, and WN ATMs." 
+                               FontSize="12" Foreground="#7F8C8D" Margin="25,0,0,10" TextWrapping="Wrap"/>
+                    
+                    <RadioButton x:Name="rbServer" Content="EJLive Server &amp; Monitoring (Install on Central Server)" FontSize="14" Margin="0,5"/>
+                    <TextBlock Text="Installs the central database, communication hub, monthly archiving, and the main monitoring dashboard." 
+                               FontSize="12" Foreground="#7F8C8D" Margin="25,0,0,10" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <GroupBox Header="Configuration" Margin="0,20,0,0" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="Installation Path:" VerticalAlignment="Center" Margin="0,5,10,5"/>
+                    <TextBox x:Name="txtPath" Grid.Column="1" Text="C:\EJLive" Margin="0,5" Padding="5"/>
+                    
+                    <TextBlock Grid.Row="1" Text="Server IP (for Client):" VerticalAlignment="Center" Margin="0,5,10,5"/>
+                    <TextBox x:Name="txtServerIP" Grid.Row="1" Grid.Column="1" Text="127.0.0.1" Margin="0,5" Padding="5" 
+                             IsEnabled="{Binding IsChecked, ElementName=rbClient}"/>
+                </Grid>
+            </GroupBox>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,30,0,0">
+                <Button x:Name="btnCancel" Content="Cancel" Width="100" Height="35" Margin="0,0,10,0" Background="#E74C3C" Foreground="White" BorderThickness="0"/>
+                <Button x:Name="btnInstall" Content="Install Now" Width="120" Height="35" Background="#2ECC71" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

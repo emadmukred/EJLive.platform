@@ -1,0 +1,12 @@
+namespace EJLive.Core.Engine
+{
+    /// <summary>
+    /// File monitoring engine. Original corrupted source preserved at Engine/ReferenceOnly/FileWatcherEngine.cs
+    /// </summary>
+    public class FileWatcherEngine
+    {
+        public bool IsRunning { get; private set; }
+        public void Start() => IsRunning = true;
+        public void Stop() => IsRunning = false;
+    }
+}

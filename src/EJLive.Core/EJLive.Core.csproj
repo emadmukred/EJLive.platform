@@ -1,0 +1,117 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.5" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>EJLive.Core</AssemblyName>
+    <RootNamespace>EJLive.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Constants.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Models\UnifiedModels.cs" />
+    <Compile Include="Models\JournalArchiveModels.cs" />
+    <Compile Include="Models\VendorRootProfileModels.cs" />
+    <Compile Include="Models\NcrConfigModels.cs" />
+    <Compile Include="Models\NcrConfigurationModels.cs" />
+    <Compile Include="Models\MergedTraceModels.cs" />
+    <Compile Include="Models\EjTransaction.cs" />
+    <Compile Include="Models\TransactionClassification.cs" />
+    <Compile Include="Models\RemoteSessionRequest.cs" />
+    <Compile Include="Models\RemoteSessionAudit.cs" />
+    <Compile Include="Models\ScreenshotMetadata.cs" />
+    <Compile Include="Models\FileDistributionRequest.cs" />
+    <Compile Include="Models\InstallManifest.cs" />
+    <Compile Include="Models\NormalizedVendorEvent.cs" />
+    <Compile Include="Models\ATMRealTimeStatusSnapshot.cs" />
+    <Compile Include="Models\TransferSession.cs" />
+    <Compile Include="Models\DashboardViewModel.cs" />
+    <Compile Include="Models\CommandQueueItem.cs" />
+    <Compile Include="Models\HandshakeModels.cs" />
+    <Compile Include="Models\OperationalEvent.cs" />
+    <Compile Include="Models\AlertSnapshot.cs" />
+    <Compile Include="Models\PolicySnapshot.cs" />
+    <Compile Include="Models\ReportRequest.cs" />
+    <Compile Include="Services\*.cs" />
+    <Compile Include="Engine\CommunicationProtocol.cs" />
+    <Compile Include="Engine\JournalOutbox.cs" />
+    <Compile Include="Engine\NetworkEngine.cs" />
+    <Compile Include="Engine\OperationalEngines.cs" />
+    <Compile Include="Engine\CompleteLineReadWindow.cs" />
+    <Compile Include="Engine\IEjTransactionParser.cs" />
+    <Compile Include="Engine\EjParserRegistry.cs" />
+    <Compile Include="Engine\NcrEjTransactionParser.cs" />
+    <Compile Include="Engine\GrgEjTransactionParser.cs" />
+    <Compile Include="Engine\WincorEjTransactionParser.cs" />
+    <Compile Include="Engine\DieboldEjTransactionParser.cs" />
+    <Compile Include="Engine\HyosungEjTransactionParser.cs" />
+    <Compile Include="Engine\CashwayEjTransactionParser.cs" />
+    <Compile Include="Engine\RemoteAssistanceSession.cs" />
+    <Compile Include="Engine\ScreenshotCaptureService.cs" />
+    <Compile Include="Engine\FileDistributionEngine.cs" />
+    <Compile Include="Engine\CommandRiskLevel.cs" />
+    <Compile Include="Engine\CorrelationEngine.cs" />
+    <Compile Include="Engine\InstallerEngine.cs" />
+    <Compile Include="Engine\WindowsServiceRegistration.cs" />
+    <Compile Include="Engine\ATMRealTimeStatusReducer.cs" />
+    <Compile Include="Engine\ChunkedTransferEngine.cs" />
+    <Compile Include="Engine\DashboardSnapshotService.cs" />
+    <Compile Include="Engine\DeploymentRollbackGuard.cs" />
+    <Compile Include="Engine\IngestionPipeline.cs" />
+    <Compile Include="Engine\LocalAtmHealthSnapshot.cs" />
+    <Compile Include="Engine\LogRedactionEngine.cs" />
+    <Compile Include="Engine\MonitoringDashboardEventBus.cs" />
+    <Compile Include="Engine\NocDashboardEventBus.cs" />
+    <Compile Include="Engine\OutboxMaintenanceService.cs" />
+    <Compile Include="Engine\OutboxQuotaManager.cs" />
+    <Compile Include="Engine\RegressionVerificationGate.cs" />
+    <Compile Include="Engine\ReleaseReadinessChecker.cs" />
+    <Compile Include="Engine\RemoteCommandPolicy.cs" />
+    <Compile Include="Engine\SafeRemoteCommandExecutor.cs" />
+    <Compile Include="Engine\SecureHandshakeService.cs" />
+    <Compile Include="Engine\SecurityPolicy.cs" />
+    <Compile Include="Engine\SecretProtector.cs" />
+    <Compile Include="Engine\StructuredLogger.cs" />
+    <Compile Include="Engine\OperationalSeverity.cs" />
+    <Compile Include="Engine\CommandSigningEngine.cs" />
+    <Compile Include="Engine\PolicyEnforcementMode.cs" />
+    <Compile Include="Engine\SafeWindowsPolicyEnforcer.cs" />
+    <Compile Include="Engine\NcrXfsAdapter.cs" />
+    <Compile Include="Engine\IXfsVendorAdapter.cs" />
+    <Compile Include="Engine\ReportingExportEngine.cs" />
+    <Compile Include="Engine\CashDistributionParser.cs" />
+    <Compile Include="Engine\FileWatcherEngine.cs" />
+    <Compile Include="Engine\FleetPredictionEngine.cs" />
+    <Compile Include="Engine\HeartbeatService.cs" />
+    <Compile Include="Engine\ImageSyncEngine.cs" />
+    <Compile Include="Engine\SafeRemoteCommandQueue.cs" />
+    <Compile Include="Engine\SequenceValidationService.cs" />
+    <Compile Include="Engine\TimeSyncService.cs" />
+    <Compile Include="Engine\TransactionInquiryEngine.cs" />
+    <Compile Include="Data\JournalOffsetStore.cs" />
+    <Compile Include="Data\DatabaseMigrationContracts.cs" />
+    <Compile Include="Data\DatabaseMigrationsRunner.cs" />
+    <Compile Include="Transport\TransportContracts.cs" />
+    <Compile Include="Security\SecurityContracts.cs" />
+    <Compile Include="Security\SecurityHelper.cs" />
+    <Compile Include="Server\IngestionPipelineContracts.cs" />
+    <Compile Include="Server\ServerCoreServices.cs" />
+    <Compile Include="Protocols\Ndc\NdcModels.cs" />
+    <Compile Include="Xfs\XfsModels.cs" />
+    <Compile Include="Xfs\XfsEventModels.cs" />
+    <Compile Include="Xfs\Adapters\*.cs" />
+    <Compile Include="Xfs\XfsAdapterRegistry.cs" />
+  </ItemGroup>
+
+</Project>

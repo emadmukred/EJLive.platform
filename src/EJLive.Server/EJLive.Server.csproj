@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
+    <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>EJLive.Server</AssemblyName>
+    <RootNamespace>EJLive.Server</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ClientTelemetryStateService.cs" />
+    <Compile Include="Services\JournalAnalyticsService.cs" />
+    <Compile Include="Services\RemoteControlService.cs" />
+    <Compile Include="Services\ServerAuditService.cs" />
+  </ItemGroup>
+</Project>

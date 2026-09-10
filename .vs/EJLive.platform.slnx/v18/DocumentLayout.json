@@ -1,0 +1,40 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\user\\Desktop\\EJLive.platform\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{888C146F-2874-4F36-992C-E92CBF152914}|src\\EJLive.Client.WinForms\\EJLive.Client.WinForms.csproj|c:\\users\\user\\desktop\\ejlive.platform\\src\\ejlive.client.winforms\\clientmainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{888C146F-2874-4F36-992C-E92CBF152914}|src\\EJLive.Client.WinForms\\EJLive.Client.WinForms.csproj|solutionrelative:src\\ejlive.client.winforms\\clientmainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ClientMainForm.cs [Design]",
+              "DocumentMoniker": "C:\\Users\\user\\Desktop\\EJLive.platform\\src\\EJLive.Client.WinForms\\ClientMainForm.cs",
+              "RelativeDocumentMoniker": "src\\EJLive.Client.WinForms\\ClientMainForm.cs",
+              "ToolTip": "C:\\Users\\user\\Desktop\\EJLive.platform\\src\\EJLive.Client.WinForms\\ClientMainForm.cs [Design]",
+              "RelativeToolTip": "src\\EJLive.Client.WinForms\\ClientMainForm.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-10T00:36:17.307Z",
+              "EditorCaption": " [Design]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

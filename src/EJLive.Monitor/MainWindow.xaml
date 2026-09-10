@@ -1,0 +1,95 @@
+<Window x:Class="EJLive.Monitoring.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2003/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2003/xaml"
+        Title="EJLive Central Monitoring Dashboard" Height="800" Width="1200"
+        Background="#1A1A1A" Foreground="White">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/> <!-- Header -->
+            <RowDefinition Height="*"/>  <!-- Main Content -->
+            <RowDefinition Height="30"/> <!-- Status Bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Background="#2C3E50" Grid.Row="0" Padding="15,0">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="EJLive" FontSize="24" FontWeight="Bold" Foreground="#3498DB"/>
+                    <TextBlock Text=" | Monitoring Room" FontSize="18" VerticalAlignment="Bottom" Margin="10,0,0,3" Foreground="#BDC3C7"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="txtTime" Text="2026-05-01 12:00:00" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                    <Button Content="Settings" Background="Transparent" Foreground="White" BorderThickness="1" Padding="10,5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/> <!-- Sidebar Stats -->
+                <ColumnDefinition Width="*"/>   <!-- Network Map -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar -->
+            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                <Border Background="#252525" CornerRadius="5" Padding="15" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="System Health" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" Foreground="#3498DB"/>
+                        <ProgressBar Value="95" Height="10" Foreground="#2ECC71" Background="#333"/>
+                        <TextBlock Text="95% Online" HorizontalAlignment="Right" FontSize="11" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#252525" CornerRadius="5" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Fleet Summary" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" Foreground="#3498DB"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Total ATMs" Foreground="#7F8C8D"/>
+                                <TextBlock Text="15" FontSize="24" FontWeight="Bold"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Syncing" Foreground="#7F8C8D"/>
+                                <TextBlock Text="14" FontSize="24" FontWeight="Bold" Foreground="#2ECC71"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Alerts List -->
+                <TextBlock Text="Live Alerts" FontSize="16" FontWeight="Bold" Margin="0,15,0,5" Foreground="#E74C3C"/>
+                <ListBox Background="Transparent" BorderThickness="0" Foreground="White">
+                    <ListBoxItem Content="ATM005: Low Cash Warning" Foreground="#F1C40F"/>
+                    <ListBoxItem Content="ATM012: Journal Sync Delayed" Foreground="#E67E22"/>
+                    <ListBoxItem Content="ATM002: Offline for 5 mins" Foreground="#E74C3C"/>
+                </ListBox>
+            </StackPanel>
+
+            <!-- Network Map Grid -->
+            <Border Grid.Column="1" Background="#252525" CornerRadius="5" Padding="10">
+                <ItemsControl x:Name="ATMGrid">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="5" Rows="3"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <!-- ATM Card Template would go here -->
+                </ItemsControl>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2" Background="#2C3E50" Foreground="#BDC3C7" FontSize="11">
+            <StatusBarItem Content="Server Status: Connected"/>
+            <Separator Background="#34495E"/>
+            <StatusBarItem Content="Active Clients: 15"/>
+            <Separator Background="#34495E"/>
+            <StatusBarItem Content="Last Update: Just Now"/>
+        </StatusBar>
+    </Grid>
+</Window>

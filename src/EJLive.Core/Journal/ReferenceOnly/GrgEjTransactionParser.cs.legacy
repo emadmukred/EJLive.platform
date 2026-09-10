@@ -1,0 +1,37 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using EJLive.Core.Journal;
+
+namespace EJLive.Core.Journal
+{
+    public class GrgEjTransactionParser : IEjTransactionParser
+    {
+        public string Vendor => "GRG";
+        public bool CanParse(EjParseContext ctx) => ctx.Lines != null && ctx.Lines.Any(l => l != null && l.IndexOf("GRG", StringComparison.OrdinalIgnoreCase) >= 0);
+        public EjParseResult Parse(EjParseContext ctx)
+        {
+            var r = new EjParseResult { TotalLines = ctx.Lines?.Length ?? 0, OverallConfidence = ConfidenceScore.Low };
+            if (ctx?.Lines == null) return r;
+            foreach (var l in ctx.Lines)
+            {
+                var line = l ?? "";
+                if (line.IndexOf("TRANS", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    var tx = new EjTransaction { ATM_ID = ctx.ATM_ID, Vendor = Vendor };
+                    ParseLine(line, tx);
+                    r.Transactions.Add(tx);
+                }
+                else r.UnknownLines.Add(line);
+            }
+            r.ParsedTransactions = r.Transactions.Count;
+            if (r.ParsedTransactions > 0) r.OverallConfidence = ConfidenceScore.Medium;
+            return r;
+        }
+        private void ParseLine(string line, EjTransaction tx)
+        {
+            if (line.IndexOf("AMOUNT", StringComparison.OrdinalIgnoreCase) >= 0 && decimal.TryParse(ExtractValue(line, "AMOUNT"), out var amt)) tx.Amount = amt;
+        }
+        private string ExtractValue(string line, string key) { var i = line.IndexOf(key, StringComparison.OrdinalIgnoreCase); return i >= 0 ? line.Substring(i + key.Length).Trim().Split(' ')[0] : null; }
+    }
+}

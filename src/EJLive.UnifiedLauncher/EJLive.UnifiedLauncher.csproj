@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+  <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+      <OutputType>WinExe</OutputType>
+      <TargetFramework>net8.0-windows</TargetFramework>
+      <AssemblyName>EJLive.UnifiedLauncher</AssemblyName>
+      <RootNamespace>EJLive.UnifiedLauncher</RootNamespace>
+      <ApplicationIcon />
+      <UseWindowsForms>true</UseWindowsForms>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Platforms>AnyCPU;x64;x86</Platforms>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EJLive.Client.WinForms\EJLive.Client.WinForms.csproj" />
+      <ProjectReference Include="..\EJLive.Server.WinForms\EJLive.Server.WinForms.csproj" />
+    </ItemGroup>
+  </Project>

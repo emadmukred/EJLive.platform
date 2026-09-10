@@ -1,0 +1,17 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
+  </ItemGroup>
+
+<ItemGroup><Compile Include="**\*.cs" /><Compile Include="ATMCardPanel.cs" /><Compile Include="ATMDetailDrawerForm.Designer.cs" /><Compile Include="ATMDetailDrawerForm.cs" /><Compile Include="ATMDetailForm.Designer.cs" /><Compile Include="ATMDetailForm.cs" /><Compile Include="JournalSyncDashboardForm.cs" /><Compile Include="JournalViewerForm.Designer.cs" /><Compile Include="JournalViewerForm.cs" /><Compile Include="Program.cs" /><Compile Include="Properties\AssemblyInfo.cs" /><Compile Include="ServerMainForm.Designer.cs" /><Compile Include="ServerMainForm.cs" /><Compile Include="Services\ArchiveManager.cs" /><Compile Include="Services\EJServer.cs" /><Compile Include="Services\EJServerService.cs" /><Compile Include="Services\JournalAnalyticsService.cs" /><Compile Include="Services\RemoteControlService.cs" /><Compile Include="SyncDashboardForm.Designer.cs" /><Compile Include="SyncDashboardForm.cs" /></ItemGroup></Project>

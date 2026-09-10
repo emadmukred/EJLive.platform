@@ -1,0 +1,2768 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Threading;
+using System.Windows.Forms;
+using System.IO;
+using EJLive.Core;
+using EJLive.Core.Engine;
+using EJLive.Core.Models;
+using EJLive.Core.Services;
+using EJLive.Client.WinForms.Services;
+using EJLive.Shared;
+using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Windows.Forms;
+using System.Threading;
+using System.IO;
+using System.Net.NetworkInformation;
+using System.Collections.Generic;
+using System.Linq;
+using EJLive.Core;
+using EJLive.Core.Engine;
+using EJLive.Core.Models;
+using EJLive.Client.WinForms.Services;
+
+namespace EJLive.Client.WinForms
+{
+    public class ClientMainForm : Form
+    {
+namespace EJLive.Client.WinForms
+{
+    /// <summary>
+    /// الواجهة الرئيسية للعميل — EJLive Enterprise Client v4.0
+    /// 5 تبويبات: الاتصال | المزامنة | الجورنال | التحكم البعيد | الإعدادات
+    /// Dark Theme مع مؤشرات حية وتحديث مستمر
+    /// </summary>
+    public partial class ClientMainForm : Form
+    {
+        #region Controls — General
+        private MenuStrip   _menuStrip;
+        private TabControl  _tabMain;
+        private TabPage     _tabConnection, _tabSync, _tabJournal, _tabRemote, _tabServices, _tabSettings, _tabAgentConfig;
+        private StatusStrip _statusStrip;
+        private ToolStripStatusLabel _lblStatus, _lblSpeed, _lblTime, _lblSyncState;
+        private System.Windows.Forms.Timer       _uiTimer;
+        #endregion
+
+        #region Tab 1 — Connection
+        private Panel   _pnlConnStatus;
+        private Label   _lblConnIndicator, _lblConnText, _lblSessionId, _lblLatency;
+        private Label   _lblConnectedSince, _lblBytesSent, _lblBytesRecv;
+        private Button  _btnConnect, _btnDisconnect;
+        private ProgressBar _pbConnProgress;
+        private Label   _lblConnProgress;
+        private RichTextBox _rtbConnLog;
+        private Panel   _pnlConnMeta;
+        private Panel   _pnlLocalState;
+        private DataGridView _dgvLocalState;
+        private Label   _lblLocalStateSummary;
+        private int     _localStateTick;
+        private string  _lastLocalStateSignature;
+        private bool    _cachedAutoStartRegistered;
+        private bool    _cachedRemoteDesktopEnabled;
+        private bool    _hasWindowsStateCache;
+        private DateTime _lastWindowsStateRefreshUtc = DateTime.MinValue;
+        private string  _lastRemoteCommandType = "—";
+        private string  _lastRemoteCommandStatus = "—";
+        private string  _lastRemoteCommandResult = "";
+        private DateTime _lastRemoteCommandAtLocal = DateTime.MinValue;
+        private int     _cachedMonthlyArchiveFiles;
+        private long    _cachedMonthlyArchiveBytes;
+        private DateTime _lastMonthlyArchiveRefreshUtc = DateTime.MinValue;
+        #endregion
+
+        #region Tab 2 — Sync
+        private DataGridView _dgvSyncQueue;
+        private Panel        _pnlSyncControls;
+        private Button       _btnForceSend, _btnClearFailed, _btnPauseSync, _btnResumeSync;
+        private Label        _lblQueueCount, _lblSyncStats;
+        private ProgressBar  _pbSyncProgress;
+        private Label        _lblSyncFile, _lblSyncPercent;
+        private Panel        _pnlSyncProgress, _pnlSyncTimeline;
+        private Label[]      _syncStepLabels = new Label[5];
+        private Label        _lblTotalSent, _lblSuccessRate;
+        #endregion
+
+        #region Tab 3 — Journal
+        private RichTextBox  _rtbJournal;
+        private Panel        _pnlJournalFilter;
+        private Button[]     _filterBtns;
+        private TextBox      _txtJournalSearch;
+        private Label        _lblJournalStats;
+        private ComboBox     _cmbJournalFile;
+        private Button       _btnLoadJournal, _btnExportJournal;
+        private Label        _lblJournalResultCount;
+        #endregion
+
+        #region Tab 4 — Remote Control
+        private PictureBox   _pbRemoteScreen;
+        private Label        _lblRemoteStatus, _lblFPS;
+        private Button       _btnRequestScreen, _btnStopScreen;
+        private RichTextBox  _rtbRemoteLog;
+        private DataGridView _dgvPendingCmds;
+        private readonly Dictionary<string, DataGridViewRow> _remoteCommandRows =
+            new Dictionary<string, DataGridViewRow>(StringComparer.OrdinalIgnoreCase);
+        #endregion
+
+        #region Tab 5 — Services
+        private sealed class ServiceRowState
+        {
+            public Label StatusLabel { get; set; }
+            public Button StartButton { get; set; }
+            public Button StopButton { get; set; }
+            public Func<bool> IsRunning { get; set; }
+            public string RunningText { get; set; }
+            public string StoppedText { get; set; }
+        }
+
+        private readonly Dictionary<string, ServiceRowState> _serviceRows = new Dictionary<string, ServiceRowState>();
+        private bool _ghostServiceRunning;
+        private string _lastScreenshotPath;
+        private RichTextBox _rtbWindowsOpsLog;
+        private Label _lblWindowsReadiness;
+        private Button _btnWindowsDiagnostics, _btnRegisterStartup, _btnUnregisterStartup;
+        #endregion
+
+        #region Tab 6 — Settings
+        private TextBox  _txtServerIP, _txtServerPort, _txtATMID, _txtATMName;
+        private ComboBox _cmbATMType, _cmbNetworkType;
+        private TextBox  _txtSourcePath, _txtBackupPath;
+        private CheckBox _chkAutoConnect, _chkEncrypt, _chkCompression, _chkAutoBackup;
+        private Button   _btnSaveSettings, _btnBrowseSource, _btnBrowseBackup;
+        private TextBox  _txtCurrentPassword, _txtNewPassword, _txtConfirmPassword;
+        private Button   _btnChangePassword;
+        #endregion
+
+        #region Tab 7 — Agent Configuration
+        private DataGridView _dgvAgentConfig;
+        private Label _lblAgentConfigPath, _lblAgentConfigStatus;
+        private Button _btnLoadAgentConfig, _btnApplyAgentConfig, _btnSaveAgentConfig, _btnOpenAgentConfigFolder;
+        #endregion
+
+        #region Services
+        private NetworkManager         _networkManager;
+        private FileWatcherEngine      _fileWatcher;
+        private JournalOutbox          _outbox;
+        private JournalProcessor       _journalProcessor;
+        private TransactionAnalysisEngine _analysisEngine;
+        private RemoteCommandHandler   _remoteHandler;
+        private ATMInfo                _atmInfo;
+        private AppConfig              _config;
+        private AgentConfigurationRecord _agentConfig;
+        #endregion
+
+        // ==========================================
+        // بناء الفورم
+        // ==========================================
+
+        public ClientMainForm()
+        {
+            if (IsVisualStudioDesigner())
+            {
+                InitializeDesignerPreview();
+                return;
+            }
+
+            _config = AgentConfigurationXmlService.LoadAppConfig(AppConfig.Load());
+            InitializeServices();
+            InitializeForm();
+            InitializeMenuStrip();
+            InitializeStatusStrip();
+            InitializeTabs();
+            InitializeTimer();
+            LoadSettingsToUI();
+
+            if (_config.AutoConnect) BeginConnect();
+        }
+
+        private static bool IsVisualStudioDesigner()
+        {
+            if (System.ComponentModel.LicenseManager.UsageMode == System.ComponentModel.LicenseUsageMode.Designtime)
+                return true;
+
+            var processName = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+            return processName.IndexOf("devenv", StringComparison.OrdinalIgnoreCase) >= 0
+                || processName.IndexOf("DesignToolsServer", StringComparison.OrdinalIgnoreCase) >= 0
+                || processName.IndexOf("XDesProc", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void InitializeDesignerPreview()
+        {
+            InitializeComponent();
+            Text = "EJLive Enterprise Client v4.0.0 - Design Preview";
+            Size = new Size(1050, 760);
+            MinimumSize = new Size(900, 600);
+            BackColor = LightUiTheme.Window;
+            ForeColor = LightUiTheme.Text;
+            Font = new Font("Segoe UI", 9.5f);
+            Controls.Clear();
+
+            var notice = new Label
+            {
+                Dock = DockStyle.Top,
+                Height = 42,
+                Text = "معاينة المصمم: واجهة التشغيل الفعلية مبنية بالكود في ClientMainForm.cs",
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = LightUiTheme.SurfaceAlt,
+                ForeColor = LightUiTheme.Muted,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold)
+            };
+
+            var menu = new MenuStrip { BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text };
+            menu.Items.AddRange(new ToolStripItem[] { new ToolStripMenuItem("ملف"), new ToolStripMenuItem("أدوات") });
+
+            var tabs = new TabControl
+            {
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                Padding = new Point(14, 5)
+            };
+
+            tabs.TabPages.Add(CreateDesignerPreviewTab("الاتصال", "حالة الاتصال، الجلسة، السرعة، وسجل الاتصال"));
+            tabs.TabPages.Add(CreateDesignerPreviewTab("المزامنة", "طابور الملفات، تقدم الإرسال، وإحصائيات النجاح"));
+            tabs.TabPages.Add(CreateDesignerPreviewTab("الجورنال", "عرض وتحليل سجلات EJ والبحث داخلها"));
+            tabs.TabPages.Add(CreateDesignerPreviewTab("التحكم البعيد", "Ghost View والأوامر المستلمة من الخادم"));
+            tabs.TabPages.Add(CreateDesignerPreviewTab("الخدمات", "تشغيل وإيقاف خدمات العميل"));
+            tabs.TabPages.Add(CreateDesignerPreviewTab("الإعدادات", "إعدادات الاتصال والصراف والمسارات"));
+            tabs.TabPages.Add(CreateDesignerPreviewTab("Agent Config", "قراءة AgentConf.xml وربطه بإعدادات التشغيل"));
+
+            var status = new StatusStrip { BackColor = LightUiTheme.Surface, SizingGrip = false };
+            status.Items.Add(new ToolStripStatusLabel("● معاينة فقط") { ForeColor = LightUiTheme.Muted });
+
+            Controls.Add(tabs);
+            Controls.Add(notice);
+            Controls.Add(menu);
+            Controls.Add(status);
+        }
+
+        private static TabPage CreateDesignerPreviewTab(string title, string description)
+        {
+            var tab = new TabPage(title) { BackColor = LightUiTheme.Window };
+            var label = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = description,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = LightUiTheme.Text,
+                Font = new Font("Segoe UI", 12f, FontStyle.Bold)
+            };
+            tab.Controls.Add(label);
+            return tab;
+        }
+
+        private void InitializeServices()
+        {
+            AppLogger.Instance.Initialize(AppConstants.DefaultLogPath, "client");
+            AppLogger.Instance.OnLog += (s, e) => AppendConnLog(e.FormattedForUI, e.Level);
+            _config = AgentConfigurationXmlService.LoadAppConfig(_config);
+            _agentConfig = AgentConfigurationXmlService.LoadOrCreate(_config);
+            _config.ApplyDefaults();
+            EnsureClientRuntimeFolders();
+            _config.Save();
+            DatabaseManager.Instance.Initialize(AppConstants.DefaultDatabasePath);
+
+            _analysisEngine = new TransactionAnalysisEngine();
+            _atmInfo        = new ATMInfo
+            {
+                ATM_ID      = _config.ATM_ID,
+                ATM_Name    = _config.ATM_Name,
+                ATM_Type    = _config.ATM_Type,
+                NetworkType = _config.NetworkType,
+                ServerIP    = _config.ServerIP,
+                ServerPort  = _config.ServerPort
+            };
+        }
+
+        private void InitializeForm()
+        {
+            Text          = $"EJLive Enterprise Client — {_config.ATM_ID}";
+            Size          = new Size(1050, 760);
+            MinimumSize   = new Size(900, 600);
+            StartPosition = FormStartPosition.CenterScreen;
+            BackColor     = LightUiTheme.Window;
+            ForeColor     = LightUiTheme.Text;
+            Font          = new Font("Segoe UI", 9.5f);
+        }
+
+        private void InitializeMenuStrip()
+        {
+            _menuStrip = new MenuStrip { BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text };
+            var fileMenu = new ToolStripMenuItem("ملف");
+            fileMenu.DropDownItems.AddRange(new ToolStripItem[]
+            {
+                new ToolStripMenuItem("اتصال",     null, (s,e) => BeginConnect()),
+                new ToolStripMenuItem("قطع الاتصال", null, (s,e) => DisconnectNow()),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("خروج", null, (s,e) => Close())
+            });
+            var toolsMenu = new ToolStripMenuItem("أدوات");
+            toolsMenu.DropDownItems.AddRange(new ToolStripItem[]
+            {
+                new ToolStripMenuItem("فتح مجلد الجورنال", null, OnOpenJournalFolder),
+                new ToolStripMenuItem("فتح مجلد السجل",    null, OnOpenLogFolder),
+                new ToolStripSeparator(),
+                new ToolStripMenuItem("اختبار الاتصال",   null, OnPing)
+            });
+            _menuStrip.Items.AddRange(new[] { fileMenu, toolsMenu });
+            Controls.Add(_menuStrip);
+        }
+
+        private void InitializeStatusStrip()
+        {
+            _statusStrip = new StatusStrip { BackColor = LightUiTheme.Surface, SizingGrip = false };
+            _lblStatus    = new ToolStripStatusLabel("● غير متصل") { ForeColor = Color.FromArgb(255, 69, 58) };
+            _lblSpeed     = new ToolStripStatusLabel("السرعة: —") { ForeColor = Color.FromArgb(99, 99, 102) };
+            _lblSyncState = new ToolStripStatusLabel("المزامنة: —") { ForeColor = Color.FromArgb(99, 99, 102) };
+            _lblTime      = new ToolStripStatusLabel { Alignment = ToolStripItemAlignment.Right, ForeColor = Color.FromArgb(99, 99, 102) };
+            _statusStrip.Items.AddRange(new ToolStripItem[] { _lblStatus, new ToolStripSeparator(), _lblSpeed, new ToolStripSeparator(), _lblSyncState, _lblTime });
+            Controls.Add(_statusStrip);
+        }
+
+        private void InitializeTabs()
+        {
+            _tabMain = new TabControl
+            {
+                Dock               = DockStyle.None,
+                DrawMode           = TabDrawMode.Normal,
+                ItemSize           = new Size(150, 32),
+                SizeMode           = TabSizeMode.Normal,
+                Font               = new Font("Segoe UI", 9f, FontStyle.Bold),
+                Padding            = new Point(14, 5),
+                RightToLeft        = RightToLeft.No,
+                RightToLeftLayout  = false
+            };
+
+            _tabConnection = new TabPage("الاتصال");
+            _tabSync       = new TabPage("المزامنة");
+            _tabJournal    = new TabPage("الجورنال");
+            _tabRemote     = new TabPage("التحكم البعيد");
+            _tabServices   = new TabPage("الخدمات");
+            _tabSettings   = new TabPage("الإعدادات");
+            _tabAgentConfig = new TabPage("Agent Config");
+
+            _tabServices.Text = "الخدمات والتحكم";
+
+            foreach (var t in new[] { _tabConnection, _tabSync, _tabJournal, _tabRemote, _tabServices, _tabSettings, _tabAgentConfig })
+                t.BackColor = LightUiTheme.Window;
+
+            BuildTabConnection();
+            BuildTabSync();
+            BuildTabJournal();
+            BuildTabServices();
+            BuildTabRemote();
+            BuildTabSettingsModern();
+            BuildTabAgentConfig();
+
+            _tabMain.TabPages.AddRange(new[] { _tabConnection, _tabSync, _tabJournal, _tabRemote, _tabServices, _tabSettings, _tabAgentConfig });
+            Controls.Add(_tabMain);
+            _menuStrip.BringToFront();
+            _statusStrip.BringToFront();
+            LayoutMainRegions();
+            Resize += (s, e) => LayoutMainRegions();
+            LightUiTheme.Apply(this);
+            ApplyClientVisualCorrections();
+        }
+
+        // ═══════════════════════════════════════════
+        // TAB 1 — الاتصال
+        // ═══════════════════════════════════════════
+
+        private void BuildTabConnection()
+        {
+            // مؤشر الاتصال الكبير
+            _pnlConnStatus = new Panel { Height = 124, Dock = DockStyle.Top, BackColor = LightUiTheme.Surface, Padding = new Padding(20) };
+            _lblConnIndicator = new Label
+            {
+                Text      = "●",
+                Font      = new Font("Segoe UI", 24f, FontStyle.Bold),
+                ForeColor = LightUiTheme.Muted,
+                AutoSize  = true,
+                Location  = new Point(24, 30)
+            };
+            _lblConnText = new Label
+            {
+                Text      = "غير متصل",
+                Font      = new Font("Segoe UI", 20f, FontStyle.Bold),
+                ForeColor = LightUiTheme.Danger,
+                AutoSize  = true,
+                Location  = new Point(78, 26)
+            };
+            _lblSessionId = new Label { Text = "Session: —", AutoSize = true, ForeColor = LightUiTheme.Muted, Location = new Point(78, 74), Font = new Font("Segoe UI", 9f) };
+            _lblLatency   = new Label { Text = "—", AutoSize = true, ForeColor = LightUiTheme.Muted, Location = new Point(280, 74) };
+            _pnlConnStatus.Controls.AddRange(new Control[] { _lblConnIndicator, _lblConnText, _lblSessionId, _lblLatency });
+
+            // أزرار الاتصال
+            var btnRow = new FlowLayoutPanel { Height = 58, Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, Padding = new Padding(16, 10, 16, 8), BackColor = LightUiTheme.SurfaceAlt };
+            _btnConnect    = MakeButton("اتصال",       LightUiTheme.Success, BeginConnect, 130);
+            _btnDisconnect = MakeButton("قطع الاتصال", LightUiTheme.Danger,  DisconnectNow, 150);
+            SetButtonVisual(_btnDisconnect, LightUiTheme.Danger, false);
+            btnRow.Controls.AddRange(new Control[] { _btnConnect, _btnDisconnect });
+
+            // شريط التقدم
+            _pnlConnProgress = new Panel { Height = 42, Dock = DockStyle.Top, BackColor = LightUiTheme.Surface };
+            _pbConnProgress  = new ProgressBar { Width = 400, Height = 18, Location = new Point(16, 12), Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 0 };
+            _lblConnProgress = new Label { Text = "", AutoSize = true, ForeColor = LightUiTheme.Primary, Location = new Point(440, 11), Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+            _pnlConnProgress.Controls.AddRange(new Control[] { _pbConnProgress, _lblConnProgress });
+
+            // معلومات الجلسة
+            _pnlConnMeta = new Panel { Height = 64, Dock = DockStyle.Top, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(16, 12, 16, 8) };
+            var metaFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.SurfaceAlt };
+            _lblConnectedSince = MakeMeta("متصل منذ:", "—");
+            _lblBytesSent      = MakeMeta("بايتات أُرسلت:", "0 KB");
+            _lblBytesRecv      = MakeMeta("بايتات مُستلمة:", "0 KB");
+            metaFlow.Controls.AddRange(new Control[] { _lblConnectedSince, _lblBytesSent, _lblBytesRecv });
+            _pnlConnMeta.Controls.Add(metaFlow);
+
+            // سجل الاتصال
+            _rtbConnLog = new RichTextBox
+            {
+                Dock        = DockStyle.Fill,
+                BackColor   = LightUiTheme.Surface,
+                ForeColor   = LightUiTheme.Text,
+                Font        = new Font("Segoe UI", 9f),
+                ReadOnly    = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                ScrollBars  = RichTextBoxScrollBars.Vertical,
+                RightToLeft = RightToLeft.No
+            };
+
+            _pnlLocalState = BuildLocalStatePanel();
+            _tabConnection.Controls.AddRange(new Control[] { _rtbConnLog, _pnlLocalState, _pnlConnMeta, _pnlConnProgress, btnRow, _pnlConnStatus });
+            RefreshLocalStateReading(false);
+        }
+
+        private Panel _pnlConnProgress;
+
+        private Panel BuildLocalStatePanel()
+        {
+            var panel = new Panel
+            {
+                Height = 210,
+                Dock = DockStyle.Top,
+                BackColor = LightUiTheme.Surface,
+                Padding = new Padding(12, 8, 12, 10)
+            };
+
+            _lblLocalStateSummary = new Label
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                Text = "قراءة الحالات المحلية: —",
+                ForeColor = LightUiTheme.Muted,
+                Font = new Font("Segoe UI", 9.4f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            _dgvLocalState = CreateDataGrid();
+            _dgvLocalState.Dock = DockStyle.Fill;
+            _dgvLocalState.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+            _dgvLocalState.Columns.AddRange(new DataGridViewColumn[]
+            {
+                new DataGridViewTextBoxColumn { HeaderText = "المجال", Width = 135 },
+                new DataGridViewTextBoxColumn { HeaderText = "الحالة", Width = 105 },
+                new DataGridViewTextBoxColumn { HeaderText = "القراءة اللحظية", Width = 330 },
+                new DataGridViewTextBoxColumn { HeaderText = "الإجراء المحلي", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill }
+            });
+
+            panel.Controls.Add(_dgvLocalState);
+            panel.Controls.Add(_lblLocalStateSummary);
+            return panel;
+        }
+
+        // ═══════════════════════════════════════════
+        // TAB 2 — المزامنة
+        // ═══════════════════════════════════════════
+
+        private void BuildTabSync()
+        {
+            // شريط التقدم الحي
+            _pnlSyncProgress = new Panel { Height = 80, Dock = DockStyle.Top, BackColor = LightUiTheme.Surface, Padding = new Padding(12) };
+            _pbSyncProgress  = new ProgressBar { Width = 500, Height = 22, Location = new Point(12, 12), Minimum = 0, Maximum = 100 };
+            _lblSyncFile     = new Label { Text = "—", AutoSize = true, ForeColor = LightUiTheme.Primary, Location = new Point(12, 42) };
+            _lblSyncPercent  = new Label { Text = "0%", AutoSize = true, ForeColor = LightUiTheme.Text, Font = new Font("Segoe UI", 11f, FontStyle.Bold), Location = new Point(520, 10) };
+            _pnlSyncProgress.Controls.AddRange(new Control[] { _pbSyncProgress, _lblSyncFile, _lblSyncPercent });
+
+            _pnlSyncTimeline = new Panel { Height = 48, Dock = DockStyle.Top, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(12, 8, 12, 6) };
+            var timelineFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = LightUiTheme.SurfaceAlt };
+            var steps = new[] { "قراءة المصدر", "نسخة محلية", "طابور", "إرسال", "تحقق الخادم" };
+            for (int i = 0; i < steps.Length; i++)
+            {
+                _syncStepLabels[i] = new Label
+                {
+                    Text = steps[i],
+                    Width = 128,
+                    Height = 28,
+                    Margin = new Padding(4, 2, 4, 2),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    BackColor = i == 0 ? LightUiTheme.Primary : LightUiTheme.Surface,
+                    ForeColor = i == 0 ? Color.White : LightUiTheme.Muted,
+                    BorderStyle = BorderStyle.FixedSingle,
+                    Font = new Font("Segoe UI", 8.4f, FontStyle.Bold)
+                };
+                timelineFlow.Controls.Add(_syncStepLabels[i]);
+            }
+            _pnlSyncTimeline.Controls.Add(timelineFlow);
+
+            // الإحصائيات
+            var statsPanel = new Panel { Height = 54, Dock = DockStyle.Top, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(12, 10, 12, 8) };
+            var sf = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.SurfaceAlt };
+            _lblQueueCount  = MakeMeta("في الطابور:",   "0");
+            _lblTotalSent   = MakeMeta("إجمالي مُرسل:", "0 KB");
+            _lblSuccessRate = MakeMeta("معدل النجاح:",  "100%");
+            _lblSyncStats   = new Label { Text = "", ForeColor = LightUiTheme.Muted, AutoSize = true };
+            sf.Controls.AddRange(new Control[] { _lblQueueCount, _lblTotalSent, _lblSuccessRate, _lblSyncStats });
+            statsPanel.Controls.Add(sf);
+
+            // أزرار التحكم
+            _pnlSyncControls = new Panel { Height = 56, Dock = DockStyle.Top, BackColor = LightUiTheme.Surface, Padding = new Padding(12, 8, 12, 8) };
+            var ctrlFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Surface };
+            _btnForceSend   = MakeButton("إرسال جبري",  Color.FromArgb(17, 94, 89),  OnForceSend, 140);
+            _btnClearFailed = MakeButton("حذف الفاشلة", LightUiTheme.Danger,         OnClearFailed, 140);
+            _btnPauseSync   = MakeButton("إيقاف مؤقت",  LightUiTheme.Warning,        OnPauseSync, 130);
+            _btnResumeSync  = MakeButton("استئناف",      LightUiTheme.Success,        OnResumeSync, 110);
+            ctrlFlow.Controls.AddRange(new Control[] { _btnForceSend, _btnClearFailed, _btnPauseSync, _btnResumeSync });
+            _pnlSyncControls.Controls.Add(ctrlFlow);
+
+            // جدول الطابور
+            _dgvSyncQueue = CreateDataGrid();
+            _dgvSyncQueue.Columns.AddRange(new DataGridViewColumn[]
+            {
+                new DataGridViewTextBoxColumn { HeaderText = "#",         Width = 40  },
+                new DataGridViewTextBoxColumn { HeaderText = "اسم الملف",  Width = 180 },
+                new DataGridViewTextBoxColumn { HeaderText = "الحجم",     Width = 90  },
+                new DataGridViewTextBoxColumn { HeaderText = "الحالة",    Width = 110 },
+                new DataGridViewTextBoxColumn { HeaderText = "التقدم",    Width = 90  },
+                new DataGridViewTextBoxColumn { HeaderText = "المحاولات", Width = 80  },
+                new DataGridViewTextBoxColumn { HeaderText = "Checksum",  Width = 130 },
+                new DataGridViewTextBoxColumn { HeaderText = "وقت الإضافة", Width = 130, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill }
+            });
+
+            _tabSync.Controls.AddRange(new Control[] { _dgvSyncQueue, _pnlSyncControls, statsPanel, _pnlSyncTimeline, _pnlSyncProgress });
+        }
+
+        // ═══════════════════════════════════════════
+        // TAB 3 — الجورنال
+        // ═══════════════════════════════════════════
+
+        private void BuildTabJournal()
+        {
+            // شريط الفلاتر
+            _pnlJournalFilter = new Panel { Height = 130, Dock = DockStyle.Top, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(10, 8, 10, 8) };
+
+            // صف 1: أزرار الفلاتر
+            var filterNames = new[] { "Approved", "Power Up", "Error E3", "Cash Error", "M-18", "M-02/03/05", "M-10/11", "Capture", "Declined", "الكل" };
+            var filterEnums = new[] { JournalSearchFilter.ApprovedTransactions, JournalSearchFilter.PowerUpReset, JournalSearchFilter.ErrorE3, JournalSearchFilter.TotalCashError, JournalSearchFilter.M18, JournalSearchFilter.M02_M03_M05, JournalSearchFilter.M10_M11, JournalSearchFilter.CardCapture, JournalSearchFilter.Declined, JournalSearchFilter.All };
+            var filterColors = new[] { LightUiTheme.Success, Color.FromArgb(150, 90, 0), LightUiTheme.Danger, Color.FromArgb(150, 80, 20), Color.FromArgb(126, 58, 140), Color.FromArgb(100, 72, 160), Color.FromArgb(70, 82, 160), Color.FromArgb(140, 56, 100), Color.FromArgb(170, 50, 60), LightUiTheme.Primary };
+
+            _filterBtns = new Button[filterNames.Length];
+            var filterRow = new FlowLayoutPanel { Height = 78, Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.SurfaceAlt };
+            for (int i = 0; i < filterNames.Length; i++)
+            {
+                var idx = i;
+                var btn = new Button { Text = filterNames[i], Width = 118, Height = 32, BackColor = filterColors[i], ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 8.3f), Margin = new Padding(4, 3, 4, 3), Cursor = Cursors.Hand, AutoEllipsis = true };
+                LightUiTheme.StyleButton(btn, filterColors[i]);
+                btn.Click += (s, e) => ApplyJournalFilter(filterEnums[idx]);
+                filterRow.Controls.Add(btn);
+                _filterBtns[i] = btn;
+            }
+
+            // صف 2: بحث + تحكم
+            var searchRow = new FlowLayoutPanel { Height = 42, Dock = DockStyle.Bottom, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(0, 4, 0, 0) };
+            _cmbJournalFile   = new ComboBox { Width = 220, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, FlatStyle = FlatStyle.System };
+            _txtJournalSearch = new TextBox { Width = 220, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, Text = "بحث في الجورنال...", BorderStyle = BorderStyle.FixedSingle };
+            _txtJournalSearch.TextChanged += (s, e) => ApplyJournalFreeSearch();
+            _btnLoadJournal   = MakeButton("تحميل", LightUiTheme.Primary, OnLoadJournal, 100);
+            _btnExportJournal = MakeButton("تصدير", LightUiTheme.Success, OnExportJournal, 100);
+            _lblJournalResultCount = new Label { Text = "0 سطر", ForeColor = LightUiTheme.Muted, AutoSize = true, Padding = new Padding(6, 8, 0, 0) };
+            searchRow.Controls.AddRange(new Control[] { _cmbJournalFile, _btnLoadJournal, _txtJournalSearch, _btnExportJournal, _lblJournalResultCount });
+
+            _pnlJournalFilter.Controls.AddRange(new Control[] { filterRow, searchRow });
+
+            // إحصائيات الجورنال
+            _lblJournalStats = new Label { Dock = DockStyle.Top, Height = 30, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Muted, Font = new Font("Segoe UI",8.5f), TextAlign = ContentAlignment.MiddleCenter };
+
+            // منطقة النص
+            _rtbJournal = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                BackColor = LightUiTheme.Surface,
+                ForeColor = LightUiTheme.Text,
+                Font      = new Font("Segoe UI", 9.5f),
+                ReadOnly  = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                ScrollBars  = RichTextBoxScrollBars.Both,
+                WordWrap    = false,
+                RightToLeft = RightToLeft.No
+            };
+
+            _tabJournal.Controls.AddRange(new Control[] { _rtbJournal, _lblJournalStats, _pnlJournalFilter });
+            LoadJournalFiles();
+        }
+
+        // ═══════════════════════════════════════════
+        // TAB 4 — التحكم البعيد
+        // ═══════════════════════════════════════════
+
+        private void BuildTabRemote()
+        {
+            var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterWidth = 4, BackColor = LightUiTheme.Border };
+
+            // Ghost Screen
+            var leftPanel = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.Surface };
+            _pbRemoteScreen = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Black };
+            var screenToolbar = new Panel { Height = 52, Dock = DockStyle.Bottom, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(10, 8, 10, 8) };
+            var stf = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.SurfaceAlt };
+            _lblRemoteStatus = new Label { Text = "Ghost View معطّل", ForeColor = LightUiTheme.Muted, AutoSize = true, Padding = new Padding(8, 8, 0, 0) };
+            _lblFPS          = new Label { Text = "", ForeColor = LightUiTheme.Muted, AutoSize = true, Padding = new Padding(8, 8, 0, 0) };
+            _btnRequestScreen = MakeButton("طلب شاشة", LightUiTheme.Primary, OnRequestScreen, 130);
+            _btnStopScreen    = MakeButton("إيقاف",    LightUiTheme.Danger,  OnStopScreen, 100);
+            SetButtonVisual(_btnStopScreen, LightUiTheme.Warning, true);
+            stf.Controls.AddRange(new Control[] { _btnRequestScreen, _btnStopScreen, _lblRemoteStatus, _lblFPS });
+            screenToolbar.Controls.Add(stf);
+            leftPanel.Controls.AddRange(new Control[] { _pbRemoteScreen, screenToolbar });
+            split.Panel1.Controls.Add(leftPanel);
+
+            // الأوامر المعلقة
+            var rightPanel = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.Surface };
+            var cmdLabel   = new Label { Text = "الأوامر الواردة من الخادم", Dock = DockStyle.Top, Height = 32, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.SurfaceAlt, TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+            _dgvPendingCmds = CreateDataGrid();
+            _dgvPendingCmds.Dock = DockStyle.Fill;
+            _dgvPendingCmds.Columns.AddRange(new DataGridViewColumn[]
+            {
+                new DataGridViewTextBoxColumn { HeaderText = "الأمر",   Width = 160 },
+                new DataGridViewTextBoxColumn { HeaderText = "المعرف",  Width = 100 },
+                new DataGridViewTextBoxColumn { HeaderText = "الحالة",  Width = 90  },
+                new DataGridViewTextBoxColumn { HeaderText = "الوقت",   Width = 120 },
+                new DataGridViewTextBoxColumn { HeaderText = "النتيجة", Width = 200, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill }
+            });
+            _rtbRemoteLog = new RichTextBox { Height = 120, Dock = DockStyle.Bottom, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, Font = new Font("Segoe UI", 8.8f), ReadOnly = true, BorderStyle = BorderStyle.FixedSingle, RightToLeft = RightToLeft.No };
+            rightPanel.Controls.AddRange(new Control[] { _dgvPendingCmds, _rtbRemoteLog, cmdLabel });
+            split.Panel2.Controls.Add(rightPanel);
+
+            _tabRemote.Controls.Add(split);
+        }
+
+        private void BuildTabServices()
+        {
+            _serviceRows.Clear();
+
+            var host = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = LightUiTheme.Window,
+                Padding = new Padding(12)
+            };
+
+            var split = new SplitContainer
+            {
+                Dock = DockStyle.Fill,
+                Orientation = Orientation.Vertical,
+                SplitterWidth = 5,
+                BackColor = LightUiTheme.Border
+            };
+            split.HandleCreated += (s, e) => split.BeginInvoke(new Action(() => ApplyServicesSplitterLayout(split)));
+            split.SizeChanged += (s, e) => ApplyServicesSplitterLayout(split);
+
+            var remotePanel = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.Window, Padding = new Padding(0, 0, 10, 0) };
+            var remoteGroup = new GroupBox
+            {
+                Text = "المشاهدة البعيدة",
+                Dock = DockStyle.Fill,
+                BackColor = LightUiTheme.Window,
+                ForeColor = LightUiTheme.Text,
+                Padding = new Padding(10)
+            };
+
+            var remoteHost = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.Surface };
+            _pbRemoteScreen = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Black, BorderStyle = BorderStyle.FixedSingle };
+            var remoteToolbar = new Panel { Height = 56, Dock = DockStyle.Bottom, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(10, 8, 10, 8) };
+            var remoteFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.SurfaceAlt };
+            _btnRequestScreen = MakeButton("التقاط شاشة", LightUiTheme.Primary, OnRequestScreen, 130);
+            _btnStopScreen = MakeButton("فتح اللقطات", LightUiTheme.Warning, OnStopScreen, 130);
+            _lblRemoteStatus = new Label { Text = "لا توجد لقطة بعد", ForeColor = LightUiTheme.Muted, AutoSize = true, Padding = new Padding(8, 8, 0, 0) };
+            _lblFPS = new Label { Text = "", ForeColor = LightUiTheme.Muted, AutoSize = true, Padding = new Padding(8, 8, 0, 0) };
+            remoteFlow.Controls.AddRange(new Control[] { _btnRequestScreen, _btnStopScreen, _lblRemoteStatus, _lblFPS });
+            remoteToolbar.Controls.Add(remoteFlow);
+            remoteHost.Controls.AddRange(new Control[] { _pbRemoteScreen, remoteToolbar });
+            remoteGroup.Controls.Add(remoteHost);
+            _rtbRemoteLog = new RichTextBox { Height = 110, Dock = DockStyle.Bottom, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, Font = new Font("Segoe UI", 8.8f), ReadOnly = true, BorderStyle = BorderStyle.FixedSingle, RightToLeft = RightToLeft.No };
+            remotePanel.Controls.AddRange(new Control[] { remoteGroup, _rtbRemoteLog });
+            split.Panel1.Controls.Add(remotePanel);
+
+            var opsPanel = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.Window, Padding = new Padding(10, 0, 0, 0) };
+            var servicesGroup = new GroupBox
+            {
+                Text = "خدمات نظام ويندوز",
+                Dock = DockStyle.Top,
+                Height = 266,
+                BackColor = LightUiTheme.Window,
+                ForeColor = LightUiTheme.Text,
+                Padding = new Padding(10)
+            };
+
+            var table = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 4,
+                RowCount = 6,
+                BackColor = LightUiTheme.Window
+            };
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55));
+            table.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            for (int row = 1; row < 6; row++)
+                table.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+
+            AddServiceHeader(table);
+            AddServiceRow(table, 1, "conn", "Controller", () => BeginConnect(), () => DisconnectNow(), () => _networkManager?.IsConnected == true, "Connected", "Stopped");
+            AddServiceRow(table, 2, "watcher", "File Watcher", StartFileWatcherService, StopFileWatcherService, () => _fileWatcher != null, "Running", "Stopped");
+            AddServiceRow(table, 3, "sender", "File Sender", StartSocketFilesService, StopSocketFilesService, () => _journalProcessor?.IsRunning == true, "Running", "Stopped");
+            AddServiceRow(table, 4, "ghost", "Ghost Access", StartGhostService, StopGhostService, () => _ghostServiceRunning, "Enabled", "Disabled");
+            AddServiceRow(table, 5, "remote", "Windows Remote", StartWindowsRemoteAccessService, StopWindowsRemoteAccessService, WindowsRemoteAccessService.IsRemoteDesktopEnabled, "Enabled", "Disabled");
+
+            servicesGroup.Controls.Add(table);
+
+            var windowsGroup = new GroupBox
+            {
+                Text = "تشخيص Windows والتشغيل الذاتي",
+                Dock = DockStyle.Top,
+                Height = 176,
+                BackColor = LightUiTheme.Window,
+                ForeColor = LightUiTheme.Text,
+                Padding = new Padding(10)
+            };
+            _lblWindowsReadiness = new Label
+            {
+                Text = "اضغط تشخيص لقراءة جاهزية Windows، التشغيل الذاتي، RDP، والمسارات.",
+                Dock = DockStyle.Top,
+                Height = 32,
+                ForeColor = LightUiTheme.Muted,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            var winToolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            _btnWindowsDiagnostics = MakeButton("تشخيص", LightUiTheme.Primary, RunWindowsDiagnostics, 110);
+            _btnRegisterStartup = MakeButton("تسجيل تشغيل تلقائي", Color.FromArgb(17, 94, 89), RegisterWindowsStartup, 170);
+            _btnUnregisterStartup = MakeButton("إزالة التشغيل التلقائي", LightUiTheme.Warning, UnregisterWindowsStartup, 180);
+            winToolbar.Controls.AddRange(new Control[] { _btnWindowsDiagnostics, _btnRegisterStartup, _btnUnregisterStartup });
+            _rtbWindowsOpsLog = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = LightUiTheme.Surface,
+                ForeColor = LightUiTheme.Text,
+                Font = new Font("Consolas", 8.5f),
+                RightToLeft = RightToLeft.No,
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
+            windowsGroup.Controls.Add(_rtbWindowsOpsLog);
+            windowsGroup.Controls.Add(winToolbar);
+            windowsGroup.Controls.Add(_lblWindowsReadiness);
+
+            var cmdGroup = new GroupBox
+            {
+                Text = "الأوامر الواردة من الخادم",
+                Dock = DockStyle.Fill,
+                BackColor = LightUiTheme.Window,
+                ForeColor = LightUiTheme.Text,
+                Padding = new Padding(10)
+            };
+            _dgvPendingCmds = CreateDataGrid();
+            _dgvPendingCmds.Columns.AddRange(new DataGridViewColumn[]
+            {
+                new DataGridViewTextBoxColumn { HeaderText = "الأمر", Width = 130 },
+                new DataGridViewTextBoxColumn { HeaderText = "المعرف", Width = 90 },
+                new DataGridViewTextBoxColumn { HeaderText = "الحالة", Width = 90 },
+                new DataGridViewTextBoxColumn { HeaderText = "الوقت", Width = 90 },
+                new DataGridViewTextBoxColumn { HeaderText = "النتيجة", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill }
+            });
+            cmdGroup.Controls.Add(_dgvPendingCmds);
+
+            opsPanel.Controls.Add(cmdGroup);
+            opsPanel.Controls.Add(windowsGroup);
+            opsPanel.Controls.Add(servicesGroup);
+            split.Panel2.Controls.Add(opsPanel);
+
+            host.Controls.Add(split);
+            _tabServices.Controls.Add(host);
+            UpdateServiceStatuses();
+            RunWindowsDiagnostics();
+        }
+
+        private void ApplyServicesSplitterLayout(SplitContainer split)
+        {
+            if (split == null || split.IsDisposed) return;
+            const int preferredPanel1Min = 260;
+            const int preferredPanel2Min = 220;
+
+            if (split.Width <= preferredPanel1Min + preferredPanel2Min + split.SplitterWidth)
+                return;
+
+            if (split.Panel1MinSize != preferredPanel1Min)
+                split.Panel1MinSize = preferredPanel1Min;
+            if (split.Panel2MinSize != preferredPanel2Min)
+                split.Panel2MinSize = preferredPanel2Min;
+
+            var min = preferredPanel1Min;
+            var max = split.Width - preferredPanel2Min - split.SplitterWidth;
+            if (max <= min) return;
+
+            var target = (int)(split.Width * 0.62);
+            target = Math.Max(min, Math.Min(max, target));
+
+            if (split.SplitterDistance != target)
+                split.SplitterDistance = target;
+        }
+
+        private void AddServiceHeader(TableLayoutPanel table)
+        {
+            table.Controls.Add(new Label { Text = "الخدمة", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
+            table.Controls.Add(new Label { Text = "تشغيل", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter }, 1, 0);
+            table.Controls.Add(new Label { Text = "إيقاف", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter }, 2, 0);
+            table.Controls.Add(new Label { Text = "الحالة", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9f, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter }, 3, 0);
+        }
+
+        private void AddServiceRow(TableLayoutPanel table, int row, string key, string name, Action start, Action stop, Func<bool> isRunning, string runningText, string stoppedText)
+        {
+            var title = new Label { Text = name, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 8.7f, FontStyle.Regular) };
+            var startBtn = MakeButton("Start", Color.FromArgb(68, 176, 90), () => { start?.Invoke(); UpdateServiceStatuses(); }, 78);
+            var stopBtn = MakeButton("Stop", Color.FromArgb(244, 67, 54), () => { stop?.Invoke(); UpdateServiceStatuses(); }, 78);
+            var status = new Label { Dock = DockStyle.Fill, Text = $"[OFF] {stoppedText}", ForeColor = LightUiTheme.Muted, TextAlign = ContentAlignment.MiddleCenter };
+            table.Controls.Add(title, 0, row);
+            table.Controls.Add(startBtn, 1, row);
+            table.Controls.Add(stopBtn, 2, row);
+            table.Controls.Add(status, 3, row);
+
+            _serviceRows[key] = new ServiceRowState
+            {
+                StatusLabel = status,
+                StartButton = startBtn,
+                StopButton = stopBtn,
+                IsRunning = isRunning,
+                RunningText = runningText,
+                StoppedText = stoppedText
+            };
+        }
+
+        // ═══════════════════════════════════════════
+        // TAB 5 — الإعدادات
+        // ═══════════════════════════════════════════
+
+        private void BuildTabSettings()
+        {
+            var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(20, 15, 20, 15), BackColor = LightUiTheme.Window };
+
+            // مجموعة الاتصال
+            var grpConn = new GroupBox { Text = "إعدادات الاتصال", Dock = DockStyle.Top, Height = 120, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10) };
+            var connFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            _txtServerIP   = MakeInput("192.168.1.100", 180);
+            _txtServerPort = MakeInput("5656", 80);
+            _cmbNetworkType = MakeCombo(new[] { "LAN", "ADSL", "GSM", "CDMA" }, 100);
+            connFlow.Controls.AddRange(new Control[]
+            {
+                MakeLabel("IP السيرفر:"), _txtServerIP, MakeLabel("  المنفذ:"), _txtServerPort,
+                MakeLabel("  نوع الشبكة:"), _cmbNetworkType
+            });
+            grpConn.Controls.Add(connFlow);
+
+            // مجموعة الصراف
+            var grpATM = new GroupBox { Text = "معلومات الصراف", Dock = DockStyle.Top, Height = 120, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0,10,0,0) };
+            var atmFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            _txtATMID   = MakeInput("ATM001", 120);
+            _txtATMName = MakeInput("الاسم", 160);
+            _cmbATMType = MakeCombo(AppConstants.GetSupportedATMTypes(), 110);
+            _cmbATMType.SelectedIndexChanged += OnATMTypeChanged;
+            atmFlow.Controls.AddRange(new Control[] { MakeLabel("معرف الصراف:"), _txtATMID, MakeLabel("  الاسم:"), _txtATMName, MakeLabel("  النوع:"), _cmbATMType });
+            grpATM.Controls.Add(atmFlow);
+
+            // مجموعة المسارات
+            var grpPaths = new GroupBox { Text = "مسارات الملفات", Dock = DockStyle.Top, Height = 120, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0,10,0,0) };
+            var pathFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            _txtSourcePath = MakeInput(AppConstants.NCR_JournalPath, 250);
+            _txtBackupPath = MakeInput(AppConstants.NCR_BackupPath, 250);
+            _btnBrowseSource = MakeButton("...", LightUiTheme.Primary, OnBrowseSource, 44);
+            _btnBrowseBackup = MakeButton("...", LightUiTheme.Primary, OnBrowseBackup, 44);
+            pathFlow.Controls.AddRange(new Control[] { MakeLabel("مجلد الجورنال:"), _txtSourcePath, _btnBrowseSource, MakeLabel("  النسخ الاحتياطي:"), _txtBackupPath, _btnBrowseBackup });
+            grpPaths.Controls.Add(pathFlow);
+
+            // مجموعة الخيارات
+            var grpOptions = new GroupBox { Text = "الخيارات", Dock = DockStyle.Top, Height = 100, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0,10,0,0) };
+            var optFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            _chkAutoConnect  = MakeCheckbox("اتصال تلقائي عند التشغيل");
+            _chkEncrypt      = MakeCheckbox("تشفير AES-256", true);
+            _chkCompression  = MakeCheckbox("ضغط Deflate", true);
+            _chkAutoBackup   = MakeCheckbox("نسخ احتياطي تلقائي", true);
+            optFlow.Controls.AddRange(new Control[] { _chkAutoConnect, _chkEncrypt, _chkCompression, _chkAutoBackup });
+            grpOptions.Controls.Add(optFlow);
+
+            // تغيير كلمة السر
+            var grpPwd = new GroupBox { Text = "تغيير كلمة المرور", Dock = DockStyle.Top, Height = 100, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0,10,0,0) };
+            var pwdFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            _txtCurrentPassword = MakeInput("الحالية",    120); _txtCurrentPassword.UseSystemPasswordChar = true;
+            _txtNewPassword     = MakeInput("الجديدة",    120); _txtNewPassword.UseSystemPasswordChar = true;
+            _txtConfirmPassword = MakeInput("تأكيد",      120); _txtConfirmPassword.UseSystemPasswordChar = true;
+            _btnChangePassword  = MakeButton("تغيير", Color.FromArgb(80, 62, 140), OnLocalChangePassword, 100);
+            pwdFlow.Controls.AddRange(new Control[] { MakeLabel("الحالية:"), _txtCurrentPassword, MakeLabel("  الجديدة:"), _txtNewPassword, MakeLabel("  تأكيد:"), _txtConfirmPassword, _btnChangePassword });
+            grpPwd.Controls.Add(pwdFlow);
+
+            // زر الحفظ
+            var savePanel = new Panel { Height = 58, Dock = DockStyle.Top, BackColor = LightUiTheme.SurfaceAlt, Margin = new Padding(0,12,0,0) };
+            _btnSaveSettings = MakeButton("حفظ الإعدادات", LightUiTheme.Success, OnSaveSettings, 170);
+            _btnSaveSettings.Location = new Point(20, 10);
+            savePanel.Controls.Add(_btnSaveSettings);
+
+            scroll.Controls.AddRange(new Control[] { savePanel, grpPwd, grpOptions, grpPaths, grpATM, grpConn });
+            _tabSettings.Controls.Add(scroll);
+        }
+
+        private void BuildTabSettingsModern()
+        {
+            var scroll = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                Padding = new Padding(16, 12, 16, 12),
+                BackColor = LightUiTheme.Window
+            };
+
+            _txtServerIP = MakeInput("192.168.1.100", 170);
+            _txtServerPort = MakeInput("5656", 90);
+            _cmbNetworkType = MakeCombo(new[] { "LAN", "ADSL", "GSM", "CDMA" }, 120);
+            _txtATMID = MakeInput("ATM001", 130);
+            _txtATMName = MakeInput("الاسم", 170);
+            _cmbATMType = MakeCombo(AppConstants.GetSupportedATMTypes(), 130);
+            _cmbATMType.SelectedIndexChanged += OnATMTypeChanged;
+            _txtSourcePath = MakeInput(AppConstants.NCR_JournalPath, 250);
+            _txtBackupPath = MakeInput(AppConstants.NCR_BackupPath, 250);
+            _btnBrowseSource = MakeButton("...", LightUiTheme.Primary, OnBrowseSource, 44);
+            _btnBrowseBackup = MakeButton("...", LightUiTheme.Primary, OnBrowseBackup, 44);
+            _chkAutoConnect = MakeCheckbox("اتصال تلقائي عند التشغيل");
+            _chkEncrypt = MakeCheckbox("تشفير AES-256", true);
+            _chkCompression = MakeCheckbox("ضغط Deflate", true);
+            _chkAutoBackup = MakeCheckbox("نسخ احتياطي تلقائي", true);
+            _txtCurrentPassword = MakeInput("الحالية", 120); _txtCurrentPassword.UseSystemPasswordChar = true;
+            _txtNewPassword = MakeInput("الجديدة", 120); _txtNewPassword.UseSystemPasswordChar = true;
+            _txtConfirmPassword = MakeInput("تأكيد", 120); _txtConfirmPassword.UseSystemPasswordChar = true;
+            _btnChangePassword = MakeButton("تغيير", Color.FromArgb(80, 62, 140), OnLocalChangePassword, 100);
+            _btnSaveSettings = MakeButton("حفظ الإعدادات", LightUiTheme.Success, OnSaveSettings, 190);
+
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 2,
+                RowCount = 3,
+                BackColor = LightUiTheme.Window
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 144));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 146));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
+
+            var grpConn = new GroupBox { Text = "إعدادات الاتصال", Dock = DockStyle.Fill, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0, 0, 8, 10) };
+            var connGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, BackColor = LightUiTheme.Window };
+            connGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            connGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            connGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            connGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            connGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            connGrid.Controls.Add(MakeLabel("IP السيرفر:"), 0, 0); connGrid.Controls.Add(_txtServerIP, 1, 0);
+            connGrid.Controls.Add(MakeLabel("المنفذ:"), 0, 1); connGrid.Controls.Add(_txtServerPort, 1, 1);
+            connGrid.Controls.Add(MakeLabel("نوع الشبكة:"), 0, 2); connGrid.Controls.Add(_cmbNetworkType, 1, 2);
+            grpConn.Controls.Add(connGrid);
+
+            var grpATM = new GroupBox { Text = "معلومات الصراف", Dock = DockStyle.Fill, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(8, 0, 0, 10) };
+            var atmGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, BackColor = LightUiTheme.Window };
+            atmGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            atmGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            atmGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            atmGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            atmGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            atmGrid.Controls.Add(MakeLabel("معرف الصراف:"), 0, 0); atmGrid.Controls.Add(_txtATMID, 1, 0);
+            atmGrid.Controls.Add(MakeLabel("الاسم:"), 0, 1); atmGrid.Controls.Add(_txtATMName, 1, 1);
+            atmGrid.Controls.Add(MakeLabel("النوع:"), 0, 2); atmGrid.Controls.Add(_cmbATMType, 1, 2);
+            grpATM.Controls.Add(atmGrid);
+
+            var grpPaths = new GroupBox { Text = "مسارات الملفات", Dock = DockStyle.Fill, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0, 0, 8, 10) };
+            var pathGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2, BackColor = LightUiTheme.Window };
+            pathGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+            pathGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            pathGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 52));
+            pathGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            pathGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
+            pathGrid.Controls.Add(MakeLabel("مجلد الجورنال:"), 0, 0); pathGrid.Controls.Add(_txtSourcePath, 1, 0); pathGrid.Controls.Add(_btnBrowseSource, 2, 0);
+            pathGrid.Controls.Add(MakeLabel("النسخ الاحتياطي:"), 0, 1); pathGrid.Controls.Add(_txtBackupPath, 1, 1); pathGrid.Controls.Add(_btnBrowseBackup, 2, 1);
+            grpPaths.Controls.Add(pathGrid);
+
+            var grpOptions = new GroupBox { Text = "خيارات العميل", Dock = DockStyle.Fill, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(8, 0, 0, 10) };
+            var optFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = LightUiTheme.Window };
+            optFlow.Controls.AddRange(new Control[] { _chkAutoConnect, _chkEncrypt, _chkCompression, _chkAutoBackup });
+            grpOptions.Controls.Add(optFlow);
+
+            var grpPwd = new GroupBox { Text = "تغيير كلمة المرور", Dock = DockStyle.Fill, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(0, 0, 8, 0) };
+            var pwdGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 2, BackColor = LightUiTheme.Window };
+            pwdGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80));
+            pwdGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33));
+            pwdGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70));
+            pwdGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 67));
+            pwdGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            pwdGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+            pwdGrid.Controls.Add(MakeLabel("الحالية:"), 0, 0); pwdGrid.Controls.Add(_txtCurrentPassword, 1, 0);
+            pwdGrid.Controls.Add(MakeLabel("الجديدة:"), 2, 0); pwdGrid.Controls.Add(_txtNewPassword, 3, 0);
+            pwdGrid.Controls.Add(MakeLabel("تأكيد:"), 0, 1); pwdGrid.Controls.Add(_txtConfirmPassword, 1, 1);
+            pwdGrid.Controls.Add(_btnChangePassword, 3, 1);
+            grpPwd.Controls.Add(pwdGrid);
+
+            var grpSave = new GroupBox { Text = "حفظ وتطبيق", Dock = DockStyle.Fill, ForeColor = LightUiTheme.Text, BackColor = LightUiTheme.Window, Padding = new Padding(10), Margin = new Padding(8, 0, 0, 0) };
+            var savePanel = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.SurfaceAlt };
+            _btnSaveSettings.Location = new Point(14, 30);
+            savePanel.Controls.Add(_btnSaveSettings);
+            grpSave.Controls.Add(savePanel);
+
+            layout.Controls.Add(grpConn, 0, 0);
+            layout.Controls.Add(grpATM, 1, 0);
+            layout.Controls.Add(grpPaths, 0, 1);
+            layout.Controls.Add(grpOptions, 1, 1);
+            layout.Controls.Add(grpPwd, 0, 2);
+            layout.Controls.Add(grpSave, 1, 2);
+
+            scroll.Controls.Add(layout);
+            _tabSettings.Controls.Add(scroll);
+        }
+
+        private void BuildTabAgentConfig()
+        {
+            var host = new Panel { Dock = DockStyle.Fill, BackColor = LightUiTheme.Window, Padding = new Padding(14) };
+
+            var header = new Panel { Dock = DockStyle.Top, Height = 88, BackColor = LightUiTheme.SurfaceAlt, Padding = new Padding(12) };
+            _lblAgentConfigPath = new Label
+            {
+                Dock = DockStyle.Top,
+                Height = 26,
+                ForeColor = LightUiTheme.Text,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            _lblAgentConfigStatus = new Label
+            {
+                Dock = DockStyle.Bottom,
+                Height = 22,
+                ForeColor = LightUiTheme.Muted,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            var actions = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = true,
+                BackColor = LightUiTheme.SurfaceAlt
+            };
+            _btnLoadAgentConfig = MakeButton("تحميل XML", LightUiTheme.Primary, OnLoadAgentConfig, 120);
+            _btnApplyAgentConfig = MakeButton("تطبيق على الفورم", Color.FromArgb(17, 94, 89), OnApplyAgentConfig, 150);
+            _btnSaveAgentConfig = MakeButton("حفظ AgentConf", LightUiTheme.Success, OnSaveAgentConfig, 150);
+            _btnOpenAgentConfigFolder = MakeButton("فتح المجلد", LightUiTheme.Warning, OnOpenAgentConfigFolder, 120);
+            actions.Controls.AddRange(new Control[] { _btnLoadAgentConfig, _btnApplyAgentConfig, _btnSaveAgentConfig, _btnOpenAgentConfigFolder });
+
+            header.Controls.Add(actions);
+            header.Controls.Add(_lblAgentConfigPath);
+            header.Controls.Add(_lblAgentConfigStatus);
+
+            _dgvAgentConfig = CreateDataGrid();
+            _dgvAgentConfig.ReadOnly = false;
+            _dgvAgentConfig.AllowUserToAddRows = true;
+            _dgvAgentConfig.AllowUserToDeleteRows = true;
+            _dgvAgentConfig.SelectionMode = DataGridViewSelectionMode.CellSelect;
+            _dgvAgentConfig.Columns.AddRange(new DataGridViewColumn[]
+            {
+                new DataGridViewTextBoxColumn { HeaderText = "Key", Width = 190 },
+                new DataGridViewTextBoxColumn { HeaderText = "Value", Width = 360 },
+                new DataGridViewTextBoxColumn { HeaderText = "الاستخدام التشغيلي", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true }
+            });
+
+            var hint = new Label
+            {
+                Dock = DockStyle.Bottom,
+                Height = 42,
+                BackColor = LightUiTheme.SurfaceAlt,
+                ForeColor = LightUiTheme.Muted,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(10, 0, 10, 0),
+                Text = "هذا التبويب يجعل إعدادات AgentConf.xml مصدر تشغيل واضحًا: Terminal ID، السيرفر، المسارات، Durable Sync، ACK، Dedup."
+            };
+
+            host.Controls.Add(_dgvAgentConfig);
+            host.Controls.Add(hint);
+            host.Controls.Add(header);
+            _tabAgentConfig.Controls.Add(host);
+            PopulateAgentConfigGrid();
+        }
+
+        // ==========================================
+        // عمليات الاتصال
+        // ==========================================
+
+        private void BeginConnect()
+        {
+            if (_networkManager != null && _networkManager.IsConnected) return;
+            SaveSettingsFromUI();
+            PersistAgentConfigurationFromCurrentSettings();
+            EnsureClientRuntimeFolders();
+
+            SetConnecting();
+            var thread = new Thread(() =>
+            {
+                InitNetworkManager();
+                var ok = _networkManager.Connect();
+                BeginInvoke(new Action(() => OnConnectionResult(ok)));
+            }) { IsBackground = true };
+            thread.Start();
+        }
+
+        private void InitNetworkManager()
+        {
+            EnsureClientRuntimeFolders();
+            var outboxPath = Path.Combine(AppConstants.DefaultClientOutboxPath, $"{_config.ATM_ID}_outbox.json");
+            _outbox = new JournalOutbox(outboxPath);
+            _outbox.OnQueueChanged += (s, count) => BeginInvoke(new Action(() => _lblQueueCount.Text = $"الطابور: {count} ملف"));
+            _outbox.OnItemCompleted += (s, item) => RecordClientUploadState(item, UploadHealthState.Acked, null);
+            _outbox.OnItemFailed += (s, item) => RecordClientUploadState(item, UploadHealthState.Failed, item.FailReason);
+            _networkManager = new NetworkManager(_config.ServerIP, _config.ServerPort,
+                _config.ATM_ID, _config.ATM_Type, _config.NetworkType);
+
+            _networkManager.OnConnectionChanged  += (s, ok) => BeginInvoke(new Action(() => OnConnectionChanged(ok)));
+            _networkManager.OnSessionEstablished += (s, sid) => BeginInvoke(new Action(() => OnSessionEstablished(sid)));
+            _networkManager.OnMessageReceived    += (s, msg) => HandleIncomingMessage(msg);
+            _networkManager.OnLog += (s, msg) => AppendConnLog(msg);
+
+            _remoteHandler = new RemoteCommandHandler(_config.ATM_ID, _networkManager, () => _journalProcessor?.ForceSendNow());
+            _remoteHandler.OnCommandReceived += (s, cmd) => BeginInvoke(new Action(() => ShowPendingCommand(cmd)));
+            _remoteHandler.OnCommandExecuted += (s, cmd) => BeginInvoke(new Action(() => UpdateExecutedCommand(cmd)));
+            _remoteHandler.OnGhostFrameSent  += (s, jpg) => BeginInvoke(new Action(() => ShowLocalGhostFrame(jpg)));
+
+            // بدء FileWatcher
+            _fileWatcher = new FileWatcherEngine(_config.ATM_ID, _config.ATM_Type, _config.SourcePath, _config.BackupPath, _outbox);
+            _fileWatcher.OnNewData += (s, ev) => AppendConnLog($"بيانات جديدة: {ev.FileName} [{ev.BytesRead / 1024.0:F1} KB]");
+            _fileWatcher.Start();
+        }
+
+        private void OnConnectionResult(bool ok)
+        {
+            if (ok)
+            {
+                OnConnectionChanged(true);
+                _fileWatcher?.Start();
+                StartSyncLoop();
+            }
+            else
+            {
+                SetDisconnected();
+                AppendConnLog("فشل الاتصال - تحقق من الإعدادات وإمكانية الوصول للسيرفر");
+            }
+        }
+
+        private void OnConnectionChanged(bool connected)
+        {
+            if (InvokeRequired) { Invoke(new Action(() => OnConnectionChanged(connected))); return; }
+            if (connected)
+            {
+                _lblConnIndicator.ForeColor = LightUiTheme.Success;
+                _lblConnText.Text           = "متصل";
+                _lblConnText.ForeColor      = LightUiTheme.Success;
+                _lblStatus.Text             = $"● متصل - {_config.ServerIP}:{_config.ServerPort}";
+                _lblStatus.ForeColor        = LightUiTheme.Success;
+                SetButtonVisual(_btnConnect, LightUiTheme.Success, false);
+                SetButtonVisual(_btnDisconnect, LightUiTheme.Danger, true);
+                _pbConnProgress.MarqueeAnimationSpeed = 0;
+                _lblConnProgress.Text       = "";
+                _atmInfo.ConnectionStatus   = ConnectionStatus.Connected;
+                _atmInfo.ConnectedAtUtc     = DateTime.UtcNow;
+                AppendConnLog($"اتصال ناجح - {_config.ServerIP}:{_config.ServerPort}");
+                UpdateServiceStatuses();
+                RefreshLocalStateReading(false);
+            }
+            else
+            {
+                SetDisconnected();
+            }
+        }
+
+        private void OnSessionEstablished(string sessionId)
+        {
+            _atmInfo.SessionId = sessionId;
+            _lblSessionId.Text = $"Session: {sessionId}";
+        }
+
+        private void HandleIncomingMessage(EJMessage msg)
+        {
+            if (msg == null) return;
+            if (CommunicationProtocol.IsCommand(msg))
+                _remoteHandler?.HandleCommand(msg);
+        }
+
+        private void SetConnecting()
+        {
+            _lblConnIndicator.ForeColor = LightUiTheme.Warning;
+            _lblConnText.Text           = "يتصل...";
+            _lblConnText.ForeColor      = LightUiTheme.Warning;
+            _pbConnProgress.MarqueeAnimationSpeed = 40;
+            _lblConnProgress.Text       = $"جاري الاتصال بـ {_config.ServerIP}:{_config.ServerPort}...";
+            SetButtonVisual(_btnConnect, LightUiTheme.Success, false);
+            SetButtonVisual(_btnDisconnect, LightUiTheme.Danger, false);
+        }
+
+        private void SetDisconnected()
+        {
+            if (InvokeRequired) { Invoke(new Action(SetDisconnected)); return; }
+            _lblConnIndicator.ForeColor = LightUiTheme.Muted;
+            _lblConnText.Text           = "غير متصل";
+            _lblConnText.ForeColor      = LightUiTheme.Danger;
+            _lblStatus.Text             = "● غير متصل";
+            _lblStatus.ForeColor        = LightUiTheme.Danger;
+            SetButtonVisual(_btnConnect, LightUiTheme.Success, true);
+            SetButtonVisual(_btnDisconnect, LightUiTheme.Danger, false);
+            _pbConnProgress.MarqueeAnimationSpeed = 0;
+            _lblConnProgress.Text       = "";
+            _atmInfo.ConnectionStatus   = ConnectionStatus.Disconnected;
+            UpdateServiceStatuses();
+            RefreshLocalStateReading(false);
+        }
+
+        private void DisconnectNow()
+        {
+            _fileWatcher?.Stop();
+            _fileWatcher = null;
+            _networkManager?.Disconnect();
+            SetDisconnected();
+            UpdateServiceStatuses();
+            RefreshLocalStateReading(false);
+        }
+
+        private void StartFileWatcherService()
+        {
+            SaveSettingsFromUI();
+            EnsureClientRuntimeFolders();
+            if (_outbox == null)
+                _outbox = new JournalOutbox(Path.Combine(AppConstants.DefaultClientOutboxPath, $"{_config.ATM_ID}_outbox.json"));
+            if (_fileWatcher == null)
+            {
+                _fileWatcher = new FileWatcherEngine(_config.ATM_ID, _config.ATM_Type, _config.SourcePath, _config.BackupPath, _outbox);
+                _fileWatcher.OnNewData += (s, ev) => AppendConnLog($"بيانات جديدة: {ev.FileName} [{ev.BytesRead / 1024.0:F1} KB]");
+            }
+            _fileWatcher.Start();
+            AppendConnLog("File Watcher started.");
+            RefreshLocalStateReading(false);
+        }
+
+        private void StopFileWatcherService()
+        {
+            _fileWatcher?.Stop();
+            _fileWatcher = null;
+            AppendConnLog("File Watcher stopped.");
+            RefreshLocalStateReading(false);
+        }
+
+        private void StartSocketFilesService()
+        {
+            if (_networkManager?.IsConnected != true)
+            {
+                AppendConnLog("Socket Files requires an active server connection.", AppLogger.Level.Warning);
+                return;
+            }
+            if (_journalProcessor?.IsRunning != true)
+                StartSyncLoop();
+            AppendConnLog("Socket Files sender started.");
+            RefreshLocalStateReading(false);
+        }
+
+        private void StopSocketFilesService()
+        {
+            _journalProcessor?.Stop();
+            _journalProcessor = null;
+            AppendConnLog("Socket Files sender stopped.");
+            RefreshLocalStateReading(false);
+        }
+
+        private void StartScreenshotService()
+        {
+            CaptureAndDisplayScreenshot();
+        }
+
+        private void StopScreenshotService()
+        {
+            OnStopScreen();
+        }
+
+        private void StartGhostService()
+        {
+            _ghostServiceRunning = true;
+            AppendConnLog("Ghost Access service ready for remote screen commands.");
+        }
+
+        private void StopGhostService()
+        {
+            _ghostServiceRunning = false;
+            AppendConnLog("Ghost Access service stopped.");
+        }
+
+        private void StartWindowsRemoteAccessService()
+        {
+            var result = WindowsRemoteAccessService.EnableRemoteDesktop();
+            AppendConnLog(result.Message, result.Success ? AppLogger.Level.Info : AppLogger.Level.Warning);
+            if (!result.Success && result.RequiresAdministrator)
+                MessageBox.Show(result.Message, "Windows Remote Access", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            RefreshLocalStateReading(true);
+        }
+
+        private void StopWindowsRemoteAccessService()
+        {
+            var result = WindowsRemoteAccessService.DisableRemoteDesktop();
+            AppendConnLog(result.Message, result.Success ? AppLogger.Level.Info : AppLogger.Level.Warning);
+            if (!result.Success && result.RequiresAdministrator)
+                MessageBox.Show(result.Message, "Windows Remote Access", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            RefreshLocalStateReading(true);
+        }
+
+        private void RunWindowsDiagnostics()
+        {
+            var isAdmin = IsRunningAsAdministrator();
+            var autoStart = WindowsStartupService.IsClientAutostartRegistered();
+            var rdpEnabled = WindowsRemoteAccessService.IsRemoteDesktopEnabled();
+            var sourceOk = Directory.Exists(_config.SourcePath);
+            var backupOk = Directory.Exists(_config.BackupPath);
+            var connected = _networkManager?.IsConnected == true;
+            var syncRunning = _journalProcessor?.IsRunning == true;
+
+            var checks = new List<Tuple<string, bool, string>>
+            {
+                Tuple.Create("Administrator", isAdmin, isAdmin ? "صلاحيات مدير متاحة" : "عمليات RDP/Startup تحتاج تشغيل كمسؤول"),
+                Tuple.Create("AutoStart", autoStart, autoStart ? "مسجل في مهام Windows" : "غير مسجل للتشغيل عند بدء النظام"),
+                Tuple.Create("RemoteDesktop", rdpEnabled, rdpEnabled ? "RDP مفعل" : "RDP غير مفعل"),
+                Tuple.Create("SourcePath", sourceOk, sourceOk ? _config.SourcePath : "مسار المصدر غير موجود: " + _config.SourcePath),
+                Tuple.Create("BackupPath", backupOk, backupOk ? _config.BackupPath : "مسار النسخ غير موجود: " + _config.BackupPath),
+                Tuple.Create("ServerConnection", connected, connected ? "متصل بالخادم" : "غير متصل بالخادم"),
+                Tuple.Create("JournalProcessor", syncRunning, syncRunning ? "المزامنة تعمل" : "المزامنة متوقفة")
+            };
+
+            var ok = 0;
+            AppendWindowsOps("DIAG", "بدء تشخيص Windows والعميل");
+            foreach (var check in checks)
+            {
+                if (check.Item2) ok++;
+                AppendWindowsOps(check.Item2 ? "OK" : "WARN", $"{check.Item1}: {check.Item3}");
+            }
+
+            _cachedAutoStartRegistered = autoStart;
+            _cachedRemoteDesktopEnabled = rdpEnabled;
+            _hasWindowsStateCache = true;
+            _lastWindowsStateRefreshUtc = DateTime.UtcNow;
+
+            var percent = checks.Count > 0 ? (double)ok / checks.Count * 100.0 : 0.0;
+            _lblWindowsReadiness.Text = $"جاهزية Windows/Client: {percent:F0}% ({ok}/{checks.Count})";
+            _lblWindowsReadiness.ForeColor = percent >= 80 ? LightUiTheme.Success : percent >= 55 ? LightUiTheme.Warning : LightUiTheme.Danger;
+            AppendConnLog(_lblWindowsReadiness.Text, percent >= 55 ? AppLogger.Level.Info : AppLogger.Level.Warning);
+            RefreshLocalStateReading(false);
+        }
+
+        private void RegisterWindowsStartup()
+        {
+            var result = WindowsStartupService.RegisterClientAutostart(Application.ExecutablePath);
+            AppendWindowsOps(result.Success ? "OK" : "WARN", result.Message);
+            AppendConnLog(result.Message, result.Success ? AppLogger.Level.Info : AppLogger.Level.Warning);
+            RunWindowsDiagnostics();
+            RefreshLocalStateReading(true);
+        }
+
+        private void UnregisterWindowsStartup()
+        {
+            var result = WindowsStartupService.UnregisterClientAutostart();
+            AppendWindowsOps(result.Success ? "OK" : "WARN", result.Message);
+            AppendConnLog(result.Message, result.Success ? AppLogger.Level.Info : AppLogger.Level.Warning);
+            RunWindowsDiagnostics();
+            RefreshLocalStateReading(true);
+        }
+
+        private void RefreshLocalStateReading(bool includeWindowsChecks)
+        {
+            if (_dgvLocalState == null || _lblLocalStateSummary == null || IsDisposed) return;
+            if (_dgvLocalState.InvokeRequired)
+            {
+                _dgvLocalState.Invoke(new Action(() => RefreshLocalStateReading(includeWindowsChecks)));
+                return;
+            }
+
+            if (includeWindowsChecks || !_hasWindowsStateCache ||
+                (DateTime.UtcNow - _lastWindowsStateRefreshUtc).TotalSeconds > 45)
+            {
+                _cachedAutoStartRegistered = WindowsStartupService.IsClientAutostartRegistered();
+                _cachedRemoteDesktopEnabled = WindowsRemoteAccessService.IsRemoteDesktopEnabled();
+                _hasWindowsStateCache = true;
+                _lastWindowsStateRefreshUtc = DateTime.UtcNow;
+            }
+
+            if (includeWindowsChecks || (DateTime.UtcNow - _lastMonthlyArchiveRefreshUtc).TotalSeconds > 60)
+                RefreshMonthlyArchiveCache();
+
+            _dgvLocalState.Rows.Clear();
+            var healthy = 0;
+            var warning = 0;
+            var critical = 0;
+
+            var connected = _networkManager?.IsConnected == true;
+            AddLocalStateRow("الاتصال", connected ? "سليم" : "حرج",
+                connected ? $"متصل بالخادم {_config.ServerIP}:{_config.ServerPort}" : $"لا توجد جلسة مع {_config.ServerIP}:{_config.ServerPort}",
+                connected ? "مراقبة الجلسة والنبض" : "اضغط اتصال أو تحقق من IP والمنفذ والخادم",
+                ref healthy, ref warning, ref critical);
+
+            var watcherRunning = _fileWatcher?.IsRunning == true;
+            AddLocalStateRow("مراقبة الجورنال", watcherRunning ? "سليم" : "تحذير",
+                watcherRunning ? $"نشطة | ملفات: {_fileWatcher.TotalFilesDetected} | قراءة: {_fileWatcher.TotalBytesRead / 1024.0:F1} KB" : "File Watcher غير نشط",
+                watcherRunning ? "استمرار مراقبة المصدر" : "ابدأ File Watcher من الخدمات أو اتصل بالخادم",
+                ref healthy, ref warning, ref critical);
+
+            var syncRunning = _journalProcessor?.IsRunning == true;
+            var syncPaused = _journalProcessor?.IsPaused == true;
+            var syncState = syncRunning && !syncPaused ? "سليم" : syncPaused ? "تحذير" : "تحذير";
+            AddLocalStateRow("المزامنة", syncState,
+                syncRunning ? (syncPaused ? "متوقفة مؤقتاً بقرار المشغل" : $"تعمل | مرسل: {_journalProcessor.TotalSent} | فشل: {_journalProcessor.TotalFailed}") : "معالج المزامنة متوقف",
+                syncRunning && !syncPaused ? "المعالجة مستمرة" : "استئناف المزامنة أو بدء Socket Files",
+                ref healthy, ref warning, ref critical);
+
+            var sourceOk = Directory.Exists(_config.SourcePath);
+            AddLocalStateRow("مسار المصدر", sourceOk ? "سليم" : "حرج",
+                sourceOk ? _config.SourcePath : $"غير موجود: {_config.SourcePath}",
+                sourceOk ? "جاهز لقراءة الجورنال" : "صحح المسار من الإعدادات أو أنشئ المجلد",
+                ref healthy, ref warning, ref critical);
+
+            var backupOk = Directory.Exists(_config.BackupPath);
+            AddLocalStateRow("مسار النسخ", backupOk ? "سليم" : "حرج",
+                backupOk ? _config.BackupPath : $"غير موجود: {_config.BackupPath}",
+                backupOk ? "جاهز للأرشفة واللقطات" : "أنشئ مجلد النسخ أو عدله من الإعدادات",
+                ref healthy, ref warning, ref critical);
+
+            var monthlyArchivePath = Path.Combine(_config.BackupPath ?? string.Empty, "MonthlyArchive");
+            var archiveState = !backupOk ? "حرج" : Directory.Exists(monthlyArchivePath) ? "سليم" : "تحذير";
+            AddLocalStateRow("الأرشفة الشهرية", archiveState,
+                Directory.Exists(monthlyArchivePath)
+                    ? $"{_cachedMonthlyArchiveFiles:N0} ملف | {FormatHumanBytes(_cachedMonthlyArchiveBytes)} | {monthlyArchivePath}"
+                    : $"لم يتم تجهيز المجلد: {monthlyArchivePath}",
+                Directory.Exists(monthlyArchivePath)
+                    ? "جاهزة لتجميع ملفات الشهر وترحيلها"
+                    : "نفذ تهيئة المجلدات أو احفظ الإعدادات لإعادة إنشائه",
+                ref healthy, ref warning, ref critical);
+
+            var pending = _outbox?.PendingCount ?? 0;
+            var inFlight = _outbox?.InFlightCount ?? 0;
+            var failed = _outbox?.TotalFailed ?? 0;
+            var outboxState = failed > 0 ? "تحذير" : pending > 20 ? "تحذير" : "سليم";
+            AddLocalStateRow("طابور الإرسال", outboxState,
+                $"منتظر: {pending} | قيد الإرسال: {inFlight} | فشل: {failed}",
+                pending > 0 ? "إرسال جبري أو انتظار عودة الاتصال" : "لا توجد عناصر عالقة",
+                ref healthy, ref warning, ref critical);
+
+            var remoteCommandState = GetRemoteCommandHealth();
+            AddLocalStateRow("آخر أمر بعيد", remoteCommandState,
+                _lastRemoteCommandAtLocal == DateTime.MinValue
+                    ? "لم تصل أوامر من الخادم بعد"
+                    : $"{_lastRemoteCommandType} | {_lastRemoteCommandStatus} | {_lastRemoteCommandAtLocal:HH:mm:ss} | {_lastRemoteCommandResult}",
+                remoteCommandState == "سليم"
+                    ? "التنفيذ موثق في تبويب التحكم"
+                    : remoteCommandState == "حرج" ? "راجع نتيجة الأمر وسجل التحكم" : "بانتظار أمر أو نتيجة تنفيذ",
+                ref healthy, ref warning, ref critical);
+
+            AddLocalStateRow("تشغيل Windows", _cachedAutoStartRegistered ? "سليم" : "تحذير",
+                _cachedAutoStartRegistered ? "مسجل للتشغيل التلقائي" : "غير مسجل في مهام Windows",
+                _cachedAutoStartRegistered ? "لا إجراء مطلوب" : "سجل التشغيل التلقائي من تبويب الخدمات كمسؤول",
+                ref healthy, ref warning, ref critical);
+
+            AddLocalStateRow("التحكم المحلي", _cachedRemoteDesktopEnabled ? "سليم" : "تحذير",
+                _cachedRemoteDesktopEnabled ? "Remote Desktop مفعل" : "Remote Desktop غير مفعل",
+                _cachedRemoteDesktopEnabled ? "جاهز لدعم التحكم المحلي/البعيد" : "فعّل Windows Remote من الخدمات عند الحاجة",
+                ref healthy, ref warning, ref critical);
+
+            var summary = $"قراءة الحالات المحلية: {healthy} سليم | {warning} مراقبة | {critical} حرج";
+            _lblLocalStateSummary.Text = summary;
+            _lblLocalStateSummary.ForeColor = critical > 0 ? LightUiTheme.Danger : warning > 0 ? LightUiTheme.Warning : LightUiTheme.Success;
+
+            var signature = $"{healthy}:{warning}:{critical}:{connected}:{watcherRunning}:{syncRunning}:{syncPaused}:{pending}:{failed}:{_cachedMonthlyArchiveFiles}:{_cachedMonthlyArchiveBytes}:{_lastRemoteCommandType}:{_lastRemoteCommandStatus}";
+            if (!string.Equals(_lastLocalStateSignature, signature, StringComparison.Ordinal))
+            {
+                _lastLocalStateSignature = signature;
+                if (critical > 0 || warning > 0)
+                    AppendConnLog(summary, critical > 0 ? AppLogger.Level.Warning : AppLogger.Level.Info);
+            }
+        }
+
+        private void AddLocalStateRow(string domain, string state, string reading, string action,
+            ref int healthy, ref int warning, ref int critical)
+        {
+            var rowIndex = _dgvLocalState.Rows.Add(domain, state, reading, action);
+            var row = _dgvLocalState.Rows[rowIndex];
+            Color color;
+            switch (state)
+            {
+                case "سليم":
+                    healthy++;
+                    color = LightUiTheme.Success;
+                    break;
+                case "حرج":
+                    critical++;
+                    color = LightUiTheme.Danger;
+                    break;
+                default:
+                    warning++;
+                    color = LightUiTheme.Warning;
+                    break;
+            }
+
+            row.Cells[1].Style.ForeColor = color;
+            row.Cells[1].Style.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+            row.DefaultCellStyle.SelectionBackColor = color;
+            row.DefaultCellStyle.SelectionForeColor = Color.White;
+        }
+
+        private void RefreshMonthlyArchiveCache()
+        {
+            _cachedMonthlyArchiveFiles = 0;
+            _cachedMonthlyArchiveBytes = 0;
+            _lastMonthlyArchiveRefreshUtc = DateTime.UtcNow;
+
+            try
+            {
+                var folder = Path.Combine(_config.BackupPath ?? string.Empty, "MonthlyArchive");
+                if (!Directory.Exists(folder)) return;
+
+                foreach (var file in Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        var info = new FileInfo(file);
+                        _cachedMonthlyArchiveFiles++;
+                        _cachedMonthlyArchiveBytes += info.Length;
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Instance.Warning($"Monthly archive scan failed: {ex.Message}", "ClientState");
+            }
+        }
+
+        private string GetRemoteCommandHealth()
+        {
+            if (_lastRemoteCommandAtLocal == DateTime.MinValue) return "تحذير";
+            if (string.Equals(_lastRemoteCommandStatus, "فشل", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(_lastRemoteCommandStatus, "مهلة", StringComparison.OrdinalIgnoreCase))
+                return "حرج";
+            if (string.Equals(_lastRemoteCommandStatus, "نُفذ", StringComparison.OrdinalIgnoreCase))
+                return "سليم";
+            return "تحذير";
+        }
+
+        private static string FormatHumanBytes(long bytes)
+        {
+            if (bytes < 1024) return $"{bytes:N0} B";
+            var kb = bytes / 1024.0;
+            if (kb < 1024) return $"{kb:N1} KB";
+            var mb = kb / 1024.0;
+            if (mb < 1024) return $"{mb:N1} MB";
+            return $"{mb / 1024.0:N1} GB";
+        }
+
+        private void AppendWindowsOps(string tag, string message)
+        {
+            var line = $"[{DateTime.Now:HH:mm:ss}] {tag} | {message}\r\n";
+            if (_rtbWindowsOpsLog == null) return;
+            if (_rtbWindowsOpsLog.InvokeRequired)
+            {
+                _rtbWindowsOpsLog.Invoke(new Action(() => AppendWindowsOps(tag, message)));
+                return;
+            }
+            _rtbWindowsOpsLog.AppendText(line);
+            _rtbWindowsOpsLog.ScrollToCaret();
+        }
+
+        private static bool IsRunningAsAdministrator()
+        {
+            try
+            {
+                using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent())
+                {
+                    return new System.Security.Principal.WindowsPrincipal(identity)
+                        .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private string CaptureScreenshotToFile()
+        {
+            var folder = Path.Combine(_config.BackupPath, "Screenshots");
+            Directory.CreateDirectory(folder);
+            var filePath = Path.Combine(folder, $"{_config.ATM_ID}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg");
+            var bounds = Screen.PrimaryScreen.Bounds;
+            using var bmp = new Bitmap(bounds.Width, bounds.Height);
+            using (var g = Graphics.FromImage(bmp))
+                g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+            bmp.Save(filePath, ImageFormat.Jpeg);
+            return filePath;
+        }
+
+        private void CaptureAndDisplayScreenshot()
+        {
+            try
+            {
+                EnsureClientRuntimeFolders();
+                _lastScreenshotPath = CaptureScreenshotToFile();
+                var bytes = File.ReadAllBytes(_lastScreenshotPath);
+                using (var ms = new MemoryStream(bytes))
+                using (var image = Image.FromStream(ms))
+                {
+                    _pbRemoteScreen?.Image?.Dispose();
+                    _pbRemoteScreen.Image = new Bitmap(image);
+                }
+
+                if (_networkManager?.IsConnected == true)
+                    _networkManager.SendMessage(CommunicationProtocol.BuildGhostFrame(bytes));
+
+                _lblRemoteStatus.Text = $"آخر لقطة: {DateTime.Now:HH:mm:ss}";
+                _lblRemoteStatus.ForeColor = LightUiTheme.Success;
+                _lblFPS.Text = $"{Math.Max(1, bytes.Length / 1024)} KB";
+                AppendConnLog($"Screenshot captured: {_lastScreenshotPath}");
+            }
+            catch (Exception ex)
+            {
+                _lblRemoteStatus.Text = "فشل التقاط الشاشة";
+                _lblRemoteStatus.ForeColor = LightUiTheme.Danger;
+                AppendConnLog($"Screenshot failed: {ex.Message}", AppLogger.Level.Error);
+            }
+        }
+
+        private void EnsureClientRuntimeFolders()
+        {
+            _config.ApplyDefaults();
+            foreach (var folder in AppConstants.GetClientRuntimeFolders(_config.ATM_Type, _config.SourcePath, _config.BackupPath))
+            {
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(folder))
+                        Directory.CreateDirectory(folder);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Instance.Warning($"Cannot create folder '{folder}': {ex.Message}", "ClientFolders");
+                }
+            }
+        }
+
+        private void UpdateServiceStatuses()
+        {
+            if (_serviceRows.Count == 0) return;
+            foreach (var row in _serviceRows.Values)
+            {
+                if (row?.IsRunning == null || row.StatusLabel == null) continue;
+                var running = row.IsRunning();
+                row.StatusLabel.Text = running ? $"[ON] {row.RunningText}" : $"[OFF] {row.StoppedText}";
+                row.StatusLabel.ForeColor = running ? LightUiTheme.Success : LightUiTheme.Muted;
+                SetButtonVisual(row.StartButton, LightUiTheme.Success, !running);
+                SetButtonVisual(row.StopButton, LightUiTheme.Danger, running);
+            }
+        }
+
+        // ==========================================
+        // حلقة المزامنة
+        // ==========================================
+
+        private void StartSyncLoop()
+        {
+            if (_journalProcessor?.IsRunning == true) return;
+            _journalProcessor = new JournalProcessor(_networkManager, _outbox);
+            _journalProcessor.OnSyncProgress += (s, prog) => BeginInvoke(new Action(() => UpdateSyncProgress(prog)));
+            _journalProcessor.OnItemCompleted += (s, item) => BeginInvoke(new Action(() => MarkSyncCompleted(item)));
+            _journalProcessor.OnItemFailed    += (s, item) => BeginInvoke(new Action(() => MarkSyncFailed(item)));
+            _journalProcessor.Start();
+            UpdateServiceStatuses();
+            RefreshLocalStateReading(false);
+        }
+
+        private void UpdateSyncProgress(LiveSyncProgress prog)
+        {
+            _pbSyncProgress.Value = Math.Max(0, Math.Min(100, prog.Percent));
+            _lblSyncPercent.Text  = $"{prog.Percent}%";
+            _lblSyncFile.Text     = $"{prog.FileName} [{prog.BytesSentDisplay} / {prog.TotalBytesDisplay}]";
+            _lblSyncState.Text    = $"المزامنة: {prog.FileName} {prog.Percent}%";
+            _lblSpeed.Text        = $"السرعة: {prog.SpeedKBs:F1} KB/s";
+            UpdateSyncTimeline(prog.Percent, false);
+        }
+
+        private void MarkSyncCompleted(JournalOutboxItem item)
+        {
+            RecordClientUploadState(item, UploadHealthState.Acked, null);
+            _lblTotalSent.Text = $"مُرسل: {(_networkManager?.TotalBytesSent ?? 0) / 1024.0:F1} KB";
+            RefreshSyncQueue();
+            UpdateSyncTimeline(100, false);
+            AppendConnLog($"مزامنة ناجحة: {item.FileName}");
+            RefreshLocalStateReading(false);
+        }
+
+        private void MarkSyncFailed(JournalOutboxItem item)
+        {
+            RecordClientUploadState(item, UploadHealthState.Failed, item?.FailReason);
+            RefreshSyncQueue();
+            UpdateSyncTimeline(_pbSyncProgress.Value, true);
+            AppendConnLog($"فشل مزامنة: {item.FileName} - {item.FailReason}");
+            RefreshLocalStateReading(false);
+        }
+
+        private void RecordClientUploadState(JournalOutboxItem item, UploadHealthState state, string failureReason)
+        {
+            if (item == null) return;
+            OperationalStateStore.Instance.UpsertUpload(new UploadLogRecord
+            {
+                UploadId = $"{_config.ATM_ID}|{item.FileName}|{item.Checksum}".ToUpperInvariant(),
+                TerminalId = _config.ATM_ID,
+                FileName = item.FileName,
+                FileKind = "EJ",
+                SourcePath = item.LocalPath,
+                BytesExpected = item.DataSize,
+                BytesReceived = state == UploadHealthState.Acked ? item.DataSize : 0,
+                Checksum = item.Checksum,
+                AckId = state == UploadHealthState.Acked ? $"CLIENT-ACK-{DateTime.UtcNow:yyyyMMddHHmmss}" : null,
+                State = state,
+                FailureReason = failureReason,
+                CreatedAtUtc = item.EnqueuedAt == default(DateTime) ? DateTime.UtcNow : item.EnqueuedAt,
+                UpdatedAtUtc = DateTime.UtcNow
+            });
+        }
+
+        private void UpdateSyncTimeline(int percent, bool failed)
+        {
+            if (_syncStepLabels == null || _syncStepLabels.Length == 0) return;
+            var activeStep = percent >= 100 ? 4 : percent >= 70 ? 3 : percent >= 40 ? 2 : percent >= 15 ? 1 : 0;
+            for (int i = 0; i < _syncStepLabels.Length; i++)
+            {
+                var label = _syncStepLabels[i];
+                if (label == null) continue;
+                if (failed && i == activeStep)
+                {
+                    label.BackColor = LightUiTheme.Danger;
+                    label.ForeColor = Color.White;
+                }
+                else if (i <= activeStep)
+                {
+                    label.BackColor = i == activeStep ? LightUiTheme.Primary : LightUiTheme.Success;
+                    label.ForeColor = Color.White;
+                }
+                else
+                {
+                    label.BackColor = LightUiTheme.Surface;
+                    label.ForeColor = LightUiTheme.Muted;
+                }
+            }
+        }
+
+        private void RefreshSyncQueue()
+        {
+            if (_outbox == null) return;
+            _dgvSyncQueue.Rows.Clear();
+            _lblQueueCount.Text = $"الطابور: {_outbox.PendingCount} ملف";
+        }
+
+        private void OnForceSend(object s = null, EventArgs e = null)
+        {
+            if (_journalProcessor == null)
+            {
+                AppendConnLog("لا يمكن الإرسال الجبري: خدمة المزامنة غير مفعلة.", AppLogger.Level.Warning);
+                return;
+            }
+            _journalProcessor.ForceSendNow();
+            AppendConnLog("تم إطلاق الإرسال الجبري للطابور الحالي");
+        }
+
+        private void OnClearFailed(object s = null, EventArgs e = null)
+        {
+            int removed = 0;
+            for (int i = _dgvSyncQueue.Rows.Count - 1; i >= 0; i--)
+            {
+                var state = _dgvSyncQueue.Rows[i].Cells.Count > 3
+                    ? _dgvSyncQueue.Rows[i].Cells[3].Value?.ToString()
+                    : null;
+                if (!string.IsNullOrWhiteSpace(state) &&
+                    state.IndexOf("فشل", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    _dgvSyncQueue.Rows.RemoveAt(i);
+                    removed++;
+                }
+            }
+
+            _lblSyncStats.Text = $"الفاشلة المحذوفة من العرض: {removed} | إجمالي الفشل: {_outbox?.TotalFailed ?? 0}";
+            AppendConnLog($"تنظيف عرض الطابور: أزيلت {removed} عناصر فاشلة من الجدول");
+        }
+
+        private void OnPauseSync(object s = null, EventArgs e = null)
+        {
+            _journalProcessor?.Pause();
+            _lblSyncState.Text = "المزامنة: متوقفة مؤقتاً";
+            AppendConnLog("تم إيقاف المزامنة مؤقتاً بقرار المشغل");
+            RefreshLocalStateReading(false);
+        }
+
+        private void OnResumeSync(object s = null, EventArgs e = null)
+        {
+            _journalProcessor?.Resume();
+            _lblSyncState.Text = "المزامنة: مستأنفة";
+            AppendConnLog("تم استئناف المزامنة");
+            RefreshLocalStateReading(false);
+        }
+
+        // ==========================================
+        // الجورنال
+        // ==========================================
+
+        private string _journalRawText = "";
+
+        private void LoadJournalFiles()
+        {
+            _cmbJournalFile.Items.Clear();
+            var path = _config.SourcePath;
+            if (!Directory.Exists(path)) return;
+            foreach (var f in Directory.GetFiles(path))
+                _cmbJournalFile.Items.Add(Path.GetFileName(f));
+            if (_cmbJournalFile.Items.Count > 0) _cmbJournalFile.SelectedIndex = 0;
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // ClientMainForm
+            // 
+            this.ClientSize = new System.Drawing.Size(762, 401);
+            this.ForeColor = System.Drawing.SystemColors.HotTrack;
+            this.Name = "ClientMainForm";
+            this.ResumeLayout(false);
+
+        }
+
+        private void OnLoadJournal(object s = null, EventArgs e = null)
+        {
+            var file = _cmbJournalFile.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(file)) return;
+            var path = Path.Combine(_config.SourcePath, file);
+            if (!File.Exists(path)) return;
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var sr = new System.IO.StreamReader(fs, System.Text.Encoding.UTF8, true);
+                _journalRawText = sr.ReadToEnd();
+                SetJournalText(_journalRawText);
+                UpdateJournalStats();
+            }
+            catch (Exception ex) { AppendConnLog($"خطأ: {ex.Message}"); }
+        }
+
+        private void SetJournalText(string text)
+        {
+            _rtbJournal.Clear();
+            _rtbJournal.Text = text;
+            _lblJournalResultCount.Text = $"{text.Split('\n').Length:N0} سطر";
+        }
+
+        private void ApplyJournalFilter(JournalSearchFilter filter)
+        {
+            if (string.IsNullOrEmpty(_journalRawText)) return;
+            if (filter == JournalSearchFilter.All) { SetJournalText(_journalRawText); return; }
+            var lines = _analysisEngine.SearchLines(_journalRawText, filter);
+            _rtbJournal.Clear();
+            foreach (var line in lines)
+            {
+                _rtbJournal.SelectionColor = GetLineColor(line);
+                _rtbJournal.AppendText(line + "\n");
+            }
+            _lblJournalResultCount.Text = $"{lines.Count} نتيجة";
+        }
+
+        private void ApplyJournalFreeSearch()
+        {
+            var kw = _txtJournalSearch.Text.Trim();
+            if (string.IsNullOrEmpty(kw) || kw == "بحث في الجورنال...") { SetJournalText(_journalRawText); return; }
+            var lines = _analysisEngine.SearchFreeText(_journalRawText, kw);
+            _rtbJournal.Clear();
+            foreach (var line in lines) _rtbJournal.AppendText(line + "\n");
+            _lblJournalResultCount.Text = $"{lines.Count} نتيجة";
+        }
+
+        private void UpdateJournalStats()
+        {
+            if (string.IsNullOrEmpty(_journalRawText)) return;
+            var filePath = Path.Combine(_config.SourcePath, _cmbJournalFile.SelectedItem?.ToString() ?? "");
+            var lines = _journalRawText.Split('\n').Length;
+            var sizeKb = File.Exists(filePath) ? new FileInfo(filePath).Length / 1024.0 : 0;
+            _lblJournalStats.Text = $"Local preview | Lines: {lines:N0} | Size: {sizeKb:F1} KB | Analytics moved to server dashboard";
+        }
+
+        private Color GetLineColor(string line)
+        {
+            var u = line.ToUpperInvariant();
+            if (u.Contains("DISPENSE") || u.Contains("APPROVED")) return Color.FromArgb(20, 120, 60);
+            if (u.Contains("DECLINED") || u.Contains("UNABLE"))   return LightUiTheme.Danger;
+            if (u.Contains("CAPTURE") || u.Contains("RETAIN"))    return Color.FromArgb(150, 90, 0);
+            if (u.Contains("ERROR"))  return LightUiTheme.Danger;
+            if (u.Contains("POWER UP") || u.Contains("RESTART"))  return LightUiTheme.Primary;
+            return LightUiTheme.Text;
+        }
+
+        private void OnExportJournal(object s = null, EventArgs e = null)
+        {
+            using var dlg = new SaveFileDialog { Filter = "Text Files|*.txt", FileName = $"journal_{_config.ATM_ID}_{DateTime.Now:yyyyMMdd}" };
+            if (dlg.ShowDialog() == DialogResult.OK)
+                File.WriteAllText(dlg.FileName, _rtbJournal.Text, System.Text.Encoding.UTF8);
+        }
+
+        // ==========================================
+        // التحكم البعيد
+        // ==========================================
+
+        private void ShowPendingCommand(RemoteCommand cmd)
+        {
+            if (_dgvPendingCmds == null || _rtbRemoteLog == null) return;
+            _dgvPendingCmds.Rows.Insert(0, cmd.CommandType, cmd.CommandId, ToArabicCommandStatus(cmd.Status), cmd.SentAtUtc.ToLocalTime().ToString("HH:mm:ss"), "بانتظار التنفيذ");
+            _remoteCommandRows[cmd.CommandId] = _dgvPendingCmds.Rows[0];
+            _rtbRemoteLog.AppendText($"\r\n[{DateTime.Now:HH:mm:ss}] أمر مُستلم: {cmd.CommandType} [{cmd.CommandId}]");
+            _lastRemoteCommandType = cmd.CommandType ?? "—";
+            _lastRemoteCommandStatus = ToArabicCommandStatus(cmd.Status);
+            _lastRemoteCommandResult = "بانتظار التنفيذ";
+            _lastRemoteCommandAtLocal = DateTime.Now;
+            AppendConnLog($"أمر وارد: {cmd.CommandType}");
+            RefreshLocalStateReading(false);
+        }
+
+        private void UpdateExecutedCommand(RemoteCommand cmd)
+        {
+            if (_dgvPendingCmds == null || cmd == null) return;
+            if (!_remoteCommandRows.TryGetValue(cmd.CommandId, out var row) || row.DataGridView == null)
+            {
+                _dgvPendingCmds.Rows.Insert(0, cmd.CommandType, cmd.CommandId, ToArabicCommandStatus(cmd.Status), DateTime.Now.ToString("HH:mm:ss"), cmd.Result ?? "");
+                row = _dgvPendingCmds.Rows[0];
+                _remoteCommandRows[cmd.CommandId] = row;
+            }
+
+            row.Cells[2].Value = ToArabicCommandStatus(cmd.Status);
+            row.Cells[4].Value = string.IsNullOrWhiteSpace(cmd.Result) ? "تم الرد" : cmd.Result;
+            row.DefaultCellStyle.ForeColor = cmd.Status == "Executed" ? LightUiTheme.Success : LightUiTheme.Danger;
+            _rtbRemoteLog?.AppendText($"\r\n[{DateTime.Now:HH:mm:ss}] نتيجة الأمر: {cmd.CommandType} [{cmd.CommandId}] => {ToArabicCommandStatus(cmd.Status)} | {cmd.Result}");
+            _lastRemoteCommandType = cmd.CommandType ?? "—";
+            _lastRemoteCommandStatus = ToArabicCommandStatus(cmd.Status);
+            _lastRemoteCommandResult = string.IsNullOrWhiteSpace(cmd.Result) ? "تم الرد" : cmd.Result;
+            _lastRemoteCommandAtLocal = DateTime.Now;
+            AppendConnLog($"نتيجة أمر {cmd.CommandType}: {ToArabicCommandStatus(cmd.Status)}");
+            RefreshLocalStateReading(false);
+        }
+
+        private static string ToArabicCommandStatus(string status)
+        {
+            switch (status)
+            {
+                case "Received": return "استُلم";
+                case "Executed": return "نُفذ";
+                case "Failed":   return "فشل";
+                case "Sent":     return "أُرسل";
+                case "Timeout":  return "مهلة";
+                default:         return string.IsNullOrWhiteSpace(status) ? "—" : status;
+            }
+        }
+
+        private void ShowLocalGhostFrame(byte[] jpg)
+        {
+            if (jpg == null || _pbRemoteScreen == null) return;
+            using (var ms = new MemoryStream(jpg))
+            using (var image = Image.FromStream(ms))
+            {
+                _pbRemoteScreen.Image?.Dispose();
+                _pbRemoteScreen.Image = new Bitmap(image);
+            }
+            if (_lblRemoteStatus != null)
+            {
+                _lblRemoteStatus.Text = $"Ghost stream: {DateTime.Now:HH:mm:ss}";
+                _lblRemoteStatus.ForeColor = LightUiTheme.Primary;
+            }
+            if (_lblFPS != null)
+                _lblFPS.Text = $"{Math.Max(1, jpg.Length / 1024)} KB";
+        }
+
+        private void OnRequestScreen(object s = null, EventArgs e = null)
+        {
+            _lblRemoteStatus.Text = "Capturing screen...";
+            CaptureAndDisplayScreenshot();
+        }
+
+        private void OnStopScreen(object s = null, EventArgs e = null)
+        {
+            _lblRemoteStatus.Text = "Opening screenshot folder...";
+            var folder = Path.Combine(_config.BackupPath, "Screenshots");
+            try
+            {
+                Directory.CreateDirectory(folder);
+                System.Diagnostics.Process.Start("explorer.exe", folder);
+                _lblRemoteStatus.Text = $"Screenshot folder: {Path.GetFileName(folder)}";
+                _lblRemoteStatus.ForeColor = LightUiTheme.Muted;
+            }
+            catch (Exception ex)
+            {
+                AppendConnLog($"Cannot open screenshots folder: {ex.Message}", AppLogger.Level.Warning);
+            }
+        }
+
+        // ==========================================
+        // الإعدادات
+        // ==========================================
+
+        private void LoadSettingsToUI()
+        {
+            var normalizedType = AppConstants.NormalizeATMType(_config.ATM_Type);
+            if (_txtServerIP    != null) _txtServerIP.Text    = _config.ServerIP;
+            if (_txtServerPort  != null) _txtServerPort.Text  = _config.ServerPort.ToString();
+            if (_txtATMID       != null) _txtATMID.Text       = _config.ATM_ID;
+            if (_txtATMName     != null) _txtATMName.Text     = _config.ATM_Name;
+            if (_txtSourcePath  != null) _txtSourcePath.Text  =
+                string.IsNullOrWhiteSpace(_config.SourcePath)
+                    ? AppConstants.GetDefaultSourcePath(normalizedType)
+                    : _config.SourcePath;
+            if (_txtBackupPath  != null) _txtBackupPath.Text  =
+                string.IsNullOrWhiteSpace(_config.BackupPath)
+                    ? AppConstants.GetDefaultBackupPath(normalizedType)
+                    : _config.BackupPath;
+            if (_cmbATMType     != null)
+            {
+                _cmbATMType.SelectedItem = normalizedType;
+                if (_cmbATMType.SelectedIndex < 0 && _cmbATMType.Items.Count > 0)
+                    _cmbATMType.SelectedIndex = 0;
+            }
+            if (_cmbNetworkType != null) _cmbNetworkType.SelectedItem = _config.NetworkType;
+            if (_chkAutoConnect != null) _chkAutoConnect.Checked     = _config.AutoConnect;
+            if (_chkEncrypt     != null) _chkEncrypt.Checked         = _config.Encrypt;
+            if (_chkCompression != null) _chkCompression.Checked     = _config.Compress;
+            if (_chkAutoBackup  != null) _chkAutoBackup.Checked      = _config.AutoBackup;
+        }
+
+        private void SaveSettingsFromUI()
+        {
+            if (_txtServerIP    != null) _config.ServerIP    = _txtServerIP.Text.Trim();
+            if (_txtServerPort  != null && int.TryParse(_txtServerPort.Text, out var p)) _config.ServerPort = p;
+            if (_txtATMID       != null) _config.ATM_ID      = _txtATMID.Text.Trim();
+            if (_txtATMName     != null) _config.ATM_Name    = _txtATMName.Text.Trim();
+            if (_txtSourcePath  != null) _config.SourcePath  = _txtSourcePath.Text.Trim();
+            if (_txtBackupPath  != null) _config.BackupPath  = _txtBackupPath.Text.Trim();
+            if (_cmbATMType     != null && _cmbATMType.SelectedItem != null)
+                _config.ATM_Type = AppConstants.NormalizeATMType(_cmbATMType.SelectedItem.ToString());
+            if (_cmbNetworkType != null && _cmbNetworkType.SelectedItem != null) _config.NetworkType = _cmbNetworkType.SelectedItem.ToString();
+            if (_chkAutoConnect != null) _config.AutoConnect  = _chkAutoConnect.Checked;
+            if (_chkEncrypt     != null) _config.Encrypt      = _chkEncrypt.Checked;
+            if (_chkCompression != null) _config.Compress     = _chkCompression.Checked;
+            if (_chkAutoBackup  != null) _config.AutoBackup   = _chkAutoBackup.Checked;
+            if (string.IsNullOrWhiteSpace(_config.SourcePath))
+                _config.SourcePath = AppConstants.GetDefaultSourcePath(_config.ATM_Type);
+            if (string.IsNullOrWhiteSpace(_config.BackupPath))
+                _config.BackupPath = AppConstants.GetDefaultBackupPath(_config.ATM_Type);
+            _config.ApplyDefaults();
+        }
+
+        private void OnATMTypeChanged(object s, EventArgs e)
+        {
+            if (_cmbATMType?.SelectedItem == null || _txtSourcePath == null) return;
+            var normalizedType = AppConstants.NormalizeATMType(_cmbATMType.SelectedItem.ToString());
+            if (AppConstants.IsKnownDefaultSourcePath(_txtSourcePath.Text))
+                _txtSourcePath.Text = AppConstants.GetDefaultSourcePath(normalizedType);
+            if (_txtBackupPath != null && AppConstants.IsKnownDefaultBackupPath(_txtBackupPath.Text))
+                _txtBackupPath.Text = AppConstants.GetDefaultBackupPath(normalizedType);
+        }
+
+        private void OnSaveSettings(object s = null, EventArgs e = null)
+        {
+            SaveSettingsFromUI();
+            EnsureClientRuntimeFolders();
+            _config.Save();
+            PersistAgentConfigurationFromCurrentSettings();
+            MessageBox.Show("تم حفظ الإعدادات بنجاح.", "حفظ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Text = $"EJLive Enterprise Client — {_config.ATM_ID}";
+        }
+
+        private void OnLoadAgentConfig(object s = null, EventArgs e = null)
+        {
+            _agentConfig = AgentConfigurationXmlService.LoadOrCreate(_config);
+            PopulateAgentConfigGrid();
+            SetAgentConfigStatus("تم تحميل AgentConf.xml من القرص.", false);
+        }
+
+        private void OnApplyAgentConfig(object s = null, EventArgs e = null)
+        {
+            _agentConfig = ReadAgentConfigurationFromGrid();
+            ApplyAgentConfigurationToRuntime(_agentConfig);
+            LoadSettingsToUI();
+            SetAgentConfigStatus("تم تطبيق القيم على إعدادات الفورم. اضغط حفظ لتثبيتها على القرص.", false);
+        }
+
+        private void OnSaveAgentConfig(object s = null, EventArgs e = null)
+        {
+            _agentConfig = ReadAgentConfigurationFromGrid();
+            AgentConfigurationXmlService.Save(_agentConfig);
+            ApplyAgentConfigurationToRuntime(_agentConfig);
+            _config.Save();
+            LoadSettingsToUI();
+            PopulateAgentConfigGrid();
+            SetAgentConfigStatus("تم حفظ AgentConf.xml وتحديث إعدادات العميل.", false);
+        }
+
+        private void OnOpenAgentConfigFolder(object s = null, EventArgs e = null)
+        {
+            try
+            {
+                var path = _agentConfig?.ConfigPath ?? AgentConfigurationXmlService.DefaultPath;
+                var folder = Path.GetDirectoryName(path);
+                if (!string.IsNullOrWhiteSpace(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                    System.Diagnostics.Process.Start("explorer.exe", folder);
+                }
+            }
+            catch (Exception ex)
+            {
+                SetAgentConfigStatus($"تعذر فتح مجلد الإعداد: {ex.Message}", true);
+            }
+        }
+
+        private void PersistAgentConfigurationFromCurrentSettings()
+        {
+            _agentConfig = AgentConfigurationXmlService.FromAppConfig(_config, _agentConfig?.ConfigPath);
+            AgentConfigurationXmlService.Save(_agentConfig);
+            PopulateAgentConfigGrid();
+        }
+
+        private void ApplyAgentConfigurationToRuntime(AgentConfigurationRecord record)
+        {
+            if (record == null) return;
+            _config = AgentConfigurationXmlService.LoadAppConfig(_config, record.ConfigPath);
+            _config.ApplyDefaults();
+            EnsureClientRuntimeFolders();
+            Text = $"EJLive Enterprise Client — {_config.ATM_ID}";
+            if (_atmInfo != null)
+            {
+                _atmInfo.ATM_ID = _config.ATM_ID;
+                _atmInfo.ATM_Name = _config.ATM_Name;
+                _atmInfo.ATM_Type = _config.ATM_Type;
+                _atmInfo.NetworkType = _config.NetworkType;
+                _atmInfo.ServerIP = _config.ServerIP;
+                _atmInfo.ServerPort = _config.ServerPort;
+            }
+        }
+
+        private void PopulateAgentConfigGrid()
+        {
+            if (_dgvAgentConfig == null) return;
+            if (_agentConfig == null)
+                _agentConfig = AgentConfigurationXmlService.LoadOrCreate(_config);
+
+            _dgvAgentConfig.Rows.Clear();
+            var flattened = AgentConfigurationXmlService.Flatten(_agentConfig);
+            foreach (var pair in flattened)
+                _dgvAgentConfig.Rows.Add(pair.Key, pair.Value ?? string.Empty, DescribeAgentConfigKey(pair.Key));
+
+            foreach (var pair in _agentConfig.Parameters)
+                if (!flattened.ContainsKey(pair.Key))
+                    _dgvAgentConfig.Rows.Add(pair.Key, pair.Value ?? string.Empty, "Parameter مخصص من AgentConf.xml");
+
+            if (_lblAgentConfigPath != null)
+                _lblAgentConfigPath.Text = $"AgentConf.xml: {_agentConfig.ConfigPath ?? AgentConfigurationXmlService.DefaultPath}";
+        }
+
+        private AgentConfigurationRecord ReadAgentConfigurationFromGrid()
+        {
+            var record = _agentConfig ?? AgentConfigurationXmlService.FromAppConfig(_config);
+            record.Parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (DataGridViewRow row in _dgvAgentConfig.Rows)
+            {
+                if (row.IsNewRow) continue;
+                var key = Convert.ToString(row.Cells[0].Value)?.Trim();
+                var value = Convert.ToString(row.Cells[1].Value)?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(key)) continue;
+
+                switch (key)
+                {
+                    case "AgentId":
+                        record.AgentId = value;
+                        break;
+                    case "TerminalId":
+                        record.TerminalId = value;
+                        break;
+                    case "TerminalName":
+                        record.Parameters["TerminalName"] = value;
+                        break;
+                    case "Vendor":
+                        record.Parameters["Vendor"] = AppConstants.NormalizeATMType(value);
+                        break;
+                    case "Model":
+                        record.Parameters["Model"] = value;
+                        break;
+                    case "NetworkType":
+                        record.Parameters["NetworkType"] = value;
+                        break;
+                    case "ServerHost":
+                        record.ServerHost = value;
+                        break;
+                    case "ServerPort":
+                        if (int.TryParse(value, out var port)) record.ServerPort = port;
+                        break;
+                    case "SourcePath":
+                        record.SourcePath = value;
+                        break;
+                    case "BackupPath":
+                        record.BackupPath = value;
+                        break;
+                    case "DurableSyncEnabled":
+                        if (bool.TryParse(value, out var durable)) record.DurableSyncEnabled = durable;
+                        break;
+                    case "AckRequired":
+                        if (bool.TryParse(value, out var ack)) record.AckRequired = ack;
+                        break;
+                    case "DedupEnabled":
+                        if (bool.TryParse(value, out var dedup)) record.DedupEnabled = dedup;
+                        break;
+                    case "AutoConnect":
+                        record.Parameters["AutoConnect"] = value;
+                        break;
+                    default:
+                        record.Parameters[key] = value;
+                        break;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(record.ConfigPath))
+                record.ConfigPath = AgentConfigurationXmlService.DefaultPath;
+            if (string.IsNullOrWhiteSpace(record.AgentId))
+                record.AgentId = record.TerminalId;
+            if (string.IsNullOrWhiteSpace(record.TerminalId))
+                record.TerminalId = record.AgentId;
+            if (!record.Parameters.ContainsKey("TerminalName"))
+                record.Parameters["TerminalName"] = _config.ATM_Name;
+            if (!record.Parameters.ContainsKey("Vendor"))
+                record.Parameters["Vendor"] = AppConstants.NormalizeATMType(_config.ATM_Type);
+            if (!record.Parameters.ContainsKey("NetworkType"))
+                record.Parameters["NetworkType"] = _config.NetworkType;
+            if (!record.Parameters.ContainsKey("AutoConnect"))
+                record.Parameters["AutoConnect"] = _config.AutoConnect.ToString().ToLowerInvariant();
+
+            return record;
+        }
+
+        private void SetAgentConfigStatus(string message, bool isError)
+        {
+            if (_lblAgentConfigStatus == null) return;
+            _lblAgentConfigStatus.Text = message;
+            _lblAgentConfigStatus.ForeColor = isError ? LightUiTheme.Danger : LightUiTheme.Success;
+        }
+
+        private static string DescribeAgentConfigKey(string key)
+        {
+            switch (key)
+            {
+                case "AgentId": return "هوية الـ Agent المستخدمة في التشغيل والتدقيق";
+                case "TerminalId": return "ربط الصراف بالخادم ومركز المراقبة";
+                case "TerminalName": return "اسم العرض داخل الواجهات";
+                case "Vendor": return "نوع الصراف لاختيار قواعد الجورنال والمسارات";
+                case "Model": return "موديل الجهاز لربط MAPPING.xml لاحقًا";
+                case "NetworkType": return "سياسة retry/backoff للشبكة";
+                case "ServerHost": return "عنوان الخادم";
+                case "ServerPort": return "منفذ TCP التشغيلي";
+                case "SourcePath": return "مصدر ملفات الجورنال";
+                case "BackupPath": return "الأرشفة المحلية واللقطات";
+                case "DurableSyncEnabled": return "تفعيل طابور مزامنة مستمر";
+                case "AckRequired": return "اشتراط ACK قبل اعتبار الملف مرسلًا";
+                case "DedupEnabled": return "منع التكرار بالـ checksum";
+                case "AutoConnect": return "الاتصال تلقائيًا عند التشغيل";
+                default: return "Parameter مخصص";
+            }
+        }
+
+        private void OnBrowseSource(object s = null, EventArgs e = null)
+        {
+            using var dlg = new FolderBrowserDialog { Description = "اختر مجلد الجورنال" };
+            if (dlg.ShowDialog() == DialogResult.OK) _txtSourcePath.Text = dlg.SelectedPath;
+        }
+
+        private void OnBrowseBackup(object s = null, EventArgs e = null)
+        {
+            using var dlg = new FolderBrowserDialog { Description = "اختر مجلد النسخ الاحتياطي" };
+            if (dlg.ShowDialog() == DialogResult.OK) _txtBackupPath.Text = dlg.SelectedPath;
+        }
+
+        private void OnLocalChangePassword(object s = null, EventArgs e = null)
+        {
+            if (_txtNewPassword.Text != _txtConfirmPassword.Text)
+            {
+                MessageBox.Show("كلمة السر الجديدة غير مطابقة للتأكيد.", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (_txtNewPassword.Text.Length < 6)
+            {
+                MessageBox.Show("كلمة السر يجب أن تكون 6 أحرف على الأقل.", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            _config.HashedPassword = SecurityHelper.HashPassword(_txtNewPassword.Text);
+            _config.Save();
+            MessageBox.Show("تم تغيير كلمة المرور بنجاح.", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            _txtCurrentPassword.Text = _txtNewPassword.Text = _txtConfirmPassword.Text = "";
+        }
+
+        // ==========================================
+        // التحديث الدوري
+        // ==========================================
+
+        private void InitializeTimer()
+        {
+            _uiTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+            _uiTimer.Tick += (s, e) =>
+            {
+                _lblTime.Text = DateTime.Now.ToString("HH:mm:ss");
+                if (_networkManager != null)
+                {
+                    _lblBytesSent.Text = $"مُرسل: {_networkManager.TotalBytesSent / 1024.0:F1} KB";
+                    _lblBytesRecv.Text = $"مُستلم: {_networkManager.TotalBytesReceived / 1024.0:F1} KB";
+                }
+                if (_outbox != null) _lblQueueCount.Text = $"الطابور: {_outbox.PendingCount} ملف";
+                UpdateServiceStatuses();
+                _localStateTick++;
+                RefreshLocalStateReading(_localStateTick % 15 == 0);
+            };
+            _uiTimer.Start();
+        }
+
+        // ==========================================
+        // مساعدات الواجهة
+        // ==========================================
+
+        private void AppendConnLog(string text, AppLogger.Level level = AppLogger.Level.Info)
+        {
+            if (_rtbConnLog == null || IsDisposed) return;
+            if (_rtbConnLog.InvokeRequired) { _rtbConnLog.Invoke(new Action(() => AppendConnLog(text, level))); return; }
+            text = CleanRuntimeText(text);
+            _rtbConnLog.SelectionColor = level >= AppLogger.Level.Error ? Color.FromArgb(180, 35, 24)
+                                       : level == AppLogger.Level.Warning ? Color.FromArgb(180, 100, 0)
+                                       : LightUiTheme.Text;
+            var prefix = text.StartsWith("[") ? "" : $"[{DateTime.Now:HH:mm:ss}] ";
+            _rtbConnLog.AppendText($"{prefix}{text}\n");
+            _rtbConnLog.ScrollToCaret();
+        }
+
+        private Button MakeButton(string text, Color backColor, Action action, int width = 130) =>
+            MakeButton(text, backColor, (s, e) => action?.Invoke(), width);
+
+        private Button MakeButton(string text, Color backColor, EventHandler onClick, int width)
+        {
+            var btn = new Button
+            {
+                Text = text,
+                Width = Math.Max(width, 44),
+                MinimumSize = new Size(Math.Max(width, 44), 34),
+                Height = 34,
+                BackColor = backColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8.7f, FontStyle.Bold),
+                Margin = new Padding(5, 3, 5, 3),
+                Cursor = Cursors.Hand,
+                AutoEllipsis = true,
+                TextAlign = ContentAlignment.MiddleCenter,
+                UseVisualStyleBackColor = false
+            };
+            btn.Tag = backColor;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Click += onClick;
+            LightUiTheme.StyleButton(btn, backColor);
+            return btn;
+        }
+
+        private void SetButtonVisual(Button btn, Color activeColor, bool active)
+        {
+            if (btn == null) return;
+            btn.Enabled = true;
+            if (active)
+            {
+                LightUiTheme.StyleButton(btn, activeColor);
+                btn.FlatAppearance.BorderSize = 0;
+            }
+            else
+            {
+                btn.BackColor = LightUiTheme.SurfaceAlt;
+                btn.ForeColor = LightUiTheme.Muted;
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 1;
+                btn.FlatAppearance.BorderColor = LightUiTheme.Border;
+                btn.UseVisualStyleBackColor = false;
+                btn.Cursor = Cursors.Default;
+            }
+        }
+
+        private void ApplyClientVisualCorrections()
+        {
+            if (_tabMain != null)
+            {
+                _tabMain.DrawMode = TabDrawMode.Normal;
+                _tabMain.SizeMode = TabSizeMode.Normal;
+                _tabMain.ItemSize = new Size(150, 32);
+                _tabMain.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+                _tabMain.RightToLeft = RightToLeft.No;
+                _tabMain.RightToLeftLayout = false;
+            }
+
+            foreach (var box in new[] { _rtbConnLog, _rtbJournal, _rtbRemoteLog })
+            {
+                if (box == null) continue;
+                box.BackColor = LightUiTheme.Surface;
+                box.ForeColor = LightUiTheme.Text;
+                box.Font = new Font("Segoe UI", box == _rtbJournal ? 9.5f : 9f);
+                box.BorderStyle = BorderStyle.FixedSingle;
+                box.DetectUrls = false;
+                box.RightToLeft = RightToLeft.No;
+            }
+
+            _lblConnText.ForeColor = LightUiTheme.Danger;
+            _lblConnIndicator.ForeColor = LightUiTheme.Muted;
+            _lblSessionId.ForeColor = LightUiTheme.Muted;
+            _lblLatency.ForeColor = LightUiTheme.Muted;
+            _lblConnProgress.ForeColor = LightUiTheme.Primary;
+            _lblStatus.ForeColor = LightUiTheme.Danger;
+            _lblSpeed.ForeColor = LightUiTheme.Muted;
+            _lblSyncState.ForeColor = LightUiTheme.Muted;
+            _lblTime.ForeColor = LightUiTheme.Muted;
+
+            SetButtonVisual(_btnConnect, LightUiTheme.Success, true);
+            SetButtonVisual(_btnDisconnect, LightUiTheme.Danger, false);
+            SetButtonVisual(_btnRequestScreen, LightUiTheme.Primary, true);
+            SetButtonVisual(_btnStopScreen, LightUiTheme.Danger, false);
+        }
+
+        private void LayoutMainRegions()
+        {
+            if (_tabMain == null || _menuStrip == null || _statusStrip == null) return;
+            var top = _menuStrip.Height;
+            var bottom = _statusStrip.Height;
+            _tabMain.Bounds = new Rectangle(0, top, ClientSize.Width, Math.Max(0, ClientSize.Height - top - bottom));
+        }
+
+        private string CleanRuntimeText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            return text
+                .Replace("✅", "")
+                .Replace("🔄", "")
+                .Replace("📁", "")
+                .Replace("📡", "")
+                .Replace("♻️", "")
+                .Replace("⚡", "")
+                .Replace("🔑", "")
+                .Replace("👁️", "")
+                .Replace("⟳", "")
+                .Replace("✓", "")
+                .Replace("✗", "")
+                .Replace("✕", "")
+                .Replace("→", "-")
+                .Replace("←", "-")
+                .Trim();
+        }
+
+        private TextBox MakeInput(string placeholder, int width) => new TextBox { Width = width, Text = placeholder, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, BorderStyle = BorderStyle.FixedSingle, Margin = new Padding(4) };
+        private Label MakeLabel(string text) => new Label { Text = text, AutoSize = true, ForeColor = LightUiTheme.Text, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(0, 6, 0, 0) };
+        private Label MakeMeta(string label, string value)
+        {
+            var lbl = new Label { AutoSize = true, ForeColor = LightUiTheme.Text, Margin = new Padding(0, 0, 24, 0) };
+            lbl.Text = $"{label} {value}";
+            return lbl;
+        }
+
+        private CheckBox MakeCheckbox(string text, bool chk = false) => new CheckBox { Text = text, Checked = chk, ForeColor = LightUiTheme.Text, AutoSize = true, Margin = new Padding(8, 8, 8, 0) };
+
+        private ComboBox MakeCombo(string[] items, int width)
+        {
+            var cb = new ComboBox { Width = width, DropDownStyle = ComboBoxStyle.DropDownList, BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, FlatStyle = FlatStyle.System, Margin = new Padding(4) };
+            cb.Items.AddRange(items);
+            if (cb.Items.Count > 0) cb.SelectedIndex = 0;
+            return cb;
+        }
+
+        private DataGridView CreateDataGrid()
+        {
+            var dgv = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                BackgroundColor = LightUiTheme.Surface,
+                GridColor = LightUiTheme.Border,
+                ForeColor = LightUiTheme.Text,
+                ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = LightUiTheme.Header, ForeColor = LightUiTheme.Text, Font = new Font("Segoe UI", 8.5f, FontStyle.Bold) },
+                DefaultCellStyle = new DataGridViewCellStyle { BackColor = LightUiTheme.Surface, ForeColor = LightUiTheme.Text, SelectionBackColor = LightUiTheme.Selection, SelectionForeColor = Color.White },
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, RowHeadersVisible = false, BorderStyle = BorderStyle.FixedSingle, RowTemplate = { Height = 28 }
+            };
+            LightUiTheme.ApplyDataGrid(dgv);
+            return dgv;
+        }
+
+        // ==========================================
+        // Misc Events
+        // ==========================================
+        private void OnOpenJournalFolder(object s, EventArgs e) { try { System.Diagnostics.Process.Start("explorer.exe", _config.SourcePath); } catch { } }
+        private void OnOpenLogFolder(object s, EventArgs e)     { try { System.Diagnostics.Process.Start("explorer.exe", AppConstants.DefaultLogPath); } catch { } }
+        private void OnPing(object s, EventArgs e)
+        {
+            if (_networkManager?.IsConnected != true) return;
+            var ping = CommunicationProtocol.BuildHeartbeat(_config.ATM_ID);
+            _networkManager.SendMessage(ping);
+            AppendConnLog("Ping مُرسل");
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            _uiTimer?.Stop();
+            _fileWatcher?.Stop();
+            _journalProcessor?.Stop();
+            _networkManager?.Disconnect();
+            AppLogger.Instance.Dispose();
+            base.OnFormClosing(e);
+        
+    
+
+
+        #region Controls - Tab Agent
+        private TabControl tabMain;
+        private TabPage tabClient, tabJournal, tabLog;
+
+        private GroupBox grpConnection;
+        private Label lblName, lblBranch, lblRegion, lblIP, lblPort, lblMessage, lblMsgSize, lblFilePackage, lblNetQuality, lblNetworkName;
+        private TextBox txtName, txtBranch, txtRegion, txtIP, txtPort, txtMessage, txtNetworkName;
+        private NumericUpDown numMsgSize, numFilePackage;
+        private ComboBox cmbNetQuality;
+        private Button btnPing;
+        private CheckBox chkSyncTime, chkAutoReconnect;
+
+        private GroupBox grpPaths;
+        private Label lblSourcePath, lblBackupPath;
+        private TextBox txtSourcePath, txtBackupPath;
+        private Button btnBrowseSource, btnBrowseBackup;
+
+        private GroupBox grpServices;
+        private Button btnServiceStart, btnServiceStop;
+        private Button btnFileWatcherStart, btnFileWatcherStop;
+        private Button btnSocketDataStart, btnSocketDataStop;
+        private Button btnSocketFilesStart, btnSocketFilesStop;
+        private Button btnScreenShotStart, btnScreenShotStop;
+        private Button btnGhostStart, btnGhostStop;
+        private Label lblServiceStatus, lblFileWatcherStatus, lblSocketDataStatus;
+        private Label lblSocketFilesStatus, lblScreenShotStatus, lblGhostStatus;
+
+        private GroupBox grpServiceInfo;
+        private Label lblPID, lblMemory, lblUptime;
+
+        private Button btnInstall, btnUninstall;
+        #endregion
+
+        #region Controls - Tab Journal Viewer
+        private GroupBox grpJournalFilter;
+        private DateTimePicker dtpJournalFrom, dtpJournalTo;
+        private ComboBox cmbJournalType;
+        private Button btnJournalLoad, btnJournalExport;
+        private DataGridView dgvJournal;
+        private RichTextBox rtbJournalDetail;
+        private Label lblJournalStats;
+        #endregion
+
+        #region Controls - Tab Log
+        private RichTextBox rtbLog;
+        private Panel pnlLogToolbar;
+        private Button btnClearLog, btnSaveLog, btnExportLog;
+        private CheckBox chkAutoScroll;
+        #endregion
+
+        #region Controls - Status Bar
+        private StatusStrip statusBar;
+        private ToolStripStatusLabel lblStatus, lblConnection, lblATMType, lblVersion, lblClock;
+        #endregion
+
+        #region Engine References
+        private FileWatcherEngine _fileWatcher;
+        private NetworkEngine _networkEngine;
+        private GhostRemoteEngine _ghostEngine;
+        private TransactionAnalysisEngine _analysisEngine;
+        private ClientConfig _config;
+        private bool _serviceControllerRunning, _fileWatcherRunning;
+        private bool _socketDataRunning, _socketFilesRunning, _ghostRunning;
+        private System.Windows.Forms.Timer _statusTimer, _clockTimer;
+        private DateTime _serviceStartTime;
+        private int _processId;
+        private DateTime _lastTelemetrySentAt;
+        #endregion
+
+        #region Constructor
+        public ClientMainForm()
+        {
+            _config = new ClientConfig();
+            _processId = System.Diagnostics.Process.GetCurrentProcess().Id;
+            _lastTelemetrySentAt = DateTime.MinValue;
+            InitializeComponent();
+            LoadConfig();
+            SetupTimers();
+            DetermineATMType();
+            Log("[System] EJLive Agent v3.4.0 initialized", Color.Cyan);
+            Log("[System] PID: " + _processId, Color.Gray);
+        }
+        #endregion
+
+        #region UI Construction
+        private void InitializeComponent()
+        {
+            SuspendLayout();
+            Text = "EJLive Agent v3.4.0";
+            Size = new Size(760, 700);
+            MinimumSize = new Size(720, 660);
+            StartPosition = FormStartPosition.CenterScreen;
+            Font = new Font("Segoe UI", 9F);
+            Icon = SystemIcons.Application;
+
+            tabMain = new TabControl { Dock = DockStyle.Fill };
+            tabClient = new TabPage("Agent");
+            tabJournal = new TabPage("Journal Viewer");
+            tabLog = new TabPage("Log");
+            tabMain.TabPages.AddRange(new[] { tabClient, tabJournal, tabLog });
+
+            BuildClientTab();
+            BuildJournalTab();
+            BuildLogTab();
+            BuildStatusBar();
+
+            Controls.Add(tabMain);
+            Controls.Add(statusBar);
+            ResumeLayout(false);
+        }
+
+        private void BuildClientTab()
+        {
+            var panel = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(5) };
+            tabClient.Controls.Add(panel);
+            int y = 5;
+
+            grpConnection = new GroupBox { Text = "Agent & Terminal Settings", Location = new Point(5, y), Size = new Size(360, 285) };
+            int gy = 20;
+
+            lblName = new Label { Text = "ATM Name:", Location = new Point(10, gy + 3), AutoSize = true };
+            txtName = new TextBox { Location = new Point(110, gy), Width = 145 };
+            lblNetQuality = new Label { Text = "Link:", Location = new Point(262, gy + 3), AutoSize = true };
+            cmbNetQuality = new ComboBox { Location = new Point(298, gy), Width = 52, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbNetQuality.Items.AddRange(new object[] { "LAN", "ADSL", "CDMA", "GSM" });
+            cmbNetQuality.SelectedIndex = 0;
+            gy += 30;
+
+            lblBranch = new Label { Text = "Branch:", Location = new Point(10, gy + 3), AutoSize = true };
+            txtBranch = new TextBox { Location = new Point(110, gy), Width = 240 };
+            gy += 30;
+
+            lblRegion = new Label { Text = "Region:", Location = new Point(10, gy + 3), AutoSize = true };
+            txtRegion = new TextBox { Location = new Point(110, gy), Width = 240 };
+            gy += 30;
+
+            lblNetworkName = new Label { Text = "Network:", Location = new Point(10, gy + 3), AutoSize = true };
+            txtNetworkName = new TextBox { Location = new Point(110, gy), Width = 240 };
+            gy += 30;
+
+            lblIP = new Label { Text = "Server IP:", Location = new Point(10, gy + 3), AutoSize = true };
+            txtIP = new TextBox { Location = new Point(110, gy), Width = 145 };
+            btnPing = new Button { Text = "Ping", Location = new Point(270, gy - 1), Size = new Size(80, 26), BackColor = Color.FromArgb(33, 150, 243), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            btnPing.Click += BtnPing_Click;
+            gy += 30;
+
+            lblPort = new Label { Text = "Port:", Location = new Point(10, gy + 3), AutoSize = true };
+            txtPort = new TextBox { Location = new Point(110, gy), Width = 70, Text = "5656" };
+            chkAutoReconnect = new CheckBox { Text = "Auto Reconnect", Location = new Point(190, gy + 2), AutoSize = true, Checked = true };
+            gy += 30;
+
+            lblMsgSize = new Label { Text = "Msg Size:", Location = new Point(10, gy + 3), AutoSize = true };
+            numMsgSize = new NumericUpDown { Location = new Point(110, gy), Width = 60, Minimum = 1, Maximum = 999, Value = 50 };
+            new Label { Text = "Lines", Location = new Point(175, gy + 3), AutoSize = true, Parent = grpConnection };
+            lblFilePackage = new Label { Text = "File Pkg:", Location = new Point(220, gy + 3), AutoSize = true };
+            numFilePackage = new NumericUpDown { Location = new Point(280, gy), Width = 70, Minimum = 1, Maximum = 9999, Value = 512 };
+            gy += 30;
+
+            chkSyncTime = new CheckBox { Text = "Sync Time with Server", Location = new Point(10, gy), AutoSize = true };
+            lblMessage = new Label { Text = "", Location = new Point(190, gy + 2), AutoSize = true, ForeColor = Color.Green };
+
+            grpConnection.Controls.AddRange(new Control[]
+            {
+                lblName, txtName, lblNetQuality, cmbNetQuality,
+                lblBranch, txtBranch, lblRegion, txtRegion, lblNetworkName, txtNetworkName,
+                lblIP, txtIP, btnPing, lblPort, txtPort, chkAutoReconnect,
+                lblMsgSize, numMsgSize, lblFilePackage, numFilePackage, chkSyncTime, lblMessage
+            });
+            panel.Controls.Add(grpConnection);
+
+            grpPaths = new GroupBox { Text = "Paths Configuration", Location = new Point(370, y), Size = new Size(360, 100) };
+            lblSourcePath = new Label { Text = "Source Log:", Location = new Point(10, 22), AutoSize = true };
+            txtSourcePath = new TextBox { Location = new Point(10, 40), Width = 280, ReadOnly = true };
+            btnBrowseSource = new Button { Text = "...", Location = new Point(295, 38), Size = new Size(55, 25) };
+            btnBrowseSource.Click += BtnBrowseSource_Click;
+            lblBackupPath = new Label { Text = "Backup:", Location = new Point(10, 67), AutoSize = true };
+            txtBackupPath = new TextBox { Location = new Point(65, 65), Width = 225, ReadOnly = true };
+            btnBrowseBackup = new Button { Text = "...", Location = new Point(295, 63), Size = new Size(55, 25) };
+            btnBrowseBackup.Click += BtnBrowseBackup_Click;
+            grpPaths.Controls.AddRange(new Control[] { lblSourcePath, txtSourcePath, btnBrowseSource, lblBackupPath, txtBackupPath, btnBrowseBackup });
+            panel.Controls.Add(grpPaths);
+
+            grpServiceInfo = new GroupBox { Text = "Agent Service Info", Location = new Point(370, 110), Size = new Size(360, 90) };
+            lblPID = new Label { Text = "PID: " + _processId, Location = new Point(10, 22), AutoSize = true };
+            lblMemory = new Label { Text = "Memory: 0 MB", Location = new Point(10, 44), AutoSize = true };
+            lblUptime = new Label { Text = "Uptime: 00:00:00", Location = new Point(10, 66), AutoSize = true };
+            grpServiceInfo.Controls.AddRange(new Control[] { lblPID, lblMemory, lblUptime });
+            panel.Controls.Add(grpServiceInfo);
+
+            y = 295;
+            grpServices = new GroupBox { Text = "Agent Services Control", Location = new Point(5, y), Size = new Size(725, 210) };
+            int sy = 22; int col1 = 10, col2 = 220, col3 = 305, col4 = 460;
+            AddServiceRow(grpServices, "Agent Controller:", ref sy, col1, col2, col3, col4, ref btnServiceStart, ref btnServiceStop, ref lblServiceStatus, BtnServiceStart_Click, BtnServiceStop_Click, true);
+            AddServiceRow(grpServices, "File Watcher:", ref sy, col1, col2, col3, col4, ref btnFileWatcherStart, ref btnFileWatcherStop, ref lblFileWatcherStatus, BtnFileWatcherStart_Click, BtnFileWatcherStop_Click, false);
+            AddServiceRow(grpServices, "Socket Data:", ref sy, col1, col2, col3, col4, ref btnSocketDataStart, ref btnSocketDataStop, ref lblSocketDataStatus, BtnSocketDataStart_Click, BtnSocketDataStop_Click, false);
+            AddServiceRow(grpServices, "Socket Files:", ref sy, col1, col2, col3, col4, ref btnSocketFilesStart, ref btnSocketFilesStop, ref lblSocketFilesStatus, BtnSocketFilesStart_Click, BtnSocketFilesStop_Click, false);
+            AddServiceRow(grpServices, "Screenshot:", ref sy, col1, col2, col3, col4, ref btnScreenShotStart, ref btnScreenShotStop, ref lblScreenShotStatus, BtnScreenShotStart_Click, BtnScreenShotStop_Click, false);
+            AddServiceRow(grpServices, "Ghost Access:", ref sy, col1, col2, col3, col4, ref btnGhostStart, ref btnGhostStop, ref lblGhostStatus, BtnGhostStart_Click, BtnGhostStop_Click, false);
+            panel.Controls.Add(grpServices);
+
+            y = 515;
+            btnInstall = new Button { Text = "Install Agent", Location = new Point(5, y), Size = new Size(130, 32), BackColor = Color.FromArgb(33, 150, 243), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 10, FontStyle.Bold) };
+            btnUninstall = new Button { Text = "Remove Agent", Location = new Point(145, y), Size = new Size(110, 32), BackColor = Color.FromArgb(158, 158, 158), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            btnInstall.Click += BtnInstall_Click;
+            btnUninstall.Click += BtnUninstall_Click;
+            panel.Controls.Add(btnInstall);
+            panel.Controls.Add(btnUninstall);
+        }
+
+        private void AddServiceRow(GroupBox parent, string label, ref int y, int col1, int col2, int col3, int col4, ref Button btnStart, ref Button btnStop, ref Label lblServiceRowStatus, EventHandler startHandler, EventHandler stopHandler, bool isBold)
+        {
+            var lbl = new Label { Text = label, Location = new Point(col1, y + 3), AutoSize = true };
+            if (isBold) lbl.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+            btnStart = new Button { Text = "Start", Location = new Point(col2, y), Size = new Size(75, 25), BackColor = Color.FromArgb(76, 175, 80), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            btnStop = new Button { Text = "Stop", Location = new Point(col3, y), Size = new Size(75, 25), BackColor = Color.FromArgb(244, 67, 54), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Enabled = false };
+            lblServiceRowStatus = new Label { Text = "Stopped", Location = new Point(col4, y + 3), AutoSize = true, ForeColor = Color.Gray };
+            btnStart.Click += startHandler;
+            btnStop.Click += stopHandler;
+            parent.Controls.AddRange(new Control[] { lbl, btnStart, btnStop, lblServiceRowStatus });
+            y += 30;
+        }
+
+        // remaining code unchanged except renamed visible strings below

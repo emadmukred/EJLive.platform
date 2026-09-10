@@ -1,0 +1,74 @@
+<UserControl x:Class="EJLive.Monitoring.ATMCardControl"
+             xmlns="http://schemas.microsoft.com/winfx/2003/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2003/xaml"
+             Height="180" Width="220" Margin="5">
+    <Border CornerRadius="8" BorderThickness="1" Background="#2D2D2D">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="BorderBrush" Value="#444"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Status}" Value="InService">
+                        <Setter Property="BorderBrush" Value="#2ECC71"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="OutOfService">
+                        <Setter Property="BorderBrush" Value="#E74C3C"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Status}" Value="Offline">
+                        <Setter Property="BorderBrush" Value="#7F8C8D"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        
+        <Grid Padding="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                <Ellipse Width="10" Height="10" Margin="0,0,8,0">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="InService">
+                                    <Setter Property="Fill" Value="#2ECC71"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="OutOfService">
+                                    <Setter Property="Fill" Value="#E74C3C"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Offline">
+                                    <Setter Property="Fill" Value="#7F8C8D"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <TextBlock Text="{Binding ATMID}" FontWeight="Bold" FontSize="14" Foreground="White"/>
+                <TextBlock Text="{Binding Type}" Margin="10,0,0,0" Foreground="#BDC3C7" FontSize="12" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Body -->
+            <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                <TextBlock Text="{Binding ATMName}" Foreground="#3498DB" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                <Grid Margin="0,5,0,0">
+                    <TextBlock Text="Cash:" Foreground="#7F8C8D" FontSize="10"/>
+                    <TextBlock Text="{Binding RemainingCash, StringFormat={}{0:C0}}" HorizontalAlignment="Right" Foreground="White" FontSize="10"/>
+                </Grid>
+                <Grid Margin="0,2,0,0">
+                    <TextBlock Text="Last Sync:" Foreground="#7F8C8D" FontSize="10"/>
+                    <TextBlock Text="{Binding LastSyncTime, StringFormat=HH:mm:ss}" HorizontalAlignment="Right" Foreground="White" FontSize="10"/>
+                </Grid>
+                <TextBlock Text="{Binding NetworkType}" Foreground="#9B59B6" FontSize="9" Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <!-- Footer Actions -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="⚙" Background="Transparent" BorderThickness="0" Foreground="#BDC3C7" Margin="0,0,5,0" ToolTip="Settings"/>
+                <Button Content="🔄" Background="Transparent" BorderThickness="0" Foreground="#BDC3C7" ToolTip="Remote Restart"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

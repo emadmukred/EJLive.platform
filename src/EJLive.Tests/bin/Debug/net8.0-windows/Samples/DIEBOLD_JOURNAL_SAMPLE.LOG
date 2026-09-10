@@ -1,0 +1,11 @@
+DIEBOLD MDS EJ LOG
+2026-05-25 08:15:32 [INFO] Transaction start
+2026-05-25 08:15:33 [INFO] Card captured
+2026-05-25 08:15:34 [INFO] PIN verified
+2026-05-25 08:15:35 [INFO] Approved amount: 500
+2026-05-25 08:15:36 [INFO] Cash dispensed
+2026-05-25 08:15:37 [INFO] Receipt printed
+2026-05-25 08:15:38 [INFO] Transaction end
+2026-05-25 08:20:12 [ERROR] Dispense error
+2026-05-25 08:20:13 [ERROR] Card reader jam
+2026-05-25 08:20:14 [WARN]  Low paper

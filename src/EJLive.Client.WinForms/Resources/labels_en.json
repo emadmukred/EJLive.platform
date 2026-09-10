@@ -1,0 +1,10 @@
+{
+  "ServerMainForm.Title": "EJLive Server",
+  "ClientMainForm.Title": "EJLive Client",
+  "JournalViewer.TabTitle": "Journal Viewer",
+  "SyncDashboard.TabTitle": "Sync Dashboard",
+  "Button.Sync": "Sync",
+  "Button.Refresh": "Refresh",
+  "Label.ATMId": "ATM Id",
+  "Label.Status": "Status"
+}

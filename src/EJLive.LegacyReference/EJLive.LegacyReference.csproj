@@ -1,0 +1,111 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>EJLive.LegacyReference</AssemblyName>
+    <RootNamespace>EJLive.LegacyReference</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="LegacyReferenceMarker.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md"
+          Link="root\README.md" />
+    <None Include="..\..\Directory.Build.props"
+          Link="root\Directory.Build.props" />
+    <None Include="..\..\EJLive.Unified.sln"
+          Link="root\EJLive.Unified.sln" />
+    <None Include="..\..\EJLive.Unified.slnx"
+          Link="root\EJLive.Unified.slnx" />
+    <None Include="..\..\src_update.zip"
+          Link="root\src_update.zip" />
+    <None Include="..\..\src_letast.zip"
+          Link="root\src_letast.zip" />
+    <None Include="..\..\tools\**\*.*"
+          Link="tools\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\..\legacy\original\**\*.*"
+          Exclude="..\..\legacy\original\**\bin\**;..\..\legacy\original\**\obj\**"
+          Link="legacy\original\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\..\legacy\docs\**\*.*"
+          Link="legacy\docs\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\..\legacy\*.zip"
+          Link="legacy\%(Filename)%(Extension)" />
+    <None Include="..\..\كتب ومراجع\**\*.*"
+          Link="reference-books\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\..\docs\**\*.*"
+          Link="docs\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\archive\**\*.*"
+          Link="src-reference\archive\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\_reference\**\*.*"
+          Link="src-reference\_reference\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\.continue\**\*.*"
+          Link="src-reference\.continue\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\.qoder-plugin\**\*.*"
+          Link="src-reference\.qoder-plugin\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\.qodo\**\*.*"
+          Link="src-reference\.qodo\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\.sixth\**\*.*"
+          Link="src-reference\.sixth\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\.vscode\**\*.*"
+          Link="src-reference\.vscode\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\tools\**\*.*"
+          Link="src-reference\tools\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\_rels\**\*.*"
+          Link="src-reference\_rels\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Application\**\*.*"
+          Exclude="..\EJLive.Application\**\bin\**;..\EJLive.Application\**\obj\**"
+          Link="src-reference\EJLive.Application\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Business\**\*.*"
+          Exclude="..\EJLive.Business\**\bin\**;..\EJLive.Business\**\obj\**"
+          Link="src-reference\EJLive.Business\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Client.Service\**\*.*"
+          Exclude="..\EJLive.Client.Service\**\bin\**;..\EJLive.Client.Service\**\obj\**"
+          Link="src-reference\EJLive.Client.Service\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Client.WinForms\**\*.*"
+          Exclude="..\EJLive.Client.WinForms\**\bin\**;..\EJLive.Client.WinForms\**\obj\**"
+          Link="src-reference\EJLive.Client.WinForms\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Core\**\*.*"
+          Exclude="..\EJLive.Core\**\bin\**;..\EJLive.Core\**\obj\**"
+          Link="src-reference\EJLive.Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Installer.WinForms\**\*.*"
+          Exclude="..\EJLive.Installer.WinForms\**\bin\**;..\EJLive.Installer.WinForms\**\obj\**"
+          Link="src-reference\EJLive.Installer.WinForms\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Monitor\**\*.*"
+          Exclude="..\EJLive.Monitor\**\bin\**;..\EJLive.Monitor\**\obj\**"
+          Link="src-reference\EJLive.Monitor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Monitoring.WinForms\**\*.*"
+          Exclude="..\EJLive.Monitoring.WinForms\**\bin\**;..\EJLive.Monitoring.WinForms\**\obj\**"
+          Link="src-reference\EJLive.Monitoring.WinForms\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Server\**\*.*"
+          Exclude="..\EJLive.Server\**\bin\**;..\EJLive.Server\**\obj\**"
+          Link="src-reference\EJLive.Server\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Server.WinForms\**\*.*"
+          Exclude="..\EJLive.Server.WinForms\**\bin\**;..\EJLive.Server.WinForms\**\obj\**"
+          Link="src-reference\EJLive.Server.WinForms\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Setup\**\*.*"
+          Exclude="..\EJLive.Setup\**\bin\**;..\EJLive.Setup\**\obj\**"
+          Link="src-reference\EJLive.Setup\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Shared\**\*.*"
+          Exclude="..\EJLive.Shared\**\bin\**;..\EJLive.Shared\**\obj\**"
+          Link="src-reference\EJLive.Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Tests\**\*.*"
+          Exclude="..\EJLive.Tests\**\bin\**;..\EJLive.Tests\**\obj\**"
+          Link="src-reference\EJLive.Tests\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\EJLive.Verification\**\*.*"
+          Exclude="..\EJLive.Verification\**\bin\**;..\EJLive.Verification\**\obj\**"
+          Link="src-reference\EJLive.Verification\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\ocr-document-processor\**\*.*"
+          Exclude="..\ocr-document-processor\**\bin\**;..\ocr-document-processor\**\obj\**"
+          Link="src-reference\ocr-document-processor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\packages\**\*.*"
+          Link="src-reference\packages\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\Skills.agents\**\*.*"
+          Link="src-reference\Skills.agents\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\xl\**\*.*"
+          Link="src-reference\xl\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

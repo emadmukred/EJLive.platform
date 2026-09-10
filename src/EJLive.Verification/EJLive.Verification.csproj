@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>EJLive.Verification</AssemblyName>
+    <RootNamespace>EJLive.Verification</RootNamespace>
+    <UseWindowsForms>true</UseWindowsForms>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EJLive.Application\EJLive.Application.csproj" />
+    <ProjectReference Include="..\EJLive.Business\EJLive.Business.csproj" />
+    <ProjectReference Include="..\EJLive.Client.Service\EJLive.Client.Service.csproj" />
+    <ProjectReference Include="..\EJLive.Client.WinForms\EJLive.Client.WinForms.csproj" />
+    <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
+    <ProjectReference Include="..\EJLive.Installer.WinForms\EJLive.Installer.WinForms.csproj" />
+    <ProjectReference Include="..\EJLive.Monitoring.WinForms\EJLive.Monitoring.WinForms.csproj" />
+    <ProjectReference Include="..\EJLive.Server\EJLive.Server.csproj" />
+    <ProjectReference Include="..\EJLive.Server.WinForms\EJLive.Server.WinForms.csproj" />
+    <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
+  </ItemGroup>
+</Project>

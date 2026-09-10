@@ -1,0 +1,18 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
+[assembly: AssemblyTitle("EJLive.Monitoring")]
+[assembly: AssemblyDescription("لوحة المراقبة الموسعة")]
+[assembly: AssemblyCompany("EJLive Enterprise")]
+[assembly: AssemblyProduct("EJLive Enterprise v4.0.0")]
+[assembly: AssemblyCopyright("Copyright © 2026")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("4.0.0.0")]
+[assembly: AssemblyFileVersion("4.0.0.0")]
+[assembly: AssemblyTitle("EJLive.Monitoring.WinForms")]
+[assembly: AssemblyDescription("EJLive Enterprise Monitoring Dashboard")]
+[assembly: AssemblyCompany("EJLive")]
+[assembly: AssemblyProduct("EJLive Enterprise")]
+[assembly: AssemblyCopyright("Copyright 2024-2026")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("3.4.0.0")]
+[assembly: AssemblyFileVersion("3.4.0.0")]

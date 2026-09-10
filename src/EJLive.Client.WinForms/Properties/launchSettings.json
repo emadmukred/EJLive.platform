@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "EJLive.Client.WinForms": {
+      "commandName": "Project",
+      "sqlDebugging": false,
+      "remoteDebugEnabled": true
+    }
+  }
+}

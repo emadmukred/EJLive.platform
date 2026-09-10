@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "VjbYVnsggoQ=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\user\\Desktop\\EJLIVE\\EJLive.Platform\\src\\EJLive.Shared\\EJLive.Shared.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\user\\.nuget\\packages\\system.security.cryptography.protecteddata\\8.0.0\\system.security.cryptography.protecteddata.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:Project xmlns:ns0="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <ns0:Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <ns0:PropertyGroup>
+    <ns0:Configuration Condition=" '$(Configuration)' == '' ">Debug</ns0:Configuration>
+    <ns0:Platform Condition=" '$(Platform)' == '' ">AnyCPU</ns0:Platform>
+    <ns0:ProjectGuid>{66666666-6666-6666-6666-666666666666}</ns0:ProjectGuid>
+    <ns0:OutputType>WinExe</ns0:OutputType>
+    <ns0:AppDesignerFolder>Properties</ns0:AppDesignerFolder>
+    <ns0:RootNamespace>EJLive.Installer</ns0:RootNamespace>
+    <ns0:AssemblyName>EJLive.Installer</ns0:AssemblyName>
+    <ns0:TargetFrameworkVersion>v4.8</ns0:TargetFrameworkVersion>
+    <ns0:FileAlignment>512</ns0:FileAlignment>
+    <ns0:LangVersion>10.0</ns0:LangVersion>
+    <ns0:AutoGenerateBindingRedirects>true</ns0:AutoGenerateBindingRedirects>
+    <ns0:Deterministic>true</ns0:Deterministic>
+  </ns0:PropertyGroup>
+  <ns0:PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <ns0:PlatformTarget>AnyCPU</ns0:PlatformTarget>
+    <ns0:DebugSymbols>true</ns0:DebugSymbols>
+    <ns0:DebugType>full</ns0:DebugType>
+    <ns0:Optimize>false</ns0:Optimize>
+    <ns0:OutputPath>bin\Debug\</ns0:OutputPath>
+    <ns0:DefineConstants>DEBUG;TRACE</ns0:DefineConstants>
+    <ns0:ErrorReport>prompt</ns0:ErrorReport>
+    <ns0:WarningLevel>4</ns0:WarningLevel>
+  </ns0:PropertyGroup>
+  <ns0:PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <ns0:PlatformTarget>AnyCPU</ns0:PlatformTarget>
+    <ns0:DebugType>pdbonly</ns0:DebugType>
+    <ns0:Optimize>true</ns0:Optimize>
+    <ns0:OutputPath>bin\Release\</ns0:OutputPath>
+    <ns0:DefineConstants>TRACE</ns0:DefineConstants>
+    <ns0:ErrorReport>prompt</ns0:ErrorReport>
+    <ns0:WarningLevel>4</ns0:WarningLevel>
+  </ns0:PropertyGroup>
+  <ns0:ItemGroup>
+    <ns0:Reference Include="System" />
+    <ns0:Reference Include="System.Core" />
+    <ns0:Reference Include="System.Data" />
+    <ns0:Reference Include="System.Drawing" />
+    <ns0:Reference Include="System.Windows.Forms" />
+    <ns0:Reference Include="System.Xml" />
+    <ns0:Reference Include="System.Xml.Linq" />
+    <ns0:Reference Include="Microsoft.CSharp" />
+  </ns0:ItemGroup>
+  <ns0:ItemGroup>
+    <ns0:ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj">
+      <ns0:Project>{22222222-2222-2222-2222-222222222222}</ns0:Project>
+      <ns0:Name>EJLive.Shared</ns0:Name>
+    </ns0:ProjectReference>
+  </ns0:ItemGroup>
+  <ns0:ItemGroup>
+    <ns0:Compile Include="InstallerForm.Designer.cs" /><ns0:Compile Include="InstallerForm.cs" /><ns0:Compile Include="Program.cs" /><ns0:Compile Include="Properties\AssemblyInfo.cs" /></ns0:ItemGroup>
+  <ns0:ItemGroup>
+
+  </ns0:ItemGroup>
+  <ns0:ItemGroup>
+    <ns0:None Include="app.config" />
+    <ns0:None Include="app.manifest" />
+    <ns0:None Include="packages.config" />
+  </ns0:ItemGroup>
+  <ns0:Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</ns0:Project>

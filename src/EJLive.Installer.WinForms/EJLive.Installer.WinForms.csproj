@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EJLive.Application\EJLive.Application.csproj" />
+    <ProjectReference Include="..\EJLive.Client.WinForms\EJLive.Client.WinForms.csproj" />
+    <ProjectReference Include="..\EJLive.Client.Service\EJLive.Client.Service.csproj"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>EJLive.Installer</AssemblyName>
+    <RootNamespace>EJLive.Installer.WinForms</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="InstallerForm.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.manifest" />
+  </ItemGroup>
+  <Target Name="CopyClientServicePayload" AfterTargets="Build">
+    <ItemGroup>
+      <ClientServicePayload Include="..\EJLive.Client.Service\bin\$(Configuration)\$(TargetFramework)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ClientServicePayload)"
+          DestinationFiles="@(ClientServicePayload->'$(TargetDir)payload\ClientService\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <FileWrites Include="@(ClientServicePayload->'$(TargetDir)payload\ClientService\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+  </Target>
+</Project>

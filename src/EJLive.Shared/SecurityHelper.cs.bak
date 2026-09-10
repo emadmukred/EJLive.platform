@@ -1,0 +1,308 @@
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace EJLive.Shared
+{
+    /// <summary>
+    /// مساعد الأمان الكامل — AES-256-CBC + RSA-2048 + PBKDF2 + Deflate
+    /// يطبق: S-01 (In-Transit Encryption), S-04 (At-Rest Encryption)
+    ///        S-06 (RSA Handshake), T-01 (File Locking Fix)
+    /// </summary>
+    public static class SecurityHelper
+    {
+        private const int AES_KEY_SIZE   = 256;
+        private const int AES_BLOCK_SIZE = 128;
+        private const int PBKDF2_ITER    = 100_000;
+        private const int RSA_KEY_SIZE   = 2048;
+
+        // ==========================================
+        // AES-256-CBC
+        // ==========================================
+
+        public static byte[] EncryptAES(byte[] data, byte[] key)
+        {
+            if (data == null || key == null) throw new ArgumentNullException();
+            using var aes = Aes.Create();
+            aes.KeySize   = AES_KEY_SIZE;
+            aes.BlockSize = AES_BLOCK_SIZE;
+            aes.Mode      = CipherMode.CBC;
+            aes.Padding   = PaddingMode.PKCS7;
+            aes.Key       = NormalizeKey(key, 32);
+            aes.GenerateIV();
+
+            using var enc = aes.CreateEncryptor();
+            var ct = enc.TransformFinalBlock(data, 0, data.Length);
+            // IV(16) + CipherText
+            var result = new byte[16 + ct.Length];
+            Buffer.BlockCopy(aes.IV, 0, result, 0,  16);
+            Buffer.BlockCopy(ct,     0, result, 16, ct.Length);
+            return result;
+        }
+
+        public static byte[] DecryptAES(byte[] data, byte[] key)
+        {
+            if (data == null || data.Length < 16 || key == null) throw new ArgumentNullException();
+            var iv = new byte[16];
+            var ct = new byte[data.Length - 16];
+            Buffer.BlockCopy(data, 0,  iv, 0, 16);
+            Buffer.BlockCopy(data, 16, ct, 0, ct.Length);
+
+            using var aes = Aes.Create();
+            aes.KeySize   = AES_KEY_SIZE;
+            aes.BlockSize = AES_BLOCK_SIZE;
+            aes.Mode      = CipherMode.CBC;
+            aes.Padding   = PaddingMode.PKCS7;
+            aes.Key       = NormalizeKey(key, 32);
+            aes.IV        = iv;
+
+            using var dec = aes.CreateDecryptor();
+            return dec.TransformFinalBlock(ct, 0, ct.Length);
+        }
+
+        // ==========================================
+        // RSA-2048 Handshake (S-06)
+        // ==========================================
+
+        /// <summary>يولّد زوج مفاتيح RSA للمصافحة</summary>
+        public static (string publicKeyXml, RSACryptoServiceProvider privateKey) GenerateRSAKeyPair()
+        {
+            var rsa = new RSACryptoServiceProvider(RSA_KEY_SIZE);
+            rsa.PersistKeyInCsp = false;
+            var publicKeyXml = rsa.ToXmlString(false); // المفتاح العام فقط
+            return (publicKeyXml, rsa);
+        }
+
+        /// <summary>يشفّر البيانات بالمفتاح العام RSA (يُستخدم لتشفير AES Session Key)</summary>
+        public static byte[] EncryptWithRSAPublicKey(byte[] data, string publicKeyXml)
+        {
+            using var rsa = new RSACryptoServiceProvider();
+            rsa.PersistKeyInCsp = false;
+            rsa.FromXmlString(publicKeyXml);
+            return rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA256);
+        }
+
+        /// <summary>يفك تشفير البيانات بالمفتاح الخاص RSA (على السيرفر فقط)</summary>
+        public static byte[] DecryptWithRSAPrivateKey(byte[] encryptedData, RSACryptoServiceProvider privateKey)
+        {
+            return privateKey.Decrypt(encryptedData, RSAEncryptionPadding.OaepSHA256);
+        }
+
+        // ==========================================
+        // توليد مفاتيح الجلسة
+        // ==========================================
+
+        /// <summary>يولد AES Session Key عشوائي 256-bit</summary>
+        public static byte[] GenerateSessionKey()
+        {
+            var key = new byte[32]; // 256 bits
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(key);
+            return key;
+        }
+
+        // ==========================================
+        // PBKDF2 Key Derivation
+        // ==========================================
+
+        public static byte[] DeriveKey(string password, byte[] salt = null, int keySize = 32)
+        {
+            salt ??= Encoding.UTF8.GetBytes("EJLive.Enterprise.2026.Salt");
+            using var kdf = new Rfc2898DeriveBytes(password, salt, PBKDF2_ITER, HashAlgorithmName.SHA256);
+            return kdf.GetBytes(keySize);
+        }
+
+        public static string HashPassword(string password, string saltHex = null)
+        {
+            byte[] salt;
+            if (saltHex != null)
+                salt = HexToBytes(saltHex);
+            else
+            {
+                salt = new byte[16];
+                using var rng = RandomNumberGenerator.Create();
+                rng.GetBytes(salt);
+            }
+            var hash  = DeriveKey(password, salt);
+            return $"{BytesToHex(salt)}:{BytesToHex(hash)}";
+        }
+
+        public static bool VerifyPassword(string password, string hashString)
+        {
+            if (string.IsNullOrEmpty(hashString) || !hashString.Contains(":")) return false;
+            var parts   = hashString.Split(':');
+            var salt    = HexToBytes(parts[0]);
+            var stored  = parts[1];
+            var computed = DeriveKey(password, salt);
+            return BytesToHex(computed) == stored;
+        }
+
+        // ==========================================
+        // Hashing
+        // ==========================================
+
+        public static string MD5Hash(byte[] data)
+        {
+            if (data == null || data.Length == 0) return "d41d8cd98f00b204e9800998ecf8427e";
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            return BytesToHex(md5.ComputeHash(data));
+        }
+
+        public static string MD5Hash(string text)
+            => MD5Hash(Encoding.UTF8.GetBytes(text ?? ""));
+
+        public static string ComputeMD5(byte[] data) => MD5Hash(data);
+
+        public static string CalculateChecksum(byte[] data) => SHA256Hash(data);
+
+        public static string SHA256Hash(byte[] data)
+        {
+            if (data == null || data.Length == 0) return "";
+            using var sha = SHA256.Create();
+            return BytesToHex(sha.ComputeHash(data));
+        }
+
+        public static string SHA256Hash(string text)
+            => SHA256Hash(Encoding.UTF8.GetBytes(text ?? ""));
+
+        public static string HMACSHA256(byte[] data, byte[] key)
+        {
+            using var hmac = new HMACSHA256(key);
+            return BytesToHex(hmac.ComputeHash(data));
+        }
+
+        // ==========================================
+        // Deflate Compression
+        // ==========================================
+
+        public static byte[] Compress(byte[] data)
+        {
+            if (data == null || data.Length == 0) return data;
+            using var ms     = new MemoryStream();
+            using var gzip   = new DeflateStream(ms, CompressionMode.Compress, true);
+            gzip.Write(data, 0, data.Length);
+            gzip.Close();
+            return ms.ToArray();
+        }
+
+        public static byte[] Decompress(byte[] data)
+        {
+            if (data == null || data.Length == 0) return data;
+            using var input  = new MemoryStream(data);
+            using var gzip   = new DeflateStream(input, CompressionMode.Decompress);
+            using var ms     = new MemoryStream();
+            gzip.CopyTo(ms);
+            return ms.ToArray();
+        }
+
+        public static byte[] Encrypt(byte[] data)
+            => EncryptAES(data, DeriveKey("EJLive.Default.Transfer.Key"));
+
+        public static byte[] CompressAndEncrypt(byte[] data)
+            => Encrypt(Compress(data));
+
+        public static byte[] DecryptAndDecompress(byte[] data)
+            => Decompress(DecryptAES(data, DeriveKey("EJLive.Default.Transfer.Key")));
+
+        // ==========================================
+        // قراءة الملفات بأمان (T-01: File Locking Fix)
+        // ==========================================
+
+        /// <summary>يقرأ جزءًا من الملف بدءًا من Offset محدد (لـ NCR Offset Tracking)</summary>
+        public static byte[] ReadFileChunk(string filePath, long offset = 0, int maxBytes = 524288)
+        {
+            if (!File.Exists(filePath)) return null;
+            try
+            {
+                using var fs = new FileStream(filePath,
+                    FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete); // T-01: لا يعيق الصراف
+
+                if (offset > fs.Length) return null;
+                fs.Seek(offset, SeekOrigin.Begin);
+                var toRead = (int)Math.Min(maxBytes, fs.Length - offset);
+                if (toRead <= 0) return null;
+                var buf = new byte[toRead];
+                int read = fs.Read(buf, 0, toRead);
+                if (read < toRead)
+                {
+                    var trimmed = new byte[read];
+                    Buffer.BlockCopy(buf, 0, trimmed, 0, read);
+                    return trimmed;
+                }
+                return buf;
+            }
+            catch (IOException)   { return null; }
+            catch (Exception)     { return null; }
+        }
+
+        /// <summary>يقرأ الملف كاملًا بأمان مع FileShare.ReadWrite</summary>
+        public static byte[] ReadFileSafe(string filePath)
+        {
+            if (!File.Exists(filePath)) return null;
+            try
+            {
+                using var fs = new FileStream(filePath,
+                    FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+                var buf = new byte[fs.Length];
+                fs.Read(buf, 0, buf.Length);
+                return buf;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>يُرجع طول الملف بأمان دون إغلاقه</summary>
+        public static long GetFileLengthSafe(string filePath)
+        {
+            if (!File.Exists(filePath)) return 0;
+            try
+            {
+                using var fs = new FileStream(filePath,
+                    FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+                return fs.Length;
+            }
+            catch { return 0; }
+        }
+
+        // ==========================================
+        // مساعدات Hex
+        // ==========================================
+
+        public static string BytesToHex(byte[] bytes)
+        {
+            var sb = new StringBuilder(bytes.Length * 2);
+            foreach (var b in bytes) sb.AppendFormat("{0:x2}", b);
+            return sb.ToString();
+        }
+
+        public static byte[] HexToBytes(string hex)
+        {
+            if (string.IsNullOrEmpty(hex) || hex.Length % 2 != 0) return Array.Empty<byte>();
+            var result = new byte[hex.Length / 2];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            return result;
+        }
+
+        private static byte[] NormalizeKey(byte[] key, int targetLen)
+        {
+            if (key.Length == targetLen) return key;
+            var result = new byte[targetLen];
+            Buffer.BlockCopy(key, 0, result, 0, Math.Min(key.Length, targetLen));
+            return result;
+        }
+
+        /// <summary>يولد nonce عشوائي (لاستخدام في المستقبل مع AES-GCM)</summary>
+        public static byte[] GenerateNonce(int sizeBytes = 12)
+        {
+            var nonce = new byte[sizeBytes];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(nonce);
+            return nonce;
+        }
+    }
+}
