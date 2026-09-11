@@ -1,0 +1,9 @@
+name: smoke
+on:
+  push:
+    branches: ["arena/**"]
+jobs:
+  x:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
