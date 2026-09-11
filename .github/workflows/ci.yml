@@ -46,7 +46,7 @@ jobs:
       - name: verification probes
         run: "dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build"
       - name: package payloads
-        run: "cmd /c tools\package\package.bat Release"
+        run: 'cmd /c tools\package\package.bat Release' 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
