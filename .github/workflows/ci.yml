@@ -1,0 +1,101 @@
+name: EJLive platform CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One live run per ref: the serialised Windows build takes minutes, so a superseded push is cancelled.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  structure:
+    name: ledgers + repository rules (no compiler)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: inventory ledgers are current (INV-1)
+        run: python3 tools/inventory/ejlive_inventory.py --check
+      - name: service activation ledger is current
+        run: python3 tools/inventory/service_activation.py --check
+      - name: static gate (38 rules)
+        run: python3 tools/gates/ejlive_static_gate.py --verbose
+      - name: artefact integrity (compile map, summary, probe and test ledgers agree)
+        run: python3 tools/gates/check_artefacts.py
+
+  build:
+    name: build + tests + probes + packaging (Windows)
+    needs: structure
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # restore and build keep a log file next to the console output, because the runner log is not
+      # always readable from outside GitHub while check annotations always are (see the last step).
+      - name: restore
+        run: |
+          dotnet restore EJLive.Platform.sln --configfile NuGet.Config 2>&1 | Tee-Object -FilePath ci-restore.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # Serialised on purpose (docs/CI.md): projects share sources, so parallel node reuse races on
+      # generated files and fails with MSB3577 / CS0102 / CS0111.
+      - name: build
+        run: |
+          dotnet build EJLive.Platform.sln -c Release --no-restore -m:1 /p:UseSharedCompilation=false /p:BuildInParallel=false 2>&1 | Tee-Object -FilePath ci-build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: tests
+        run: dotnet test src/EJLive.Tests/EJLive.Tests.csproj -c Release --no-build
+
+      - name: verification probes
+        run: dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build
+
+      - name: package payloads
+        run: cmd /c 'tools\package\package.bat' Release
+
+      # Mirror up to forty toolchain errors into annotations (the log blob itself is not always reachable). Without this a red run is unreadable from
+      # a sandbox that can reach api.github.com but not the log blob store.
+      - name: publish toolchain errors as annotations
+        if: failure()
+        run: |
+          $hits = @()
+          foreach ($f in 'ci-restore.log', 'ci-build.log') {
+            if (Test-Path $f) {
+              $hits += (Get-Content $f | Select-String -Pattern 'error |NU[0-9]{4}|MSB[0-9]{4}' | Select-Object -First 40).Line
+            }
+          }
+          $i = 0
+          foreach ($h in $hits) {
+            $i++
+            $msg = ($h -replace '%', '%25') -replace "`r", '' 
+            Write-Host "::error title=CI step error $i of $($hits.Count)::$($msg.Trim())"
+          }
+          if ($i -eq 0) { Write-Host "::warning title=No error lines captured::see the runner log for the failing step" }
+
+      - name: upload payloads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ejlive-payloads
+          path: tools/package/dist/*.zip
+          if-no-files-found: warn

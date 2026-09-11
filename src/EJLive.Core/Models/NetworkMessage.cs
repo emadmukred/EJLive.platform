@@ -4,16 +4,6 @@ using EJLive.Core.Enums;
 namespace EJLive.Core.Models
 {
     [Serializable]
-    public class AlertPayload
-    {
-        public AlertSeverity Severity { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-        public string Source { get; set; } = string.Empty;
-        public DateTime AlertTime { get; set; } = DateTime.UtcNow;
-        public string? StackTrace { get; set; }
-    }
-    [Serializable]
     public class FileTransferPayload
     {
         public string FileName { get; set; } = string.Empty;
@@ -64,19 +54,6 @@ namespace EJLive.Core.Models
         public int ChunkSize { get; set; } = 65536;
         public bool IsResume { get; set; } = false;
         public long ResumeOffset { get; set; } = 0;
-    }
-    [Serializable]
-    public class HeartbeatPayload
-    {
-        public ATMStatus Status { get; set; }
-        public double LatencyMs { get; set; }
-        public string CurrentVersion { get; set; } = string.Empty;
-        public DateTime SystemTime { get; set; }
-        public Dictionary<string, int> ComponentStatus { get; set; } = new();
-        public decimal RemainingCash { get; set; }
-        public int RetainedCardsCount { get; set; }
-        public string LastJournalFile { get; set; } = string.Empty;
-        public long LastJournalSize { get; set; }
     }
     [Serializable]
     public class ImageSyncPayload
@@ -349,10 +326,6 @@ namespace EJLive.Core.Models
         public string Timezone { get; set; } = "UTC";
     }
 
-    // Class: AlertPayload (from 2 sources)
-        public partial class AlertPayload
-        {
-        }
     // Class: FileTransferPayload (from 3 sources)
         public partial class FileTransferPayload
         {
@@ -374,10 +347,6 @@ namespace EJLive.Core.Models
                 public long ResumeOffset { get; set; } = 0;
     
     
-        }
-    // Class: HeartbeatPayload (from 2 sources)
-        public partial class HeartbeatPayload
-        {
         }
     // Class: ImageSyncPayload (from 3 sources)
         public partial class ImageSyncPayload
@@ -481,10 +450,4 @@ namespace EJLive.Core.Models
     
         }
 
-    public partial class AlertPayload
-        {
-        }
-    public partial class HeartbeatPayload
-        {
-        }
 }

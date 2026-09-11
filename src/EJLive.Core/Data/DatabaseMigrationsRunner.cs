@@ -19,11 +19,17 @@ public sealed class DatabaseMigrationsRunner
     }
 
     /// <summary>
-    /// Initializes from a database file path.
+    /// Opens the runner against a SQLite file. Kept as a factory rather than a
+    /// `(string, bool)` overload: the boolean existed only to break the signature
+    /// tie and carried no meaning at the call site.
     /// </summary>
-    public DatabaseMigrationsRunner(string dbPath, bool dummy)
-        : this($"Data Source={dbPath};Version=3;")
+    public static DatabaseMigrationsRunner FromDatabaseFile(string dbPath)
     {
+        if (string.IsNullOrWhiteSpace(dbPath))
+        {
+            throw new ArgumentException("A database file path is required.", nameof(dbPath));
+        }
+        return new DatabaseMigrationsRunner($"Data Source={dbPath};Version=3;");
     }
 
     /// <summary>

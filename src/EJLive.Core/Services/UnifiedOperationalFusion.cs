@@ -137,75 +137,6 @@ public sealed class UnifiedJournalEvidenceAnalyzer
     }
 }
 
-public sealed class UnifiedRemoteCommandPolicy
-{
-    public RemoteCommandPolicyDecision Evaluate(RemoteCommand command, string role, bool operatorConfirmed, bool maintenanceWindow)
-    {
-        var type = command.CommandType ?? string.Empty;
-        var risk = GetRisk(type);
-        var requiresConfirmation = command.RequiresConfirmation ||
-                                   risk is RemoteCommandRisk.High or RemoteCommandRisk.Critical ||
-                                   AppConstants.CommandsRequireConfirmation.Contains(type, StringComparer.OrdinalIgnoreCase);
-        var requiresMaintenance = risk == RemoteCommandRisk.Critical;
-        var hasRole = CanRoleExecute(role, risk);
-
-        if (risk == RemoteCommandRisk.Unknown)
-            return new RemoteCommandPolicyDecision(false, risk, "Command type is not allowlisted.", true, true);
-
-        if (!hasRole)
-            return new RemoteCommandPolicyDecision(false, risk, "Role is not allowed to execute this command.", requiresConfirmation, requiresMaintenance);
-
-        if (requiresConfirmation && !operatorConfirmed)
-            return new RemoteCommandPolicyDecision(false, risk, "Operator confirmation is required.", true, requiresMaintenance);
-
-        if (requiresMaintenance && !maintenanceWindow)
-            return new RemoteCommandPolicyDecision(false, risk, "Maintenance window is required for destructive commands.", requiresConfirmation, true);
-
-        return new RemoteCommandPolicyDecision(true, risk, "Command accepted by unified policy.", requiresConfirmation, requiresMaintenance);
-    }
-
-    private static RemoteCommandRisk GetRisk(string commandType)
-    {
-        if (string.Equals(commandType, AppConstants.CMD_SHUTDOWN, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_CHANGE_PASSWORD, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_RESTART, StringComparison.OrdinalIgnoreCase))
-            return RemoteCommandRisk.Critical;
-
-        if (string.Equals(commandType, AppConstants.CMD_REMOTE_SESSION_START, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_REMOTE_CONFIG, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_WINDOWS_REMOTE_START, StringComparison.OrdinalIgnoreCase))
-            return RemoteCommandRisk.High;
-
-        if (string.Equals(commandType, AppConstants.CMD_SCREENSHOT, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_FORCE_SYNC, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_SEND_FILE, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_GET_FILE, StringComparison.OrdinalIgnoreCase))
-            return RemoteCommandRisk.Medium;
-
-        if (string.Equals(commandType, AppConstants.CMD_PING, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_GET_STATS, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_SYNC_TIME, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(commandType, AppConstants.CMD_WINDOWS_REMOTE_CHECK, StringComparison.OrdinalIgnoreCase))
-            return RemoteCommandRisk.Low;
-
-        return RemoteCommandRisk.Unknown;
-    }
-
-    private static bool CanRoleExecute(string role, RemoteCommandRisk risk)
-    {
-        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (string.Equals(role, "Support", StringComparison.OrdinalIgnoreCase))
-            return risk is RemoteCommandRisk.Low or RemoteCommandRisk.Medium;
-
-        if (string.Equals(role, "Auditor", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(role, "Observer", StringComparison.OrdinalIgnoreCase))
-            return risk == RemoteCommandRisk.Low;
-
-        return false;
-    }
-}
 
 public sealed class UnifiedFleetReadinessService
 {
@@ -340,7 +271,6 @@ public sealed record OperationalFinding(
     string Source,
     string Message);
 
-public sealed record JournalEvidenceReport(
     string AtmId,
     string Vendor,
     int LineCount,
@@ -359,7 +289,6 @@ public sealed record FleetReadinessAssessment(
     OperationalFindingSeverity OverallSeverity,
     IReadOnlyList<OperationalFinding> Findings);
 
-public sealed record RemoteCommandPolicyDecision(
     bool Allowed,
     RemoteCommandRisk Risk,
     string Reason,

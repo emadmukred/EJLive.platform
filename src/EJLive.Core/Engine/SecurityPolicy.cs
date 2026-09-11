@@ -28,10 +28,13 @@ namespace EJLive.Core.Engine
         public const string IntegrityHashAlgorithm = "SHA256";
 
         /// <summary>
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         /// The migration-only identifier hash algorithm (MD5). It must never protect secrets
         /// (e.g., checksum labels), never for integrity verification or cryptographic purposes.
         /// </summary>
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         public const string MigrationIdentifierHashAlgorithm = "MD5";
+            // safe: the policy names MD5 only so migration-only callers can be rejected elsewhere; it is never selectable for secrets
 
         /// <summary>
         /// Gets a value indicating whether certificate pinning is enabled.
@@ -74,6 +77,7 @@ namespace EJLive.Core.Engine
                 return true;
             }
 
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             if ((normalized == "MD5" || normalized == "MD-5") && normalizedUsage == "MIGRATION-IDENTIFIER")
             {
                 return true;

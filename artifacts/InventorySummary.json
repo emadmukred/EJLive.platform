@@ -1,0 +1,70 @@
+{
+ "build_order": [
+  "EJLive.Client.WinForms",
+  "EJLive.LegacyReference",
+  "EJLive.Shared",
+  "EJLive.Core",
+  "EJLive.Business",
+  "EJLive.Application",
+  "EJLive.Client.Service",
+  "EJLive.Installer.WinForms",
+  "EJLive.Server",
+  "EJLive.Monitoring.WinForms",
+  "EJLive.Server.WinForms",
+  "EJLive.Tests",
+  "EJLive.UnifiedLauncher",
+  "EJLive.Verification"
+ ],
+ "compiled_files": 301,
+ "compiled_lines": 56708,
+ "cross_assembly_keys": [
+  "EJLive.Core.Engine.OperationalStateStore",
+  "EJLive.Core.Engine.ReportExportEngine",
+  "EJLive.Core.Engine.ServerEngine",
+  "EJLive.Core.Services.AlertManager",
+  "EJLive.Core.Services.DatabaseManager",
+  "EJLive.Core.Services.JournalSyncService",
+  "EJLive.Core.Services.JournalSyncTrackingService",
+  "EJLive.Core.Services.OperationalStateStore",
+  "EJLive.Core.Services.RoleBasedAccess",
+  "EJLive.Core.Services.TransactionAnalysisEngine",
+  "EJLive.Core.Services.UnifiedGatewayActivationBatchResult",
+  "EJLive.Core.Services.UnifiedGatewayReferenceCoverage",
+  "EJLive.Core.Services.UnifiedServiceGateway",
+  "EJLive.Core.Services.VendorRootCapabilityService",
+  "EJLive.Core.Services.XfsLogAnalysisService",
+  "EJLive.Shared.AppLogger",
+  "EJLive.Shared.SecurityHelper"
+ ],
+ "cross_assembly_partial_splits": 17,
+ "cycles": [],
+ "duplicate_type_keys": 0,
+ "duplicate_type_list": [],
+ "identity_issues": {
+  "EJLive.Client.WinForms": [
+   "AssemblyName=EJLive.Client"
+  ],
+  "EJLive.Installer.WinForms": [
+   "AssemblyName=EJLive.Installer"
+  ],
+  "EJLive.Monitoring.WinForms": [
+   "AssemblyName=EJLive.Monitoring"
+  ]
+ },
+ "ledger_rows": {
+  "CONFIGURATION": 20,
+  "DATABASE": 92,
+  "PERMISSIONS": 4,
+  "PROTOCOL": 158,
+  "TESTS": 44,
+  "UI-SURFACES": 93,
+  "VENDORS": 77
+ },
+ "legal_partial_splits": 1,
+ "projects": 14,
+ "reference_files": 239,
+ "reference_lines": 724523,
+ "stale_include_paths": {},
+ "stale_includes": 0,
+ "unmapped_source_files": 0
+}

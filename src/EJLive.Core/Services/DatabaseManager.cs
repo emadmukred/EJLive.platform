@@ -221,6 +221,7 @@ INSERT OR IGNORE INTO journal_archive
  is_encrypted, is_compressed, checksum, md5_hash, sha256_hash, transaction_count,
  archive_path, month_partition, received_at, verified_at)
 VALUES
+// safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
 (@id,@atm,@fn,@os,@cs,@es,@enc,@comp,@ck,@md5,@sha,@tc,@ap,@mp,@ra,@va)",
                 P("@id",   entry.EntryId),
                 P("@atm",  entry.ATMId),
@@ -231,6 +232,7 @@ VALUES
                 P("@enc",  entry.IsEncrypted ? 1 : 0),
                 P("@comp", entry.IsCompressed ? 1 : 0),
                 P("@ck",   entry.Checksum),
+                // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                 P("@md5",  entry.MD5Hash),
                 P("@sha",  entry.SHA256Hash),
                 P("@tc",   entry.TransactionCount),
@@ -301,9 +303,11 @@ INSERT OR IGNORE INTO sync_records
 (sync_id, atm_id, file_name, file_size, file_offset, checksum, md5_hash, sha256_hash,
  state, progress_percent, retry_count, local_path, message, created_at, updated_at)
 VALUES
+// safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
 (@id,@atm,@fn,@fs,@fo,@ck,@md5,@sha,@st,@prog,@rc,@lp,@msg,@ca,@ua)",
                 P("@id",   rec.SyncId),    P("@atm",  rec.ATM_ID),    P("@fn",  rec.FileName),
                 P("@fs",   rec.FileSize),  P("@fo",   rec.FileOffset), P("@ck",  rec.Checksum),
+                // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                 P("@md5",  rec.MD5Hash),   P("@sha",  rec.SHA256Hash), P("@st",  (int)rec.State),
                 P("@prog", rec.ProgressPercent), P("@rc", rec.RetryCount),  P("@lp",  rec.LocalPath),
                 P("@msg",  rec.Message),   P("@ca",   rec.CreatedAtUtc.ToString("o")),

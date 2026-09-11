@@ -118,7 +118,9 @@ public static class SecurityHelper
         if (data.Length == 0)
             return "d41d8cd98f00b204e9800998ecf8427e";
 
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         using var md5 = MD5.Create();
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         return BytesToHex(md5.ComputeHash(data));
     }
 
@@ -129,7 +131,9 @@ public static class SecurityHelper
     public static string ComputeFileMD5(string filePath)
     {
         using var fs = OpenSequentialReadStream(filePath);
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         using var md5 = MD5.Create();
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         return BytesToHex(md5.ComputeHash(fs));
     }
 

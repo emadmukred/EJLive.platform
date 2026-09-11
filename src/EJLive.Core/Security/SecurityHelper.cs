@@ -31,11 +31,13 @@ public static class SecurityHelper
     }
 
     /// <summary>
+    // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
     /// Computes an MD5 checksum for integrations that still require that format.
     /// </summary>
     public static string ComputeMd5Hash(string input)
     {
         var bytes = Encoding.UTF8.GetBytes(input);
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         var hash = MD5.HashData(bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }

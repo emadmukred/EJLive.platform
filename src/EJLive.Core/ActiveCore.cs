@@ -238,12 +238,6 @@ namespace EJLive.Core.Models
         public bool RemoteOperationsEnabled { get; set; }
     }
 
-    public sealed class PerformanceMetric
-    {
-        public string Key { get; set; } = string.Empty;
-        public double CurrentValue { get; set; }
-        public DateTime CapturedAtUtc { get; set; } = DateTime.UtcNow;
-    }
 
     public sealed class DatabaseManager
     {

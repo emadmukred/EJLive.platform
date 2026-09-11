@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EJLive.Application/EJLive.Application.csproj" />
+    <Project Path="src/EJLive.Business/EJLive.Business.csproj" />
+    <Project Path="src/EJLive.Client.Service/EJLive.Client.Service.csproj" />
+    <Project Path="src/EJLive.Client.WinForms/EJLive.Client.WinForms.csproj" />
+    <Project Path="src/EJLive.Core/EJLive.Core.csproj" />
+    <Project Path="src/EJLive.Installer.WinForms/EJLive.Installer.WinForms.csproj" />
+    <Project Path="src/EJLive.LegacyReference/EJLive.LegacyReference.csproj" />
+    <Project Path="src/EJLive.Monitoring.WinForms/EJLive.Monitoring.WinForms.csproj" />
+    <Project Path="src/EJLive.Server/EJLive.Server.csproj" />
+    <Project Path="src/EJLive.Server.WinForms/EJLive.Server.WinForms.csproj" />
+    <Project Path="src/EJLive.Shared/EJLive.Shared.csproj" />
+    <Project Path="src/EJLive.Tests/EJLive.Tests.csproj" />
+    <Project Path="src/EJLive.UnifiedLauncher/EJLive.UnifiedLauncher.csproj" />
+    <Project Path="src/EJLive.Verification/EJLive.Verification.csproj" />
+  </Folder>
+</Solution>

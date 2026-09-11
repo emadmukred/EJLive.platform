@@ -1,0 +1,37 @@
+<Project>
+  <!--
+    Solution-wide invariants. A project may only widen these by an explicit,
+    reviewed entry in tools/gates/ejlive_static_gate.py (POLICY allowlist).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+    <NeutralLanguage>en</NeutralLanguage>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Default</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <NoWarn>$(NoWarn);CA1416;NU5128</NoWarn>
+    <SolutionRoot>$(MSBuildThisFileDirectory)</SolutionRoot>
+  </PropertyGroup>
+
+  <!-- Windows Forms only: no WPF, no WinUI, no web host, no Blazor. -->
+  <PropertyGroup>
+    <UseWPF>false</UseWPF>
+    <UseWindowsForms Condition=" '$(IsWinFormsSurface)' == 'true' ">true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="SolutionRoot" />
+  </ItemGroup>
+</Project>

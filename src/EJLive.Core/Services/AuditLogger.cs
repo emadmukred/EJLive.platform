@@ -184,18 +184,3 @@ namespace EJLive.Core.Services
         public string IpAddress { get; set; } = string.Empty;
     }
 
-    public enum AuditAction
-    {
-        Login,
-        Logout,
-        RemoteCommand,
-        PasswordChange,
-        Restart,
-        RemoteSessionAccess,
-        ArchiveAccess,
-        ConfigChange,
-        ImageSync,
-        FileTransfer,
-        ReportExport
-    }
-}

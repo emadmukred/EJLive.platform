@@ -263,24 +263,6 @@ namespace EJLive.Core.Models
     
     
         }
-    // Enum: TransactionStatus (from 1 sources)
-        public partial enum TransactionStatus
-        {
-            // --- Constants & Fields ---
-                Success = 1,
-    
-                Failed = 2,
-    
-                Reversed = 3,
-    
-                Timeout = 4,
-    
-                Declined = 5,
-    
-                Unknown = 99
-    
-    
-        }
     // Class: TransactionSummary (from 3 sources)
         public partial class TransactionSummary
         {
@@ -341,36 +323,6 @@ namespace EJLive.Core.Models
     
     
             CashTrapping = 7
-    
-    
-        }
-    public enum TransactionStatus
-    {
-        Success = 1,
-        Failed = 2,
-        Reversed = 3,
-        Timeout = 4,
-        Declined = 5,
-        Unknown = 99
-    }
-    public partial enum TransactionStatus
-        {
-            Success = 1,
-    
-    
-            Failed = 2,
-    
-    
-            Reversed = 3,
-    
-    
-            Timeout = 4,
-    
-    
-            Declined = 5,
-    
-    
-            Unknown = 99
     
     
         }

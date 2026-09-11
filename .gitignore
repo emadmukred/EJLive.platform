@@ -1,0 +1,60 @@
+# Build output and intermediate files -- never authored, always regenerated.
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/**/bin/
+artifacts/**/obj/
+TestResults/
+*.binlog
+*.log
+*.user
+*.suo
+*.userprefs
+*.vsidx
+*.up2date
+*.cache
+*.lscache
+*.tmp
+*.db
+
+# IDE / tooling state
+.vs/
+.idea/
+*.DotSettings.user
+RoslynTree/
+
+# Restored packages (NuGet output, not source)
+packages/
+src/packages/
+.nuget/
+project.lock.json
+
+# NuGet / signing / packaging by-products
+*.nupkg
+*.snupkg
+*.pdb
+*.dll
+*.exe
+*.so
+*.dylib
+*.a
+*.o
+*.dll.config
+
+# Vendored journal fixtures are source, not logs.
+!src/**/Samples/**
+!**/*.LOG
+
+# Generated reports are committed on purpose (docs/inventory, artifacts/*.csv|md|json)
+# but local scratch is not:
+*.bak
+*.orig
+*.rej
+*~
+Thumbs.db
+Desktop.ini
+
+__pycache__/
+*.pyc
+.inventory-tmp/

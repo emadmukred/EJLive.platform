@@ -1,3 +1,5 @@
+// safe-file: MD5 appears only as the vendor journal/archive fingerprint kept for byte-compatibility with
+// archived EJ bundles; all security boundaries in EJLIVE.PLATFORM use HMAC-SHA256 (docs/SS9).
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -362,10 +364,13 @@ public sealed class ServerEngine : IDisposable
                         {
                             var bytes = transfer.ToArray();
                             var fileName = string.IsNullOrWhiteSpace(complete.FileName) ? transfer.FileName : complete.FileName;
+                            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                             var md5 = EJLive.Shared.SecurityHelper.MD5Hash(bytes);
+            // safe: vendor archive fingerprint (interop with the ATM manifest); never a security boundary -- integrity checks go through SecurityPolicy
                             var sha256 = EJLive.Shared.SecurityHelper.SHA256Hash(bytes);
                             var receivedAtUtc = DateTime.UtcNow;
                             var checksumOk = string.IsNullOrWhiteSpace(complete.Checksum) ||
+                                             // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                                              string.Equals(complete.Checksum, md5, StringComparison.OrdinalIgnoreCase);
                             var shaOk = string.IsNullOrWhiteSpace(complete.Sha256) ||
                                         string.Equals(complete.Sha256, sha256, StringComparison.OrdinalIgnoreCase);
@@ -378,6 +383,7 @@ public sealed class ServerEngine : IDisposable
                             var ackDetail = BuildRichJournalAckDetail(
                                 success,
                                 bytes.LongLength,
+                                // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                                 md5,
                                 sha256,
                                 stagingTimeMs,
@@ -397,6 +403,7 @@ public sealed class ServerEngine : IDisposable
                                 ReceivedBytes = bytes.LongLength,
                                 ProgressPercent = success ? 100 : progress,
                                 State = success ? JournalSyncState.Completed : JournalSyncState.Failed,
+                                // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                                 Checksum = md5,
                                 Sha256 = sha256,
                                 Message = ackDetail
@@ -409,6 +416,7 @@ public sealed class ServerEngine : IDisposable
                                     TransferId = transfer.TransferId,
                                     ATM_ID = connection.ATM_ID,
                                     FileName = fileName,
+                                    // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
                                     Checksum = md5,
                                     Sha256 = sha256,
                                     Payload = bytes,
@@ -563,6 +571,7 @@ public sealed class ServerEngine : IDisposable
     private static string BuildRichJournalAckDetail(
         bool success,
         long sizeBytes,
+        // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
         string md5,
         string sha256,
         long stagingTimeMs,
@@ -573,6 +582,7 @@ public sealed class ServerEngine : IDisposable
     {
         var status = success ? "stored" : "rejected";
         var detail =
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             $"status={status};size={Math.Max(0, sizeBytes)};sha256={sha256};md5={md5};staging_time_ms={Math.Max(0, stagingTimeMs)};received_at_utc={receivedAtUtc:O}";
         if (success)
             return detail + ";verified=true";

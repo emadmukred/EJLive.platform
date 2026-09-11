@@ -259,6 +259,7 @@ namespace EJLive.Tests.Track16
         [TestMethod]
         public void IsHashAlgorithmPermitted_Md5_LegacyIdentifier_ReturnsTrue()
         {
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             Assert.IsTrue(SecurityPolicy.IsHashAlgorithmPermitted("MD5", "migration-identifier"));
             Assert.IsTrue(SecurityPolicy.IsHashAlgorithmPermitted("MD-5", "migration-identifier"));
         }
@@ -266,13 +267,16 @@ namespace EJLive.Tests.Track16
         [TestMethod]
         public void IsHashAlgorithmPermitted_Md5_NonLegacy_ReturnsFalse()
         {
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             Assert.IsFalse(SecurityPolicy.IsHashAlgorithmPermitted("MD5", "integrity"));
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             Assert.IsFalse(SecurityPolicy.IsHashAlgorithmPermitted("MD5", ""));
         }
 
         [TestMethod]
         public void IsHashAlgorithmPermitted_Unknown_ReturnsFalse()
         {
+            // safe: negative assertion -- proves SHA-1 is refused for integrity use
             Assert.IsFalse(SecurityPolicy.IsHashAlgorithmPermitted("SHA1", "integrity"));
             Assert.IsFalse(SecurityPolicy.IsHashAlgorithmPermitted("", "integrity"));
         }
