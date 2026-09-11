@@ -120,7 +120,7 @@ re-point every `Protocol`/`CommunicationProtocol` framing helper at it, and keep
 grammar `<MsgType>:<byteLength>\n` asserted by `RunNetworkProbeAsync` plus a new probe that
 fails if a second `MsgType` enum appears anywhere in a compile map.
 
-## D-08 merge dumps still in the compiled set (`EJLive.Core`) &mdash; 8 files
+## D-08 merge dumps still in the compiled set (`EJLive.Core`) &mdash; 9 files
 
 The tool that assembled this repository concatenated every variant of a type into one file, annotated each
 fragment with its provenance (`// Variant from: d:\EJLIVE\EJlive_Reference_Projects\...`,
@@ -138,6 +138,7 @@ archived dump.
 * `src/EJLive.Core/Models/FleetSummary.cs`
 * `src/EJLive.Core/Models/NetworkMessage.cs`
 * `src/EJLive.Core/Models/SyncProgress.cs`
+* `src/EJLive.Core/Services/UnifiedOperationalFusion.cs`
 * `src/EJLive.Core/Models/Transaction.cs`
 
 Repaired and removed from this list already: `src/EJLive.Core/Enums/ATMTypes.cs`, where each of the ten
@@ -146,6 +147,15 @@ tools/gates/check_merge_dumps.py --repair-enum-file <path>` collapsed them into 
 carrying the *union* of the members with the values the copies agreed on, which is mechanical and loses
 nothing (verified: 10 enums, every member and every explicit value preserved, `SyncStatus` 9 = superset of
 its 8-member variant).
+
+`src/EJLive.Core/Services/UnifiedOperationalFusion.cs` is the one entry without provenance comments, added
+after CI localised it: two `public sealed record ...(` header lines were deleted by the merge tool, leaving
+orphan parameter lists (`CS1001`/`CS1002` at 274,275). Restoring them is *not* mechanical: `JournalEvidenceReport`
+is then declared twice in the assembly, because `Models/CoreAdapters.cs` carries an empty `class
+JournalEvidenceReport { }` placeholder that cannot satisfy the 10-argument `new JournalEvidenceReport(...)`
+call in this same file, and `RemoteCommandPolicyDecision` is declared three times in `CoreAdapters.cs` with a
+member set (`Approved`) that the orphan list (`Allowed`) contradicts. It needs the call sites read and a
+compiler, so it joins this list instead of being guessed at.
 
 Exit condition (Wave 1, per file, compiler-verified). The remaining files are class dumps whose copies differ
 in member *sets*, not just layout, so no lossless text transform exists: read the real call sites, write one

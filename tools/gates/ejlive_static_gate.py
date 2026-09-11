@@ -319,7 +319,8 @@ def check_syntax(projects, tracked) -> None:
     # SYN-5 - merge-dump signature. The patterns live in tools/gates/check_merge_dumps.py so that the rule
     # and the repair tool cannot disagree about what a dump is. A brace-balanced file with provenance
     # comments and copied members passes every other structural check and then fails the compiler for the
-    # whole project, so the signature itself is the gate.
+    # whole project, so the signature itself is the gate. (`partial` before `enum` is not a C# construct but
+    # Roslyn parses it, so it counts as provenance, not as an error.)
     strays = []
     for f in sorted(active_sources(projects)):
         if f in debt:
