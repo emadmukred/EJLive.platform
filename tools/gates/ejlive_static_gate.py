@@ -349,6 +349,20 @@ def check_policy(projects, tracked) -> None:
     else:
         rule("POL-3", True, "no empty catch blocks in the compiled set")
 
+    # POL-4 - the L0 primitives assembly stays pure. EJLive.Shared is referenced by every project, so a
+    # single `using` of an upper-layer namespace in it either fails with CS0234 (no such reference, the
+    # case that reached CI as a red build) or forces a Shared -> Core edge that closes a cycle. Checked by
+    # namespace ownership rather than by a denylist, so a new upper-layer project cannot slip through.
+    declared = set()
+    for f in sorted(projects["EJLive.Shared"].compiled):
+        declared.update(re.findall(r"^namespace\s+([A-Za-z0-9_.]+)", read(f), re.MULTILINE))
+    strays = []
+    for f in sorted(projects["EJLive.Shared"].compiled):
+        for ns in re.findall(r"^using\s+(EJLive\.[A-Za-z0-9_.]+)\s*;", read(f), re.MULTILINE):
+            if ns not in declared:
+                strays.append(f"{f}: using {ns};")
+    rule("POL-4", not strays, f"{len(strays)} upper-layer namespace references inside EJLive.Shared: {strays[:3]}")
+
 
 def check_artefacts(tracked) -> None:
     needed = ["artifacts/ActiveCompileMap.csv", "artifacts/ProjectDependencyGraph.md",

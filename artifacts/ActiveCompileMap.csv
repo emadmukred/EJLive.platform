@@ -195,6 +195,12 @@ EJLive.Core,src/EJLive.Core/Services/VendorPathRegistry.cs,306,db23bcf5a29b35ff3
 EJLive.Core,src/EJLive.Core/Services/VendorRootCapabilityService.cs,271,f0c2651d8369718e0112ae132ac69b20,compiled
 EJLive.Core,src/EJLive.Core/Services/VendorRootProfileCatalogService.cs,7,4ce4afdb13d9fca693b34973a31b59f3,compiled
 EJLive.Core,src/EJLive.Core/Services/XfsLogAnalysisService.cs,205,ce80a6e3027e9e539295184e0c2dfa7b,compiled
+EJLive.Core,src/EJLive.Core/Shared/SharedPrimitives.cs,70,b71499adf45575b18eef5c0960c77e33,compiled
+EJLive.Core,src/EJLive.Core/Shared/ThemeManager.cs,190,c4dbdbf5729754ab5c06cc8a5169c2aa,compiled
+EJLive.Core,src/EJLive.Core/Shared/UI/Controls/ThemedButton.cs,103,82196675d9de4ed3cab962ffb415fa31,compiled
+EJLive.Core,src/EJLive.Core/Shared/UI/LanguageManager.cs,388,8e6650b20d89112c0e7ed28b42013cce,compiled
+EJLive.Core,src/EJLive.Core/Shared/UI/LanguageToggleButton.cs,81,42568e8b290ffeefb6a40cd9392fc3b2,compiled
+EJLive.Core,src/EJLive.Core/Shared/UnifiedSystemConfiguration.cs,426,f4addaaed270c3946a5e1f5c46881c1a,compiled
 EJLive.Core,src/EJLive.Core/Transport/TransportContracts.cs,632,e0ad2f589df16d090e3e44817f977b7b,compiled
 EJLive.Core,src/EJLive.Core/Xfs/Adapters/CardReaderTraceAdapter.cs,76,3e26049a8346d42a72766f3d07f4380b,compiled
 EJLive.Core,src/EJLive.Core/Xfs/Adapters/CashwayXfsAdapter.cs,102,74b4a63598e67587a74dd5224726d323,compiled
@@ -243,7 +249,6 @@ EJLive.Shared,src/EJLive.Shared/AppConstants.cs,158,c01a4cfb256728946493da25858f
 EJLive.Shared,src/EJLive.Shared/AppLogger.cs,168,b59c36cbe7026b19c66c7f426b687abe,compiled
 EJLive.Shared,src/EJLive.Shared/Configuration/AppConfig.cs,80,8fc3d5fd8a520a148c5b9b8faf7f453f,compiled
 EJLive.Shared,src/EJLive.Shared/DateTimeHelper.cs,33,4e84202594954a466e9fa8881fc66339,compiled
-EJLive.Shared,src/EJLive.Shared/LightUiTheme.cs,241,d96c261b5b5f479574e1c00bb9ad4af0,compiled
 EJLive.Shared,src/EJLive.Shared/Logger.cs,33,2920ebdaf3d6b997161dbe62b993138f,compiled
 EJLive.Shared,src/EJLive.Shared/MonitoringState.cs,93,2c3b213fc946cd7e5ffb74242ea706e8,compiled
 EJLive.Shared,src/EJLive.Shared/MonitoringStateStore.cs,241,422ffe84926a469a3ed6c3048156c77a,compiled
@@ -251,12 +256,6 @@ EJLive.Shared,src/EJLive.Shared/Properties/AssemblyInfo.cs,14,274e3bb396ed562b30
 EJLive.Shared,src/EJLive.Shared/RetryPolicy.cs,2,6f5d90819c55aac07b690c4c0719b86a,compiled
 EJLive.Shared,src/EJLive.Shared/SecurityConfig.cs,120,5eb473c0f5450d49f1d5ae8696ea6038,compiled
 EJLive.Shared,src/EJLive.Shared/SecurityHelper.cs,453,36154ddfe2f7dfb13d3c7981cf3036fd,compiled
-EJLive.Shared,src/EJLive.Shared/SharedPrimitives.cs,70,b71499adf45575b18eef5c0960c77e33,compiled
-EJLive.Shared,src/EJLive.Shared/ThemeManager.cs,190,c4dbdbf5729754ab5c06cc8a5169c2aa,compiled
-EJLive.Shared,src/EJLive.Shared/UI/Controls/ThemedButton.cs,103,82196675d9de4ed3cab962ffb415fa31,compiled
-EJLive.Shared,src/EJLive.Shared/UI/LanguageManager.cs,388,8e6650b20d89112c0e7ed28b42013cce,compiled
-EJLive.Shared,src/EJLive.Shared/UI/LanguageToggleButton.cs,81,42568e8b290ffeefb6a40cd9392fc3b2,compiled
-EJLive.Shared,src/EJLive.Shared/UnifiedSystemConfiguration.cs,426,f4addaaed270c3946a5e1f5c46881c1a,compiled
 EJLive.Tests,src/EJLive.Tests/AdditionalTests.cs,72,af47acdb919d2420d5dd2504efa02f00,compiled
 EJLive.Tests,src/EJLive.Tests/AtmJournalEndToEndTests.cs,149,5b32c791c55a6517fe61765091942a58,compiled
 EJLive.Tests,src/EJLive.Tests/ClientV5StartupTests.cs,41,9371f5488095fe121f14782f0803de9d,compiled
@@ -535,6 +534,7 @@ EJLive.Verification,src/EJLive.Verification/Properties/AssemblyInfo.cs,17,359d95
 (reference),src/_reference/uncompiled/EJLive.Server/Services/ServerServiceController.cs,36,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server/SyncDashboardForm.Designer.cs,110,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server/SyncDashboardForm.cs,98,,linked-reference
+(reference),src/_reference/uncompiled/EJLive.Shared/LightUiTheme.cs,241,,linked-reference
 (reference),src/_reference/vs-copies/EJLive.Core/Services/JournalSyncTrackerService (91).cs,2095,,linked-reference
 (reference),src/_reference/vs-copies/EJLive.Core/Services/MergedTraceCorrelationService (51).cs,978,,linked-reference
 (reference),src/_reference/vs-copies/EJLive.Core/Services/NcrConfigCapabilityParser (72).cs,2058,,linked-reference

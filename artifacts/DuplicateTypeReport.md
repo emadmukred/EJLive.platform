@@ -6,7 +6,7 @@ none -- rule ARCH-4 holds
 
 ## Cross-assembly partial splits (CS0433 for dual consumers -- tracked debt)
 
-18 keys. Each must appear in `docs/DEBT-LEDGER.md` or the gate fails (ARCH-5).
+17 keys. Each must appear in `docs/DEBT-LEDGER.md` or the gate fails (ARCH-5).
 
 - `EJLive.Core.Engine.OperationalStateStore`: `EJLive.Core`, `EJLive.Server.WinForms`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Server.WinForms/Models/ServerModels.cs`
 - `EJLive.Core.Engine.ReportExportEngine`: `EJLive.Core`, `EJLive.Server.WinForms`, `src/EJLive.Core/Engine/OperationalEngines.cs`, `src/EJLive.Server.WinForms/Models/ServerModels.cs`
@@ -24,5 +24,4 @@ none -- rule ARCH-4 holds
 - `EJLive.Core.Services.VendorRootCapabilityService`: `EJLive.Business`, `EJLive.Core`, `src/EJLive.Business/BusinessAdapters.cs`, `src/EJLive.Core/Services/VendorRootCapabilityService.cs`
 - `EJLive.Core.Services.XfsLogAnalysisService`: `EJLive.Business`, `EJLive.Core`, `src/EJLive.Business/BusinessAdapters.cs`, `src/EJLive.Core/Services/XfsLogAnalysisService.cs`
 - `EJLive.Shared.AppLogger`: `EJLive.Core`, `EJLive.Shared`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Shared/AppLogger.cs`
-- `EJLive.Shared.LightUiTheme`: `EJLive.Core`, `EJLive.Shared`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Shared/LightUiTheme.cs`
 - `EJLive.Shared.SecurityHelper`: `EJLive.Core`, `EJLive.Shared`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Shared/SecurityHelper.cs`

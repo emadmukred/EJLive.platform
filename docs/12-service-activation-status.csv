@@ -52,11 +52,11 @@ JournalSyncTrackerService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Servi
 JournalSyncTrackingService,EJLive.Core.Services,EJLive.Business,src/EJLive.Business/BusinessAdapters.cs,5,0,orphan,
 JournalTransferIntelligenceService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/JournalTransferIntelligenceService.cs,2,0,orphan,
 LabelMappingService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/LabelMappingService.cs,0,0,reference-only,AppBootstrapper.cs
-LanguageManager,EJLive.Shared.UI,EJLive.Shared,src/EJLive.Shared/UI/LanguageManager.cs,1,0,orphan,
+LanguageManager,EJLive.Shared.UI,EJLive.Core,src/EJLive.Core/Shared/UI/LanguageManager.cs,1,0,orphan,
 LocalConfigurationStore,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/ClientServiceMissingComponents.cs,0,0,orphan,
 LogRedactionEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/LogRedactionEngine.cs,4,0,orphan,
 MergedTraceCorrelationService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/MergedTraceCorrelationService.cs,1,0,orphan,
-MonitoringStateStore,EJLive.Shared.Monitoring,EJLive.Shared,src/EJLive.Shared/MonitoringStateStore.cs,1,0,reference-only,MainDashboardForm.cs
+MonitoringStateStore,EJLive.Shared,EJLive.Core,src/EJLive.Core/Shared/SharedPrimitives.cs,1,0,reference-only,MainDashboardForm.cs
 NcrMergedTraceCorrelationService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/MergedTraceCorrelationService.cs,1,0,orphan,
 NetworkEngine,EJLive.Client.Service.Compatibility,EJLive.Client.Service,src/EJLive.Client.Service/Compatibility/ServiceStubs.cs,14,3,host,Program.cs
 OperationalReportCatalogService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/OperationalReportCatalogService.cs,4,2,host,Program.cs
@@ -80,7 +80,7 @@ ServiceRegistry,EJLive.Client.WinForms.Services,EJLive.Client.WinForms,src/EJLiv
 SystemBackupService,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/SystemBackupService.cs,1,1,registry,AgentHeadlessController.cs
 TerminalAgentManagementService,EJLive.Core.Server,EJLive.Core,src/EJLive.Core/Server/ServerCoreServices.cs,0,0,orphan,
 TestAuditStore,EJLive.Tests.Track13,EJLive.Tests,src/EJLive.Tests/Track13/RemoteAssistanceTests.cs,0,1,registry,RemoteAssistanceTests.cs
-ThemeManager,EJLive.Shared,EJLive.Shared,src/EJLive.Shared/ThemeManager.cs,0,0,orphan,
+ThemeManager,EJLive.Shared,EJLive.Core,src/EJLive.Core/Shared/ThemeManager.cs,0,0,orphan,
 TimeSyncService,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/TimeSyncService.cs,2,0,orphan,
 TransactionAnalysisEngine,EJLive.Core.Services,EJLive.Business,src/EJLive.Business/BusinessAdapters.cs,4,0,reference-only,ServerMainForm.cs
 TransactionInquiryEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/TransactionInquiryEngine.cs,0,0,orphan,

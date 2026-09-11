@@ -1,5 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <!-- Moved in from EJLive.Shared (E-17): Shared is the L0 primitives assembly and must not
+         depend upward, so the files that use EJLive.Core types or WinForms live here instead.
+         Their namespaces are unchanged, so every consumer keeps resolving them.
+         LightUiTheme did not move: Models/CoreAdapters.cs already declares EJLive.Shared.LightUiTheme
+         for this assembly, and a second copy in EJLive.Core is CS0101 - the Shared original is
+         archived under src/_reference/uncompiled/EJLive.Shared/ instead. -->
+    <Compile Include="Shared\SharedPrimitives.cs" />
+    <Compile Include="Shared\UnifiedSystemConfiguration.cs" />
+    <Compile Include="Shared\ThemeManager.cs" />
+    <Compile Include="Shared\UI\LanguageManager.cs" />
+    <Compile Include="Shared\UI\LanguageToggleButton.cs" />
+    <Compile Include="Shared\UI\Controls\ThemedButton.cs" />
     <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>

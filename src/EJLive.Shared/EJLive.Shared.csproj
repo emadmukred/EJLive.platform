@@ -9,6 +9,9 @@
       <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Seven files left this project: each referenced EJLive.Core or System.Windows.Forms,
+         which an L0 primitives assembly cannot compile (CS0234). They are now
+         src/EJLive.Core/Shared/** and documented in docs/ANALYSIS-FINDINGS.md (E-17). -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
@@ -21,7 +24,6 @@
     <Compile Include="AppLogger.cs" />
     <Compile Include="Configuration\AppConfig.cs" />
     <Compile Include="DateTimeHelper.cs" />
-    <Compile Include="LightUiTheme.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MonitoringState.cs" />
     <Compile Include="MonitoringStateStore.cs" />
@@ -29,11 +31,5 @@
     <Compile Include="RetryPolicy.cs" />
     <Compile Include="SecurityConfig.cs" />
     <Compile Include="SecurityHelper.cs" />
-    <Compile Include="SharedPrimitives.cs" />
-    <Compile Include="ThemeManager.cs" />
-    <Compile Include="UI\Controls\ThemedButton.cs" />
-    <Compile Include="UI\LanguageManager.cs" />
-    <Compile Include="UI\LanguageToggleButton.cs" />
-    <Compile Include="UnifiedSystemConfiguration.cs" />
   </ItemGroup>
 </Project>

@@ -15,8 +15,8 @@
   "EJLive.UnifiedLauncher",
   "EJLive.Verification"
  ],
- "compiled_files": 303,
- "compiled_lines": 57551,
+ "compiled_files": 302,
+ "compiled_lines": 57310,
  "cross_assembly_keys": [
   "EJLive.Core.Engine.OperationalStateStore",
   "EJLive.Core.Engine.ReportExportEngine",
@@ -34,10 +34,9 @@
   "EJLive.Core.Services.VendorRootCapabilityService",
   "EJLive.Core.Services.XfsLogAnalysisService",
   "EJLive.Shared.AppLogger",
-  "EJLive.Shared.LightUiTheme",
   "EJLive.Shared.SecurityHelper"
  ],
- "cross_assembly_partial_splits": 18,
+ "cross_assembly_partial_splits": 17,
  "cycles": [],
  "duplicate_type_keys": 0,
  "duplicate_type_list": [],
@@ -63,8 +62,8 @@
  },
  "legal_partial_splits": 1,
  "projects": 14,
- "reference_files": 237,
- "reference_lines": 724249,
+ "reference_files": 238,
+ "reference_lines": 724490,
  "stale_include_paths": {},
  "stale_includes": 0,
  "unmapped_source_files": 0

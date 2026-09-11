@@ -5,6 +5,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | project | form / control | file | controls | wired handlers | command methods |
 |---|---|---|---|---|---|
 | EJLive.Client.WinForms | ClientMainForm | src/EJLive.Client.WinForms/ClientMainForm.cs | 13 | 2 | 0 |
+| EJLive.Core | GradientPanel | src/EJLive.Core/Shared/ThemeManager.cs | 0 | 0 | 0 |
 | EJLive.Installer.WinForms | InstallerForm | src/EJLive.Installer.WinForms/InstallerForm.cs | 1 | 2 | 0 |
 | EJLive.Monitoring.WinForms | MainDashboardForm | src/EJLive.Monitoring.WinForms/MainDashboardForm.cs | 16 | 1 | 0 |
 | EJLive.Server.WinForms | ATMDetailDrawerForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 8 | 1 | 0 |
@@ -12,7 +13,6 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Server.WinForms | JournalViewerForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 7 | 1 | 0 |
 | EJLive.Server.WinForms | ServerMainForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 23 | 0 | 0 |
 | EJLive.Server.WinForms | SyncDashboardForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 7 | 1 | 0 |
-| EJLive.Shared | GradientPanel | src/EJLive.Shared/ThemeManager.cs | 0 | 0 | 0 |
 | reference | ATMCardControl | src/_reference/uncompiled/EJLive.Client.WinForms/Controls/ATMCardControl.cs | 8 | 0 | 1 |
 | reference | ATMCardControl | src/_reference/uncompiled/EJLive.Client.WinForms/Legacy/AllLegacyAdapters.cs | 4 | 0 | 0 |
 | reference | ATMCardControl | src/_reference/uncompiled/EJLive.Client.WinForms/Legacy/AllLegacyAdapters.cs | 4 | 0 | 3 |
