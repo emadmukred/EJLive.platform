@@ -29,7 +29,7 @@ Cycles detected: none (acyclic OK)
 | EJLive.Business | net8.0-windows | - | - | 15 | 1495 | ok |
 | EJLive.Client.Service | net8.0-windows | Exe | - | 21 | 4161 | ok |
 | EJLive.Client.WinForms | net8.0-windows | WinExe | true | 7 | 1040 | AssemblyName=EJLive.Client |
-| EJLive.Core | net8.0-windows | - | true | 175 | 31395 | ok |
+| EJLive.Core | net8.0-windows | - | true | 175 | 30826 | ok |
 | EJLive.Installer.WinForms | net8.0-windows | WinExe | true | 6 | 1200 | AssemblyName=EJLive.Installer |
 | EJLive.LegacyReference | net8.0 | - | - | 2 | 22 | ok |
 | EJLive.Monitoring.WinForms | net8.0-windows | WinExe | true | 4 | 891 | AssemblyName=EJLive.Monitoring |

@@ -73,7 +73,7 @@ jobs:
       - name: package payloads
         run: cmd /c 'tools\package\package.bat' Release
 
-      # Mirror the first toolchain errors into annotations. Without this a red run is unreadable from
+      # Mirror up to forty toolchain errors into annotations (the log blob itself is not always reachable). Without this a red run is unreadable from
       # a sandbox that can reach api.github.com but not the log blob store.
       - name: publish toolchain errors as annotations
         if: failure()
@@ -81,7 +81,7 @@ jobs:
           $hits = @()
           foreach ($f in 'ci-restore.log', 'ci-build.log') {
             if (Test-Path $f) {
-              $hits += (Get-Content $f | Select-String -Pattern 'error |NU[0-9]{4}|MSB[0-9]{4}' | Select-Object -First 12).Line
+              $hits += (Get-Content $f | Select-String -Pattern 'error |NU[0-9]{4}|MSB[0-9]{4}' | Select-Object -First 40).Line
             }
           }
           $i = 0

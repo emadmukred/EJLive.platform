@@ -9,7 +9,7 @@ repository-rule authority, the build job is the compiler authority.
 |---|---|---|
 | ledgers | `python3 tools/inventory/ejlive_inventory.py --check` | any drift between committed ledgers and the compile maps (repo rule INV-1: regenerate per push) |
 | activation ledger | `python3 tools/inventory/service_activation.py --check` | `docs/12-service-activation-status.csv` stale |
-| static gate | `python3 tools/gates/ejlive_static_gate.py` | any of 40 rules fail (`GIT`, `NAME`, `FILE`, `TYPE`, `ARCH`, `SEC`, `SYN`, `POL`, `DEP`, `ART`, `LED`) |
+| static gate | `python3 tools/gates/ejlive_static_gate.py` | any of 41 rules fail (`GIT`, `NAME`, `FILE`, `TYPE`, `ARCH`, `SEC`, `SYN`, `POL`, `DEP`, `ART`, `LED`) |
 | cross-check | `python3 tools/gates/ejlive_static_gate.py --verbose` in the log | advisory output only |
 
 The gate runs on Linux because every rule it checks is structural, not

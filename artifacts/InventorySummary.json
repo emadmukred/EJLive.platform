@@ -16,7 +16,7 @@
   "EJLive.Verification"
  ],
  "compiled_files": 301,
- "compiled_lines": 57277,
+ "compiled_lines": 56708,
  "cross_assembly_keys": [
   "EJLive.Core.Engine.OperationalStateStore",
   "EJLive.Core.Engine.ReportExportEngine",

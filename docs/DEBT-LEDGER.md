@@ -120,3 +120,37 @@ re-point every `Protocol`/`CommunicationProtocol` framing helper at it, and keep
 grammar `<MsgType>:<byteLength>\n` asserted by `RunNetworkProbeAsync` plus a new probe that
 fails if a second `MsgType` enum appears anywhere in a compile map.
 
+## D-08 merge dumps still in the compiled set (`EJLive.Core`) &mdash; 8 files
+
+The tool that assembled this repository concatenated every variant of a type into one file, annotated each
+fragment with its provenance (`// Variant from: d:\EJLIVE\EJlive_Reference_Projects\...`,
+`// Class: X (from 3 sources)`), and left the copies side by side. The result is brace-balanced &mdash;
+`SYN-1` passes it &mdash; and is not C#: members are declared up to four times, fragments of a copied object
+initialiser sit in class bodies (`CS1519`), and enums carry the `partial` modifier, which does not exist for
+enums (`CS1001`/`CS1002`/`CS1003` at parse time). `SYN-5` fails the gate on any compiled file carrying the
+signature unless it is listed here, so the pile is fixed-size and cannot be re-enlarged by promoting an
+archived dump.
+
+* `src/EJLive.Core/Models/ATMConfig.cs`
+* `src/EJLive.Core/Models/ATMDevice.cs`
+* `src/EJLive.Core/Models/AuditLog.cs`
+* `src/EJLive.Core/Models/CoreAdapters.cs`
+* `src/EJLive.Core/Models/FleetSummary.cs`
+* `src/EJLive.Core/Models/NetworkMessage.cs`
+* `src/EJLive.Core/Models/SyncProgress.cs`
+* `src/EJLive.Core/Models/Transaction.cs`
+
+Repaired and removed from this list already: `src/EJLive.Core/Enums/ATMTypes.cs`, where each of the ten
+enums existed in three or four copies with identical member sets. `python3
+tools/gates/check_merge_dumps.py --repair-enum-file <path>` collapsed them into one declaration per enum
+carrying the *union* of the members with the values the copies agreed on, which is mechanical and loses
+nothing (verified: 10 enums, every member and every explicit value preserved, `SyncStatus` 9 = superset of
+its 8-member variant).
+
+Exit condition (Wave 1, per file, compiler-verified). The remaining files are class dumps whose copies differ
+in member *sets*, not just layout, so no lossless text transform exists: read the real call sites, write one
+declaration per type, then delete the row above and require `--report` to come back empty. Two attempts to
+shortcut this were rejected during this pass, and the reason is recorded here so it is not retried: stripping
+every bare `Name = value,` line deletes the members of any enum that spells its values one per line, and
+"keep the richest copy" is wrong when the copies disagree, because the merge tool had no semantics and
+neither copy is authoritative.

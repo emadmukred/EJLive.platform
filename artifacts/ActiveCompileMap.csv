@@ -109,7 +109,7 @@ EJLive.Core,src/EJLive.Core/Engine/TimeSyncService.cs,170,58b708e6c56b5eb1556c4e
 EJLive.Core,src/EJLive.Core/Engine/TransactionInquiryEngine.cs,219,e8d60f18d38bc3b5cf6e879b2a0215f8,compiled
 EJLive.Core,src/EJLive.Core/Engine/WincorEjTransactionParser.cs,221,924ddf2ac9d3443ebd944be58d5423b8,compiled
 EJLive.Core,src/EJLive.Core/Engine/WindowsServiceRegistration.cs,190,34a37ea9df384986e363df32c54ac669,compiled
-EJLive.Core,src/EJLive.Core/Enums/ATMTypes.cs,687,50a32e244f93700e421eaa4fe76c4053,compiled
+EJLive.Core,src/EJLive.Core/Enums/ATMTypes.cs,118,8f1692983defc056ff45c594cdbefc66,compiled
 EJLive.Core,src/EJLive.Core/Journal/JournalContracts.cs,194,7903bc384ddd36187b8303fb38241945,compiled
 EJLive.Core,src/EJLive.Core/Models/ATMConfig.cs,730,0a856b947cdc3282fa3832cc551ee8df,compiled
 EJLive.Core,src/EJLive.Core/Models/ATMDevice.cs,875,1b794d7ad4e189a17285355061a6e4a2,compiled

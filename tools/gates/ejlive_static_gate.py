@@ -19,9 +19,11 @@ from collections import defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, "tools", "inventory"))
+sys.path.insert(0, os.path.join(ROOT, "tools", "gates"))
 import importlib  # noqa: E402
 
 inv = importlib.import_module("ejlive_inventory")
+dumps = importlib.import_module("check_merge_dumps")  # shares the dump signature with the repair tool
 
 VERBOSE = "--verbose" in sys.argv
 RESULTS: list[tuple[str, str, str]] = []
@@ -314,6 +316,20 @@ def check_syntax(projects, tracked) -> None:
                 ctag = child.tag.split("}")[-1]
                 if ctag in item_elements and ptag != "ItemGroup":
                     misplaced.append(f"{f}: <{ctag}> under <{ptag}>")
+    # SYN-5 - merge-dump signature. The patterns live in tools/gates/check_merge_dumps.py so that the rule
+    # and the repair tool cannot disagree about what a dump is. A brace-balanced file with provenance
+    # comments and copied members passes every other structural check and then fails the compiler for the
+    # whole project, so the signature itself is the gate.
+    strays = []
+    for f in sorted(active_sources(projects)):
+        if f in debt:
+            continue
+        text = read(f)
+        if dumps.MARKER.search(text) or dumps.ILLEGAL.search(text):
+            strays.append(f)
+    rule("SYN-5", not strays,
+         f"{len(strays)} compiled files carry a merge-dump signature and are not listed in "
+         f"docs/DEBT-LEDGER.md: {strays[:3]} - repair (see check_merge_dumps.py) or record the debt")
     rule("SYN-4", not malformed and not misplaced,
          f"{len(malformed)} unparsable csproj and {len(misplaced)} items outside an ItemGroup: "
          f"{(malformed + misplaced)[:3]} - wrap items in an <ItemGroup> or MSB4067 kills restore")
