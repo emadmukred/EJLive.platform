@@ -76,3 +76,18 @@ powershell tools/build/build.ps1 -WithTests -WithGate
 
 `run-gate.ps1` degrades to ledgers+gate only when `dotnet` is absent, and reports
 that it skipped the compiler steps rather than pretending success.
+
+Two further CI invariants that are not optional:
+
+* **No inline heredocs in `run:` blocks.** A `python3 - <<'PY'` written as a YAML *plain* scalar is folded
+  onto one line by the parser, so the runner executes something other than what the file shows. Every
+  multi-line check lives in `tools/` (`check_artefacts.py` is the artefact-integrity one) and is invoked by
+  path. Same rule as the ledgers: code CI depends on must be runnable locally.
+* **Restore/build errors are mirrored as annotations.** The job log lives on a blob host that is not always
+  reachable (a sandbox with only `api.github.com` egress cannot read it), so the failing step's first twelve
+  `error`/`NUxxxx`/`MSBxxxx` lines are emitted as `::error` annotations, which travel with the check run and
+  are readable through the REST API.
+
+`System.Data.SQLite.Core` is pinned to `1.0.118.0` (four-part). NuGet resolves exact versions against the
+published list, and `1.0.118` is not on it — restore fails with NU1102 before a single project compiles,
+which is the difference between "the build is red" and "the build never started".
