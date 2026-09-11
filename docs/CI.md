@@ -20,8 +20,8 @@ committed so a reviewer can read the same ledgers CI read.
 
 ```
 actions/setup-dotnet@v4  dotnet-version: 8.0.x
-dotnet restore EJLive.Platform.slnx --configfile NuGet.Config
-dotnet build EJLive.Platform.slnx -c Release -m:1 /p:BuildInParallel=false
+dotnet restore EJLive.Platform.sln --configfile NuGet.Config
+dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false
 dotnet test  src/EJLive.Tests/EJLive.Tests.csproj -c Release --no-build
 dotnet run   --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build
 powershell   tools/package/package.bat Release      # artefacts: 3 payload zips

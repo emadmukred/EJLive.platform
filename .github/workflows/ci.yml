@@ -38,15 +38,15 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - name: restore
-        run: dotnet restore EJLive.Platform.slnx --configfile NuGet.Config
-      - name: build (serialised: parallel node reuse races shared generated sources)
-        run: dotnet build EJLive.Platform.slnx -c Release -m:1 /p:BuildInParallel=false --nologo
+        run: "dotnet restore EJLive.Platform.sln --configfile NuGet.Config"
+      - name: "build (serialised: parallel node reuse races shared generated sources)"
+        run: dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false --nologo
       - name: tests
-        run: dotnet test src/EJLive.Tests/EJLive.Tests.csproj -c Release --no-build --nologo
+        run: "dotnet test src/EJLive.Tests/EJLive.Tests.csproj -c Release --no-build --nologo"
       - name: verification probes
-        run: dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build
+        run: "dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build"
       - name: package payloads
-        run: cmd /c tools\package\package.bat Release
+        run: "cmd /c tools\package\package.bat Release"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

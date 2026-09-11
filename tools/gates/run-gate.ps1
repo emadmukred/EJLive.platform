@@ -33,7 +33,7 @@ if (-not $SkipDotNet) {
     $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
     if (-not $dotnet) { Write-Host "dotnet not found: build/test skipped (-SkipDotNet implied)" -ForegroundColor Yellow }
     else {
-        Invoke-Gate 'build' { & $dotnet build EJLive.Platform.slnx -c $Configuration -m:1 /p:BuildInParallel=false }
+        Invoke-Gate 'build' { & $dotnet build EJLive.Platform.sln -c $Configuration -m:1 /p:BuildInParallel=false }
         Invoke-Gate 'tests' { & $dotnet test src/EJLive.Tests/EJLive.Tests.csproj -c $Configuration --no-build }
         Invoke-Gate 'verification probes' {
             & $dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c $Configuration --no-build

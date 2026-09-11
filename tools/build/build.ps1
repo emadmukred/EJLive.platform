@@ -7,7 +7,9 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug','Release')][string]$Configuration = 'Release',
-    [string]$Solution = 'EJLive.Platform.slnx',
+    # .sln is the entry point because global.json pins the .NET 8 SDK; the
+    # equivalent .slnx solution needs SDK 9.0.2xx+ or VS 17.13+ to be parsed.
+    [string]$Solution = 'EJLive.Platform.sln',
     [switch]$NoRestore,
     [switch]$WithGate,
     [switch]$WithTests

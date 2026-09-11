@@ -27,7 +27,7 @@
 | topology | distributed client–server, Windows-only, no web tier |
 | runtime | .NET 8 (`net8.0-windows`), SDK `8.0.404`, `rollForward: latestFeature` |
 | UI | **Windows Forms only** — client, server, NOC, installer. No WPF, no WinUI, no Blazor, no web host, no external UI framework |
-| assemblies | 14 projects (SS2), single solution `EJLive.Platform.slnx` / `.sln` |
+| assemblies | 14 projects (SS2); `EJLive.Platform.sln` is the build entry point (`global.json` pins the .NET 8 SDK), `EJLive.Platform.slnx` mirrors it for VS 17.13+ / SDK 9.0.2xx+ |
 | data | SQLite file database, code-owned schema, forward-only migrations |
 | language of artefacts | identifiers, comments, ledgers, commit messages: English. Operator-visible strings: `LanguageManager` resources (en + ar) — prose in code never mixes scripts |
 
@@ -523,7 +523,7 @@ referenced contract (`ServiceLocator` → `Type.GetType("..., EJLive.Client")` m
 
 ## SS16 · Installation, packaging, operations
 
-Build: `dotnet build EJLive.Platform.slnx -c Release -m:1 /p:BuildInParallel=false` (serialised — parallel node
+Build: `dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false` (serialised — parallel node
 reuse races the shared generated files, see `docs/CI.md`).
 Package: `tools/package/package.bat Release` → three zips (client / server / NOC) staged from `bin/Release/
 net8.0-windows`, journal fixtures copied for self-test, `install.cmd` / `start.cmd` generated.
@@ -555,7 +555,7 @@ listed there with the exact input needed — G-1 (specification corpus not prese
 
 ## SS18 · Definition of done
 
-1. `dotnet build EJLive.Platform.slnx -c Release -m:1 /p:BuildInParallel=false` — 0 errors, 0 new warnings.
+1. `dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false` — 0 errors, 0 new warnings.
 2. `dotnet test src/EJLive.Tests/EJLive.Tests.csproj` — 371+ cases, 0 failures, 0 skipped without a reason file.
 3. `dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build` — 23/23 PASS.
 4. `python3 tools/inventory/ejlive_inventory.py` then `--check` → `ledgers fresh`; activation ledger fresh.

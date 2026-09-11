@@ -17,7 +17,8 @@ Distributed ATM electronic-journal (EJ) capture, archive, correlation and remote
 ## Layout
 
 ```
-EJLive.Platform.slnx / .sln   14 projects, L0 Shared -> L5 launcher/tests/verification
+EJLive.Platform.sln         14 projects, L0 Shared -> L5 launcher/tests/verification (build entry point)
+EJLive.Platform.slnx        same graph, new solution format (VS 17.13+ / SDK 9.0.2xx+)
 Directory.Build.props         invariants: net8.0-windows, nullable, no unsafe, no WPF,
                               EnableDefaultCompileItems=false (every compile map is explicit)
 src/EJLive.{Shared,Core,Business,Application,...}
@@ -41,7 +42,7 @@ cmd /c tools\package\package.bat Release          # -> tools/package/dist/*.zip
 ```
 
 ```
-dotnet build EJLive.Platform.slnx -c Release -m:1 /p:BuildInParallel=false
+dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false
 dotnet test  src/EJLive.Tests/EJLive.Tests.csproj -c Release --no-build      # 371 cases
 dotnet run   --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build  # 23 probes
 ```
