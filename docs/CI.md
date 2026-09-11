@@ -49,6 +49,24 @@ checks) against the *published* assemblies, which `dotnet test` cannot cover.
 | `build` fails, `structure` green | compile-only error (missing type from an archived file) | promote the archived file for that type, per Wave 1 rules |
 | `structure` fails, `build` green | rule violation the compiler cannot see | never weaken the rule to pass; fix the tree or record reviewed debt |
 
+## Zero-job runs (the workflow file never parsed)
+
+If `gh run list` shows a run whose name is `.github/workflows/ci.yml` (not `ci`) with
+`jobs: []` and a 0 s duration, GitHub rejected the *file*, not a step. Two quoting bugs
+cause this and both appeared while landing this pipeline:
+
+| pattern | failure | fix |
+|---|---|---|
+| `- name: build (serialised: parallel node reuse ...)` | `: ` inside an unquoted plain scalar is a mapping indicator | quote the whole scalar |
+| `run: "cmd /c tools\package\package.bat Release"` | `\p` is an invalid escape in a double-quoted YAML scalar | use single quotes (backslashes are literal there) |
+
+Mechanical check before pushing a workflow edit:
+
+```
+grep -nE '"[^"]*\\[^"\\nt ]' .github/workflows/*.yml   # backslash inside double quotes
+grep -nE '^\s*-?\s*name: [^"'].*: ' .github/workflows/*.yml   # unquoted ': ' in a name
+```
+
 ## Local pre-push
 
 ```
