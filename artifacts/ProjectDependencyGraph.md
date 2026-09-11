@@ -35,7 +35,7 @@ Cycles detected: none (acyclic OK)
 | EJLive.Monitoring.WinForms | net8.0-windows | WinExe | true | 4 | 891 | AssemblyName=EJLive.Monitoring |
 | EJLive.Server | net8.0-windows | - | - | 5 | 1359 | ok |
 | EJLive.Server.WinForms | net8.0-windows | WinExe | true | 5 | 2545 | ok |
-| EJLive.Shared | net8.0-windows | - | - | 12 | 1532 | ok |
+| EJLive.Shared | net8.0-windows | - | - | 11 | 1499 | ok |
 | EJLive.Tests | net8.0-windows | - | true | 42 | 8406 | ok |
 | EJLive.UnifiedLauncher | net8.0-windows | WinExe | true | 1 | 102 | ok |
 | EJLive.Verification | net8.0-windows | Exe | true | 2 | 1344 | ok |

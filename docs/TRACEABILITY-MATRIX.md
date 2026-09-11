@@ -20,7 +20,7 @@ deliberately tolerated under `docs/DEBT-LEDGER.md`.
 |---|---|---|---|
 | Projects / assemblies (14) | "all .NET projects, class hierarchies, namespaces" | `EJLive.Platform.sln` + `.slnx`, `artifacts/ProjectDependencyGraph.md` | exists — 29 csproj collapsed to 14, acyclic, L0–L5 |
 | Namespaces | "harmonize naming" | every project map + `NAME-1` allowlist | partial — 3 shipped-exe names intentionally differ (prompt SS2, `ASSEMBLY_ALLOWLIST`) |
-| Class hierarchy / ownership | — | `artifacts/ActiveCompileMap.csv` (303 compiled, 237 archived rows) | exists — one owner per type key (`TYPE-1` = 0) |
+| Class hierarchy / ownership | — | `artifacts/ActiveCompileMap.csv` (301 compiled, 239 archived rows) | exists — one owner per type key (`TYPE-1` = 0) |
 | Toolbox / WinForms controls | "UI Elements, TOOLBOX [VS.NET]" | `docs/inventory/UI-SURFACES.md` (93 rows: form → controls → handlers → command methods) | partial — 0-handler rows are the UI-1 backlog; every surface is Forms-only (`FILE-3` bans XAML) |
 | Endpoint Console | "Client / Terminals" | `src/EJLive.Client.WinForms/` (`ClientMainForm`, 4 map entries + 21 archived) | partial — mapped surface exists, archived forms are Wave 1 |
 | Enterprise Server console | "Central Server Controls" | `src/EJLive.Server.WinForms/` (`ServerMainForm`, `ATMCardPanel`, `ATMDetailDrawerForm`, `SyncDashboardForm`) | partial — 5 compiled / 44 archived |

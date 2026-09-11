@@ -18,9 +18,9 @@
 > **SS = section. Reference SS-nn in commit messages when a change implements it.**
 >
 > Measured state of the tree this contract was written against (regenerated, not typed):
-> 14 projects · 303 compiled files / 57 551 lines · 237 linked-reference files / 724 249
+> 14 projects · 301 compiled files / 57 277 lines · 239 linked-reference files / 724 523
 > lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
-> type keys · 18 cross-assembly partial splits (D-01) · 10 unparsable dumps archived (D-02)
+> type keys · 17 cross-assembly partial splits (D-01) · 10 unparsable dumps archived (D-02)
 > · 19 database tables · 22 wire message types · 23 verification probes · 371 test cases
 > · 99 service-activation rows · 40 gate rules, all PASS.
 
@@ -557,7 +557,7 @@ logs 14 files × 8 MB.
 |---|---|---|
 | 0 — done (this branch) | build graph repair: 654 MB → 68 MB, 29 csproj → 14, curated explicit compile maps, archive `src/_reference/`, ledgers (12), static gate (40 rules), CI, this document | `gate: PASS`, `ledgers fresh`, 0 intra-assembly duplicate keys, 0 stale includes, 0 unparsable files in a map |
 | 1 — restore lost capability | promote archived surface into the compiled tree behind a build gate: `Server.WinForms` 5 → its 44 archived files, `Monitoring`/`Installer`/`Client` companions, `UnifiedLauncher`, `Verification`; rewrite the 10 unparsable dumps (DEBT D-02) from SS5/SS7/SS9; **build after each file group** | `dotnet build` green; 371 + new tests green; 23 probes green; `orphan` + `reference-only` rows strictly decreasing |
-| 2 — namespace & provider repair | DEBT D-01 (18 cross-assembly partial splits), D-06 (one SQLite provider), D-07 (single `MsgType` + protocol in `EJLive.Shared`), remove `ServiceLocator` reflection | `TYPE-2` empty, `DEP-1` clean, protocol ledger maps to one owner |
+| 2 — namespace & provider repair | DEBT D-01 (17 cross-assembly partial splits), D-06 (one SQLite provider), D-07 (single `MsgType` + protocol in `EJLive.Shared`), remove `ServiceLocator` reflection | `TYPE-2` empty, `DEP-1` clean, protocol ledger maps to one owner |
 | 3 — build the new | Journal Studio (SS10.5), `outbox_dead_letters` + retention job UI, audit-chain verifier UI, adaptive chunking tuning, `active_compile_map` table replacing the CSV dependency | features covered by tests + probes, targets in SS13 measured |
 
 Traceability: `docs/TRACEABILITY-MATRIX.md` maps every artefact class of the specification corpus to a file and a

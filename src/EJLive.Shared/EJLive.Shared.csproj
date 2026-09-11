@@ -11,7 +11,10 @@
   <ItemGroup>
     <!-- Seven files left this project: each referenced EJLive.Core or System.Windows.Forms,
          which an L0 primitives assembly cannot compile (CS0234). They are now
-         src/EJLive.Core/Shared/** and documented in docs/ANALYSIS-FINDINGS.md (E-17). -->
+         src/EJLive.Core/Shared/** and documented in docs/ANALYSIS-FINDINGS.md (E-17).
+         Logger.cs went to src/_reference/uncompiled/ instead (E-18): it is a second log-record
+         model whose members belong to a nested AppLogger.Level enum this assembly never declared
+         (CS0426), while AppLogger.cs is the one every consumer actually uses. -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
@@ -24,7 +27,6 @@
     <Compile Include="AppLogger.cs" />
     <Compile Include="Configuration\AppConfig.cs" />
     <Compile Include="DateTimeHelper.cs" />
-    <Compile Include="Logger.cs" />
     <Compile Include="MonitoringState.cs" />
     <Compile Include="MonitoringStateStore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

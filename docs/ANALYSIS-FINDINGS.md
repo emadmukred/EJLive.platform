@@ -29,6 +29,7 @@ correction is re-verified by `tools/gates/ejlive_static_gate.py`.
 | E-15 | No CI, no ledgers, no gate, no docs: every "strict repository rule" (one parser per vendor, no unsafe vocabulary, inventory regeneration per push) was unenforced convention | blocker (drift) | **C-12** `.github/workflows/ci.yml`, 12 generated ledgers, 39-rule static gate, `tools/build` + `tools/package` + `tools/gates` scripts, this findings file, `TRACEABILITY-MATRIX.md`, `CI.md`, `README.md`, `EJLIVE-ENGINEERING-PROMPT.md` |
 | E-16 | A `<Compile>` item outside `<ItemGroup>` in `EJLive.Client.WinForms.csproj` (introduced while promoting three archived files) is well-formed XML, so the inventory resolver, the ledgers and every earlier gate rule stayed green while `dotnet restore` aborted the whole solution with MSB4067 — a red CI with zero project diagnostics | blocker (tooling blind spot) | **C-13** gate rule `SYN-4` (csproj parses *and* items nest inside `<ItemGroup>`), verified by breaking the file and watching the gate fail; the promoted items moved into the existing `<ItemGroup>` |
 | E-17 | `EJLive.Shared` compiled five files that `using EJLive.Core*` and five that `using System.Windows.Forms`; the L0 primitives assembly has neither reference, so every one of them was CS0234 at compile time, and `SharedPrimitives.cs` additionally re-declared four types that Shared already owns in other files | blocker (build) | **C-14** the six files that need Core/WinForms moved to `src/EJLive.Core/Shared/**` with their namespaces kept (consumers unaffected); `LightUiTheme.cs` archived instead, because `Models/CoreAdapters.cs` already declares `EJLive.Shared.LightUiTheme` for that assembly and a second copy is CS0101; `SharedPrimitives.cs` moved for the same reason it was a cross-assembly twin of Logger/RetryPolicy/MonitoringState*; new gate rule `POL-4` forbids upper-layer `using` inside `EJLive.Shared` |
+| E-18 | `EJLive.Shared/Logger.cs` was the last error in the L0 assembly: a second log-record model (`LogEntry`) whose `Level` property belongs to a nested `AppLogger.Level` enum that this assembly never declared (CS0426) - `AppLogger.cs` next to it owns the real, top-level `LogLevel` contract, and nothing compiled referenced `LogEntry` | blocker (build) | **C-15** archived to `src/_reference/uncompiled/EJLive.Shared/Logger.cs` and dropped from the map, rather than re-wiring a duplicate logging type into the primitives assembly |
 
 ## Residual debt (summary)
 
@@ -49,7 +50,7 @@ correction is re-verified by `tools/gates/ejlive_static_gate.py`.
   legacy code, no glob flips, and each remaining risky step is explicitly gated on a
   Windows `dotnet build` in Wave 1. `tools/gates/run-gate.ps1` runs the compiler-verified
   sequence where an SDK exists.
-- **Ledgers are the authority.** Numbers quoted anywhere (`303/57 551` compiled,
-  `237/724 249` archived, 19 tables, 22 message types, 23 probes, 371 cases, 99 activation rows,
+- **Ledgers are the authority.** Numbers quoted anywhere (`301/57 277` compiled,
+  `239/724 523` archived, 19 tables, 22 message types, 23 probes, 371 cases, 99 activation rows,
   39 gate rules) come from `artifacts/InventorySummary.json` + `docs/inventory/*`, regenerated in the
   same commit as the change that moved them.
