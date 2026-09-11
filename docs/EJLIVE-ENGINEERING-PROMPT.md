@@ -12,7 +12,7 @@
 > ```
 > powershell tools/build/build.ps1 -Configuration Release -WithTests -WithGate
 > python3 tools/inventory/ejlive_inventory.py            # ledgers (INV-1, per push)
-> python3 tools/gates/ejlive_static_gate.py              # 38 rules, exit code = verdict
+> python3 tools/gates/ejlive_static_gate.py              # 39 rules, exit code = verdict
 > ```
 >
 > **SS = section. Reference SS-nn in commit messages when a change implements it.**
@@ -22,7 +22,7 @@
 > lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
 > type keys · 18 cross-assembly partial splits (D-01) · 10 unparsable dumps archived (D-02)
 > · 19 database tables · 22 wire message types · 23 verification probes · 371 test cases
-> · 99 service-activation rows · 38 gate rules, all PASS.
+> · 99 service-activation rows · 39 gate rules, all PASS.
 
 ---
 
@@ -46,7 +46,7 @@ Hard rules (gate-enforced; violating one is a build failure, not a review commen
 2. **POL-1** one compiled journal parser per vendor. Auxiliary readers (config capability, distribution, trace) must not claim parser ownership; adapters feed the parser.
 3. **SEC-1** no loaded vocabulary in code or prose; annotate framework names with `// safe:` only where the API is external (`.Kill()` is exempt by rule, not by annotation).
 4. **SEC-2/SEC-3** no `unsafe`, no `AllowUnsafeBlocks`, no weak crypto on a security path (`MD5`/`SHA-1`/`DES`/ECB allowed only for vendor archive fingerprints, with a `// safe:` or `// safe-file:` reason).
-5. **SYN-1/SYN-2/SYN-3** every file in a compile map must be structurally parsable, single-modifier, non-empty. Auto-merge dumps are archive material, never source.
+5. **SYN-1/SYN-2/SYN-3** every file in a compile map must be structurally parsable, single-modifier, non-empty. Auto-merge dumps are archive material, never source. **SYN-4** every csproj must parse *and* nest its items inside an `<ItemGroup>`: a stray `<Compile>` under `<Project>` is valid XML, passes every textual tool, and aborts `restore` for the whole solution with MSB4067.
 6. **TYPE-1/TYPE-2** exactly one compiled owner per type key per assembly; cross-assembly partial splits are illegal unless recorded as debt.
 7. **INV-1 (LED-1/LED-2/LED-3)** ledgers regenerate on every push; a hand-edited ledger fails the gate.
 8. **POL-2/POL-3** no synchronous wait on a UI thread; no silent `catch { }` — an empty catch carries an inline reason.
@@ -532,6 +532,11 @@ referenced contract (`ServiceLocator` → `Type.GetType("..., EJLive.Client")` m
 
 Build: `dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false` (serialised — parallel node
 reuse races the shared generated files, see `docs/CI.md`).
+CI (`docs/CI.md`) runs two jobs, in that order: `structure` (inventory `--check`, activation `--check`, the
+39-rule gate, and `tools/gates/check_artefacts.py`, which proves the artefacts agree with each other) then
+`build` on `windows-latest` (restore, serialised build, tests, 23 probes, packaging). Both jobs are green on
+the branch; the Windows job is the first thing that proves the compile maps are MSBuild-evaluatable, which no
+local tool can (no SDK), so a red `build` job is a plan input, not a surprise.
 Package: `tools/package/package.bat Release` → three zips (client / server / NOC) staged from `bin/Release/
 net8.0-windows`, journal fixtures copied for self-test, `install.cmd` / `start.cmd` generated.
 Install (endpoint, elevated): payload → `Program Files\EJLive\Client` → service `EJLive.Client.Service`
@@ -550,7 +555,7 @@ logs 14 files × 8 MB.
 
 | wave | content | exit criteria |
 |---|---|---|
-| 0 — done (this branch) | build graph repair: 654 MB → 68 MB, 29 csproj → 14, curated explicit compile maps, archive `src/_reference/`, ledgers (12), static gate (38 rules), CI, this document | `gate: PASS`, `ledgers fresh`, 0 intra-assembly duplicate keys, 0 stale includes, 0 unparsable files in a map |
+| 0 — done (this branch) | build graph repair: 654 MB → 68 MB, 29 csproj → 14, curated explicit compile maps, archive `src/_reference/`, ledgers (12), static gate (39 rules), CI, this document | `gate: PASS`, `ledgers fresh`, 0 intra-assembly duplicate keys, 0 stale includes, 0 unparsable files in a map |
 | 1 — restore lost capability | promote archived surface into the compiled tree behind a build gate: `Server.WinForms` 5 → its 44 archived files, `Monitoring`/`Installer`/`Client` companions, `UnifiedLauncher`, `Verification`; rewrite the 10 unparsable dumps (DEBT D-02) from SS5/SS7/SS9; **build after each file group** | `dotnet build` green; 371 + new tests green; 23 probes green; `orphan` + `reference-only` rows strictly decreasing |
 | 2 — namespace & provider repair | DEBT D-01 (18 cross-assembly partial splits), D-06 (one SQLite provider), D-07 (single `MsgType` + protocol in `EJLive.Shared`), remove `ServiceLocator` reflection | `TYPE-2` empty, `DEP-1` clean, protocol ledger maps to one owner |
 | 3 — build the new | Journal Studio (SS10.5), `outbox_dead_letters` + retention job UI, audit-chain verifier UI, adaptive chunking tuning, `active_compile_map` table replacing the CSV dependency | features covered by tests + probes, targets in SS13 measured |
@@ -566,7 +571,7 @@ listed there with the exact input needed — G-1 (specification corpus not prese
 2. `dotnet test src/EJLive.Tests/EJLive.Tests.csproj` — 371+ cases, 0 failures, 0 skipped without a reason file.
 3. `dotnet run --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build` — 23/23 PASS.
 4. `python3 tools/inventory/ejlive_inventory.py` then `--check` → `ledgers fresh`; activation ledger fresh.
-5. `python3 tools/gates/ejlive_static_gate.py` → `gate result: PASS` (38 rules), no new allowlist entries.
+5. `python3 tools/gates/ejlive_static_gate.py` → `gate result: PASS` (39 rules), no new allowlist entries.
 6. `artifacts/ActiveCompileMap.csv` — 0 stale includes, 0 unmapped sources, 0 intra-assembly duplicate keys.
 7. `docs/DEBT-LEDGER.md` — every remaining entry has an owner and an exit condition; nothing new added without a
    one-line justification in the PR body.

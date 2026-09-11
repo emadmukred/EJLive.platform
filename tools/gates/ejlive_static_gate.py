@@ -293,6 +293,31 @@ def check_syntax(projects, tracked) -> None:
     empty = [f for f in sorted(active_sources(projects)) if len(read(f).strip()) < 3]
     rule("SYN-3", not empty, f"{len(empty)} blank files inside a compile map: {empty[:3]}")
 
+    # SYN-4 - MSBuild evaluation shape. An item element outside an <ItemGroup> is well-formed XML, so
+    # every textual tool (inventory resolver included) accepts it, while `dotnet restore` rejects the
+    # whole solution with MSB4067 before a single project compiles. Generated csproj edits - compile-map
+    # rewrites, files promoted out of the archive - are where this is introduced, and one malformed
+    # project hides behind thirteen green ones, so the shape is checked structurally rather than built.
+    import xml.etree.ElementTree as _ET
+    item_elements = {"Compile", "None", "Content", "EmbeddedResource", "Page", "Resource",
+                     "ApplicationDefinition", "Reference", "PackageReference", "ProjectReference"}
+    malformed, misplaced = [], []
+    for f in sorted(x for x in tracked if x.endswith(".csproj") and "_reference/" not in x):
+        try:
+            root = _ET.fromstring(read(f).lstrip("\ufeff"))
+        except _ET.ParseError as exc:
+            malformed.append(f"{f} ({exc})")
+            continue
+        for parent in root.iter():
+            ptag = parent.tag.split("}")[-1]
+            for child in parent:
+                ctag = child.tag.split("}")[-1]
+                if ctag in item_elements and ptag != "ItemGroup":
+                    misplaced.append(f"{f}: <{ctag}> under <{ptag}>")
+    rule("SYN-4", not malformed and not misplaced,
+         f"{len(malformed)} unparsable csproj and {len(misplaced)} items outside an ItemGroup: "
+         f"{(malformed + misplaced)[:3]} - wrap items in an <ItemGroup> or MSB4067 kills restore")
+
 
 def check_policy(projects, tracked) -> None:
     active = sorted(active_sources(projects))

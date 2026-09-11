@@ -9,7 +9,7 @@ repository-rule authority, the build job is the compiler authority.
 |---|---|---|
 | ledgers | `python3 tools/inventory/ejlive_inventory.py --check` | any drift between committed ledgers and the compile maps (repo rule INV-1: regenerate per push) |
 | activation ledger | `python3 tools/inventory/service_activation.py --check` | `docs/12-service-activation-status.csv` stale |
-| static gate | `python3 tools/gates/ejlive_static_gate.py` | any of 38 rules fail (`GIT`, `NAME`, `FILE`, `TYPE`, `ARCH`, `SEC`, `SYN`, `POL`, `DEP`, `ART`, `LED`) |
+| static gate | `python3 tools/gates/ejlive_static_gate.py` | any of 39 rules fail (`GIT`, `NAME`, `FILE`, `TYPE`, `ARCH`, `SEC`, `SYN`, `POL`, `DEP`, `ART`, `LED`) |
 | cross-check | `python3 tools/gates/ejlive_static_gate.py --verbose` in the log | advisory output only |
 
 The gate runs on Linux because every rule it checks is structural, not
@@ -88,6 +88,25 @@ Two further CI invariants that are not optional:
   `error`/`NUxxxx`/`MSBxxxx` lines are emitted as `::error` annotations, which travel with the check run and
   are readable through the REST API.
 
-`System.Data.SQLite.Core` is pinned to `1.0.118.0` (four-part). NuGet resolves exact versions against the
-published list, and `1.0.118` is not on it — restore fails with NU1102 before a single project compiles,
-which is the difference between "the build is red" and "the build never started".
+### Restore dies before any project compiles
+
+`restore` evaluates every project in the solution before it resolves a single package, so a *shape* error in
+one csproj aborts the run with no project-level diagnostics at all. This is what actually happened here, and
+the message looks like a packaging failure while it is not:
+
+```
+src/EJLive.Client.WinForms/EJLive.Client.WinForms.csproj(19,5): error MSB4067: The element <Compile>
+beneath element <Project> is unrecognized.
+```
+
+An item element outside an `<ItemGroup>` is perfectly well-formed XML: the inventory resolver that generates
+the compile map reads `<Compile Include>` wherever it appears, so every local tool stayed green while MSBuild
+refused to evaluate the solution. `SYN-4` in the static gate now checks the nesting structurally (no compiler
+needed), and a promoted file or a rewritten map cannot repeat the mistake. Two further pins recorded while
+chasing it, kept because both are real constraints even though neither was the blocker:
+
+* `NuGet.Config` declares the source only, with no `globalPackagesFolder`: a *relative* cache path resolves
+  against the working directory, so the same file pointed the package cache into the repository tree on a
+  runner and beside `src/` on a workstation.
+* `System.Data.SQLite.Core` is pinned in its four-part form (`1.0.118.0`). NuGet normalises missing trailing
+  zeros when comparing versions, so `1.0.118` resolves - the longer form just removes the doubt.
