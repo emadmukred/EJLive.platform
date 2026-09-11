@@ -16,6 +16,13 @@
 > ```
 >
 > **SS = section. Reference SS-nn in commit messages when a change implements it.**
+>
+> Measured state of the tree this contract was written against (regenerated, not typed):
+> 14 projects · 303 compiled files / 57 551 lines · 237 linked-reference files / 724 249
+> lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
+> type keys · 18 cross-assembly partial splits (D-01) · 10 unparsable dumps archived (D-02)
+> · 19 database tables · 22 wire message types · 23 verification probes · 371 test cases
+> · 99 service-activation rows · 38 gate rules, all PASS.
 
 ---
 
