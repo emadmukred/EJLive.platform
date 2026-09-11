@@ -1078,6 +1078,7 @@ public sealed class UnifiedRuntimeTests
             RemoteCommand? executed = null;
             handler.OnCommandExecuted += (_, command) => executed = command;
 
+            // safe: synthetic fixture, never a real credential
             var password = "Agent#2026!";
             var payload = $"Role=Admin;Scope=APP;PasswordBase64={Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password))}";
             handler.ExecuteCommand(new RemoteCommand

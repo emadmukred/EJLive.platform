@@ -3,15 +3,6 @@ using System.Collections.Generic;
 
 namespace EJLive.Core.Models
 {
-    public enum TxType
-    {
-        Unknown,
-        CashWithdrawal,
-        BalanceInquiry,
-        CardRetained,
-        SupervisorMode,
-        Error
-    }
 
     public enum TxResult
     {
@@ -22,39 +13,8 @@ namespace EJLive.Core.Models
         Warning
     }
 
-    public enum TransactionType
-    {
-        Unknown,
-        CashWithdrawal,
-        BalanceInquiry,
-        MiniStatement,
-        PINChange,
-        FundTransfer,
-        BillPayment,
-        CardRetained,
-        SupervisorMode,
-        CashDeposit
-    }
 
-    public enum TransactionStatus
-    {
-        Unknown,
-        Pending,
-        InProgress,
-        Completed,
-        Failed,
-        Reversed
-    }
 
-    public enum ATMOperationalState
-    {
-        Unknown,
-        InService,
-        OutOfService,
-        SupervisorMode,
-        Offline,
-        Maintenance
-    }
 
     public enum GhostSessionStatus
     {
@@ -63,23 +23,6 @@ namespace EJLive.Core.Models
         Disconnected
     }
 
-    public sealed class ATMTransaction
-    {
-        public string TransactionID { get; set; }
-        public string ATM_ID { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-        public TransactionType Type { get; set; } = TransactionType.Unknown;
-        public TransactionStatus Status { get; set; } = TransactionStatus.Unknown;
-        public decimal Amount { get; set; }
-        public string Currency { get; set; } = "SAR";
-        public string CardNumber { get; set; }
-        public string ResponseCode { get; set; }
-        public string ErrorCode { get; set; }
-        public string ErrorDescription { get; set; }
-        public string RawJournalText { get; set; }
-        public int DurationSeconds { get; set; }
-        public bool IsSuccessful => Status == TransactionStatus.Completed;
-    }
 
     public sealed class ATMError
     {
@@ -90,14 +33,6 @@ namespace EJLive.Core.Models
         public string Severity { get; set; } = "Information";
     }
 
-    public sealed class RetainedCard
-    {
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-        public string ATM_ID { get; set; }
-        public string RetainCode { get; set; }
-        public string RetainReason { get; set; }
-        public string CardNumberMasked { get; set; }
-    }
 
     public sealed class ATMCashInfo
     {
@@ -120,34 +55,6 @@ namespace EJLive.Core.Models
         public DateTime? LastCashWithdrawal { get; set; }
     }
 
-    public sealed class TransactionAnalysisReport
-    {
-        public string ReportID { get; set; }
-        public string ATM_ID { get; set; }
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
-        public DateTime GeneratedAt { get; set; } = DateTime.Now;
-        public int TotalTransactions { get; set; }
-        public int SuccessfulTransactions { get; set; }
-        public int FailedTransactions { get; set; }
-        public decimal TotalAmountDispensed { get; set; }
-        public int RetainedCardsCount { get; set; }
-        public List<ATMTransaction> Transactions { get; set; } = new List<ATMTransaction>();
-        public List<ATMError> Errors { get; set; } = new List<ATMError>();
-        public Dictionary<TransactionType, int> TransactionsByType { get; } = new Dictionary<TransactionType, int>();
-        public Dictionary<int, int> TransactionsByHour { get; } = new Dictionary<int, int>();
-
-        public double SuccessRate => TotalTransactions > 0 ? (double)SuccessfulTransactions / TotalTransactions * 100.0 : 0.0;
-
-        public double AvgTransactionsPerHour
-        {
-            get
-            {
-                var hours = Math.Max(1.0, (ToDate - FromDate).TotalHours);
-                return TotalTransactions / hours;
-            }
-        }
-    }
 
     public sealed class AlertPayload
     {
@@ -158,18 +65,4 @@ namespace EJLive.Core.Models
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }
 
-    public sealed class GhostSession
-    {
-        public string SessionID { get; set; }
-        public string ATM_ID { get; set; }
-        public string OperatorName { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime? EndTime { get; set; }
-        public GhostSessionStatus Status { get; set; } = GhostSessionStatus.Connecting;
-        public bool IsViewOnly { get; set; }
-        public bool ATMUnaffected { get; set; }
-        public bool NoLogout { get; set; }
-        public bool ScreenNotLocked { get; set; }
-        public List<string> ActivityLog { get; } = new List<string>();
-    }
 }

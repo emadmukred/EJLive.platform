@@ -16,8 +16,6 @@ public enum RemoteCommandStatus { Pending, Sent, Running, Completed, Failed, Can
 public enum RemoteSessionState { Created, Starting, Active, Paused, Stopped, Failed }
 public enum TransactionType { Unknown, Withdrawal, Deposit, Transfer, BalanceInquiry, Reversal, BillPayment }
 public enum TransactionStatus { Unknown, Approved, Declined, Failed, Reversed, Timeout }
-public enum TxType { Unknown, CashWithdrawal, CashDeposit, FundsTransfer, BalanceInquiry, BillPayment }
-public enum TxResult { Unknown, Success, Failure, Timeout, Reversed }
 public enum ATMOperationalState { Unknown, InService, OutOfService, Supervisor, Maintenance, Faulted }
 
 public sealed class ATMInfo
@@ -382,25 +380,6 @@ public sealed class AgentConfigurationRecord
     public Dictionary<string, string> Values { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
-public sealed class AlertPayload
-{
-    public string AlertId { get; set; } = Guid.NewGuid().ToString("N");
-    public AlertSeverity Severity { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
-    public string Source { get; set; } = string.Empty;
-    public string DedupeKey { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public bool IsRead { get; set; }
-    public string Icon => Severity switch
-    {
-        AlertSeverity.Emergency => "CRIT",
-        AlertSeverity.Critical => "FAIL",
-        AlertSeverity.Warning => "WARN",
-        _ => "INFO"
-    };
-    public string SeverityIcon => Icon;
-}
 
 public sealed class JournalSyncRecord
 {
@@ -474,15 +453,6 @@ public sealed class ATMTransaction
     public string RawText { get; set; } = string.Empty;
 }
 
-public sealed class TransactionAnalysisReport
-{
-    public int TotalTransactions { get; set; }
-    public int ApprovedCount { get; set; }
-    public int FailedCount { get; set; }
-    public int RetainedCards { get; set; }
-    public decimal TotalCashDispensed { get; set; }
-    public List<string> Findings { get; set; } = new();
-}
 
 public sealed class RemoteSession
 {
@@ -501,21 +471,7 @@ public sealed class RetainedCard
     public string Reason { get; set; } = string.Empty;
 }
 
-public sealed class ATMError
-{
-    public string ATM_ID { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
-    public AlertSeverity Severity { get; set; } = AlertSeverity.Warning;
-    public DateTime OccurredAtUtc { get; set; } = DateTime.UtcNow;
-}
 
-public sealed class ATMDetailedStatus
-{
-    public ATMInfo ATM { get; set; } = new();
-    public IReadOnlyList<ATMError> Errors { get; set; } = Array.Empty<ATMError>();
-    public IReadOnlyList<JournalSyncRecord> SyncRecords { get; set; } = Array.Empty<JournalSyncRecord>();
-}
 
 public sealed class AuditLogEntry
 {

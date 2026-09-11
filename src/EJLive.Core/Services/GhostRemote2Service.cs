@@ -51,7 +51,7 @@ public sealed class GhostRemote2Service
 
             if (!process.WaitForExit(Math.Clamp(timeoutMs, 1000, 60000)))
             {
-                try { process.Kill(); } catch { }
+                try { process.Kill(); } catch (InvalidOperationException) { /* EJLIVE: teardown race, pid already exited (SS14) */ }
                 return GhostRemoteCommandResult.Failed("Process timed out.");
             }
 

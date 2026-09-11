@@ -11,45 +11,10 @@ namespace EJLive.Core.Models
         Deposit
     }
 
-    public enum TxResult
-    {
-        Unknown,
-        Approved,
-        Declined,
-        Error,
-        Warning
-    }
 
-    public enum TransactionType
-    {
-        Unknown,
-        CashWithdrawal,
-        BalanceInquiry,
-        CardRetained,
-        SupervisorMode
-    }
 
-    public enum TransactionStatus
-    {
-        Pending,
-        Completed,
-        Failed
-    }
 
-    public enum ATMOperationalState
-    {
-        Unknown,
-        InService,
-        OutOfService,
-        SupervisorMode
-    }
 
-    public enum GhostSessionStatus
-    {
-        Connecting,
-        Active,
-        Disconnected
-    }
 
     public enum ImageSyncStatus
     {
@@ -60,13 +25,6 @@ namespace EJLive.Core.Models
         Failed
     }
 
-    public sealed class AlertPayload
-    {
-        public string Severity { get; set; }
-        public string Title { get; set; }
-        public string Message { get; set; }
-        public DateTime RaisedAt { get; set; } = DateTime.UtcNow;
-    }
 
     public sealed class CashStatus
     {
@@ -77,45 +35,9 @@ namespace EJLive.Core.Models
         public Dictionary<int, int> CassetteNotes { get; set; } = new Dictionary<int, int>();
     }
 
-    public sealed class RetainedCard
-    {
-        public string CardNumber { get; set; }
-        public string Reason { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-    }
 
-    public sealed class ATMError
-    {
-        public string ErrorCode { get; set; }
-        public string ErrorDescription { get; set; }
-        public string Severity { get; set; }
-        public string RawLine { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-    }
 
-    public sealed class ATMTransaction
-    {
-        public string TransactionID { get; set; }
-        public TransactionType Type { get; set; } = TransactionType.Unknown;
-        public TransactionStatus Status { get; set; } = TransactionStatus.Pending;
-        public decimal Amount { get; set; }
-        public string CardNumber { get; set; }
-        public string ResponseCode { get; set; }
-        public string ErrorCode { get; set; }
-        public string ErrorDescription { get; set; }
-        public string RawJournalText { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-        public bool IsSuccessful => Status == TransactionStatus.Completed;
-    }
 
-    public sealed class ATMDetailedStatus
-    {
-        public ATMOperationalState OperationalState { get; set; } = ATMOperationalState.Unknown;
-        public DateTime LastUpdate { get; set; } = DateTime.Now;
-        public DateTime? LastCashWithdrawal { get; set; }
-        public CashStatus CashInfo { get; set; } = new CashStatus();
-        public List<RetainedCard> RetainedCards { get; set; } = new List<RetainedCard>();
-    }
 
     public sealed class TransactionAnalysisReport
     {

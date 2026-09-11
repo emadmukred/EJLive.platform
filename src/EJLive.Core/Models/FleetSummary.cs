@@ -2,48 +2,6 @@ using System;
 
 namespace EJLive.Core.Models
 {
-    public partial class FleetSummary
-        {
-            public int Total { get; set; }
-    
-    
-            public int Connected { get; set; }
-    
-    
-            public int Syncing { get; set; }
-    
-    
-            public int Offline { get; set; }
-    
-    
-            public int AverageHealth { get; set; }
-    
-    
-            public int WarningCount { get; set; }
-    
-    
-            public int CriticalCount { get; set; }
-    
-    
-            public DateTime SummaryAtUtc { get; set; } = DateTime.UtcNow;
-    
-    
-        }
-    /// <summary>
-        /// Summary of the entire ATM fleet operational state.
-        /// Used by OperationalStateStore and UnifiedBusinessRuntime.
-        /// </summary>
-        public sealed class FleetSummary
-        {
-            public int Total { get; set; }
-            public int Connected { get; set; }
-            public int Syncing { get; set; }
-            public int Offline { get; set; }
-            public int AverageHealth { get; set; }
-            public int WarningCount { get; set; }
-            public int CriticalCount { get; set; }
-            public DateTime SummaryAtUtc { get; set; } = DateTime.UtcNow;
-        }
     public partial class PerformanceMetric
         {
             public string Key { get; set; } = string.Empty;
@@ -89,83 +47,7 @@ namespace EJLive.Core.Models
             public double MaxValue { get; set; }
             public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
         }
-    public partial class SyncSummary
-        {
-            public int TotalRecords { get; set; }
-    
-    
-            public int Pending { get; set; }
-    
-    
-            public int InProgress { get; set; }
-    
-    
-            public int Completed { get; set; }
-    
-    
-            public int Failed { get; set; }
-    
-    
-            public long TotalBytes { get; set; }
-    
-    
-            public long SyncedBytes { get; set; }
-    
-    
-            public double AverageSpeedKBs { get; set; }
-    
-    
-            public DateTime SummaryAtUtc { get; set; } = DateTime.UtcNow;
-    
-    
-            public double ProgressPercent => TotalRecords > 0
-                ? (double)Completed / TotalRecords * 100.0
-                : 100.0;
-    
-    
-        }
-    /// <summary>
-        /// Summary of journal synchronization across the fleet.
-        /// </summary>
-        public sealed class SyncSummary
-        {
-            public int TotalRecords { get; set; }
-            public int Pending { get; set; }
-            public int InProgress { get; set; }
-            public int Completed { get; set; }
-            public int Failed { get; set; }
-            public long TotalBytes { get; set; }
-            public long SyncedBytes { get; set; }
-            public double AverageSpeedKBs { get; set; }
-            public DateTime SummaryAtUtc { get; set; } = DateTime.UtcNow;
-    
-            public double ProgressPercent => TotalRecords > 0
-                ? (double)Completed / TotalRecords * 100.0
-                : 100.0;
-        }
 
-    // Class: FleetSummary (from 3 sources)
-        public sealed partial class FleetSummary
-        {
-            // --- Properties ---
-                    public int Total { get; set; }
-    
-                    public int Connected { get; set; }
-    
-                    public int Syncing { get; set; }
-    
-                    public int Offline { get; set; }
-    
-                    public int AverageHealth { get; set; }
-    
-                    public int WarningCount { get; set; }
-    
-                    public int CriticalCount { get; set; }
-    
-                    public DateTime SummaryAtUtc { get; set; } = DateTime.UtcNow;
-    
-    
-        }
     // Enum: MetricType (from 1 sources)
         public partial enum MetricType
         {
@@ -198,34 +80,6 @@ namespace EJLive.Core.Models
                     public double MaxValue { get; set; }
     
                     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-    
-    
-        }
-    // Class: SyncSummary (from 3 sources)
-        public sealed partial class SyncSummary
-        {
-            // --- Properties ---
-                    public int TotalRecords { get; set; }
-    
-                    public int Pending { get; set; }
-    
-                    public int InProgress { get; set; }
-    
-                    public int Completed { get; set; }
-    
-                    public int Failed { get; set; }
-    
-                    public long TotalBytes { get; set; }
-    
-                    public long SyncedBytes { get; set; }
-    
-                    public double AverageSpeedKBs { get; set; }
-    
-                    public DateTime SummaryAtUtc { get; set; } = DateTime.UtcNow;
-    
-                    public double ProgressPercent => TotalRecords > 0
-                        ? (double)Completed / TotalRecords * 100.0
-                        : 100.0;
     
     
         }

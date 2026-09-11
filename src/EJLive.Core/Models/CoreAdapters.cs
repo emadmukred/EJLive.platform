@@ -20,7 +20,8 @@ namespace EJLive.Core.Services
             public dynamic AnalyzeText(string text, string atmId, string atmType) => new { Count = 0 };
     
     
-            public static string ComputeMd5(byte[] data) => Convert.ToHexString(System.Security.Cryptography.MD5.HashData(data));
+            public static string ComputeMd5(byte[] data)
+            // safe: legacy journal-index fingerprint kept for byte-compatibility with archived EJ bundles; do not extend to new callers => Convert.ToHexString(System.Security.Cryptography.MD5.HashData(data));
     
     
             public static byte[] ProtectDpapiStringIfNeeded(string value) => System.Text.Encoding.UTF8.GetBytes(value);
@@ -59,10 +60,8 @@ namespace EJLive.Core.Services
             public static byte[]? ReadFileSafe(string path) { try { return File.Exists(path) ? File.ReadAllBytes(path) : null; } catch { return null; } }
     
     
-            public class JournalSyncTracker { }
     
     
-            public class JournalSyncTrackingService { }
     
     
             public class NcrConfigCapabilityProfile { public string ProfileName { get; set; } = ""; }
@@ -99,24 +98,12 @@ namespace EJLive.Core.Services
         public partial enum AuditAction
         {
         }
-    // Class: ClientOutboxRow (from 2 sources)
-        public partial class ClientOutboxRow
-        {
-        }
     // Class: FilterRuleDefinition (from 3 sources)
         public partial class FilterRuleDefinition
         {
         }
-    // Class: JournalSyncServiceStub (from 3 sources)
-        public partial class JournalSyncServiceStub
-        {
-        }
     // Class: NetworkEngine (from 2 sources)
         public partial class NetworkEngine
-        {
-        }
-    // Class: OperationalStateStore (from 2 sources)
-        public partial class OperationalStateStore
         {
         }
     // Class: RemoteCommandPolicyDecision (from 3 sources)
@@ -137,6 +124,7 @@ namespace EJLive.Core.Services
     
             public dynamic AnalyzeText(string text, string atmId, string atmType) => new { Count = 0 };
     
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             public static string ComputeMd5(byte[] data) => Convert.ToHexString(System.Security.Cryptography.MD5.HashData(data));
     
             public static byte[] ProtectDpapiStringIfNeeded(string value) => System.Text.Encoding.UTF8.GetBytes(value);
@@ -164,10 +152,7 @@ namespace EJLive.Core.Services
             public static byte[]? ReadFileSafe(string path) { try { return File.Exists(path) ? File.ReadAllBytes(path) : null; } catch { return null; } }
     
     
-            // --- Nested Classes ---
-            public class JournalSyncTracker { }
     
-            public class JournalSyncTrackingService { }
     
             public class NcrConfigCapabilityProfile { public string ProfileName { get; set; } = ""; }
     
@@ -189,14 +174,6 @@ namespace EJLive.Core.Services
             public enum JournalSearchFilter { All = 0, ApprovedTransactions = 1, PowerUpReset = 2, ErrorE3 = 3, TotalCashError = 4, M18 = 5, M02_M03_M05 = 6, M10_M11 = 7, CardCapture = 8, Declined = 9 }
     
     
-        }
-    // Class: UnifiedJournalEvidenceAnalyzer (from 3 sources)
-        public partial class UnifiedJournalEvidenceAnalyzer
-        {
-        }
-    // Class: UnifiedServerAnalyticsSnapshot (from 3 sources)
-        public partial class UnifiedServerAnalyticsSnapshot
-        {
         }
     // Enum: UploadHealthState (from 2 sources)
         public partial enum UploadHealthState
@@ -223,23 +200,11 @@ namespace EJLive.Core.Services
     public partial enum AuditAction
         {
         }
-    public partial class ClientOutboxRow
-        {
-        }
     public partial class FilterRuleDefinition
         {
         }
     public class JournalEvidenceReport { }
-    public class JournalSyncServiceStub { }
-    public partial class JournalSyncServiceStub
-        {
-        }
-    public class JournalSyncTracker { }
-    public class JournalSyncTrackingService { }
     public partial class NetworkEngine
-        {
-        }
-    public partial class OperationalStateStore
         {
         }
     public partial class RemoteCommandPolicyDecision
@@ -248,15 +213,7 @@ namespace EJLive.Core.Services
     public partial class RetryPolicy
         {
         }
-    public class UnifiedJournalEvidenceAnalyzer { }
-    public partial class UnifiedJournalEvidenceAnalyzer
-        {
-        }
     public class UnifiedRemoteCommandPolicy { }
-    public class UnifiedServerAnalyticsSnapshot { }
-    public partial class UnifiedServerAnalyticsSnapshot
-        {
-        }
     public partial enum UploadHealthState
         {
         }
@@ -278,16 +235,10 @@ namespace EJLive.Core.Services
 namespace EJLive.Core.Engine
 {
     public class ClientOutboxRow { public string ItemId { get; set; } = ""; public string ATM_ID { get; set; } = ""; public string FileName { get; set; } = ""; public string PayloadPath { get; set; } = ""; public long PayloadSize { get; set; } public long FileOffset { get; set; } public string Checksum { get; set; } = ""; public int RetryCount { get; set; } public string Status { get; set; } = ""; public DateTime NextAttemptUtc { get; set; } public DateTime? LastSentUtc { get; set; } public DateTime? AckDeadlineUtc { get; set; } public string LastAckDetail { get; set; } = ""; public DateTime CreatedAtUtc { get; set; } public DateTime UpdatedAtUtc { get; set; } }
-    public class NetworkEngine { public bool IsConnected => false; public void Connect() { } public void SendMessage(byte[] frame) { } public void SendMessage(string message) { } public void SendChunk(ChunkPayload payload) { } public void SendTransferComplete(TransferComplete complete) { } public event Action<object?, ChunkAck>? OnChunkAck; }
     public class OperationalStateStore { public static OperationalStateStore Instance { get; } = new(); public void UpsertUpload(object upload) { } }
     public class RetryPolicy { public int MaxAttempts { get; set; } = 5; public TimeSpan ComputeDelay(int attempt) => TimeSpan.FromMilliseconds(1000 * Math.Pow(2, attempt)); public static RetryPolicy ForNetwork(string t) => new(); }
     public class UploadLogRecord { public string UploadId { get; set; } = ""; public string TerminalId { get; set; } = ""; public string FileName { get; set; } = ""; public string FileKind { get; set; } = ""; public long BytesExpected { get; set; } public long BytesReceived { get; set; } public string Checksum { get; set; } = ""; public string AckId { get; set; } = ""; public UploadHealthState State { get; set; } public string FailureReason { get; set; } = ""; public DateTime CreatedAtUtc { get; set; } public DateTime UpdatedAtUtc { get; set; } }
 
-    public class TransactionAnalysisEngine {
-        public List<string> SearchLines(string text, object filter) => new() { text ?? "" };
-        public List<string> SearchFreeText(string text, string keyword) => new() { text ?? "" };
-        public dynamic AnalyzeText(string text, string atmId, string atmType) => new { Count = 0 };
-        }
 
     public enum JournalSearchFilter { All = 0, ApprovedTransactions = 1, PowerUpReset = 2, ErrorE3 = 3, TotalCashError = 4, M18 = 5, M02_M03_M05 = 6, M10_M11 = 7, CardCapture = 8, Declined = 9 }
     public enum UploadHealthState { Pending, Uploading, Acked, Duplicate, IntegrityFailure, Failed }
@@ -295,9 +246,7 @@ namespace EJLive.Core.Engine
 
 namespace EJLive.Core.Models
 {
-    public class NcrConfigCapabilityProfile { public string ProfileName { get; set; } = ""; }
     public class VendorRootArtifact { public string ArtifactType { get; set; } = ""; public string RelativePath { get; set; } = ""; public string? Summary { get; set; } }
-    public class VendorRootProfile { public string Vendor { get; set; } = ""; public string Model { get; set; } = ""; public string VendorName { get; set; } = ""; public string PlatformLineage { get; set; } = ""; public bool HasFilterIni { get; set; } public bool HasXfsMediaTemplates { get; set; } public bool HasDispenserConfigData { get; set; } public bool HasKeyboardMapData { get; set; } public bool HasKbapeConfig { get; set; } public string FilterHeaderHint { get; set; } = ""; public List<VendorRootArtifact> Artifacts { get; set; } = new(); }
 }
 
 namespace EJLive.Shared
@@ -309,6 +258,7 @@ namespace EJLive.Shared
     public static class SecurityHelper
         {
             public static string ComputeSha256(byte[] data) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(data));
+            // safe: vendor journal/archive fingerprint kept for byte-compatibility; not a security boundary (SS9 integrity uses HMAC-SHA256)
             public static string ComputeMd5(byte[] data) => Convert.ToHexString(System.Security.Cryptography.MD5.HashData(data));
             public static byte[] ProtectDpapiStringIfNeeded(string value) => System.Text.Encoding.UTF8.GetBytes(value);
             public static byte[] Compress(byte[] data) => data;

@@ -6,15 +6,6 @@ using EJLive.Core;
 
 namespace EJLive.Shared
 {
-    public static class DateTimeHelper
-    {
-        public static DateTime UtcNow => DateTime.UtcNow;
-
-        public static string ToIsoUtc(DateTime value)
-        {
-            return value.ToUniversalTime().ToString("O");
-        }
-    }
 
     public static class Logger
     {
@@ -32,28 +23,6 @@ namespace EJLive.Shared
         }
     }
 
-    public static class SecurityHelper
-    {
-        public static string SHA256Hash(string value)
-        {
-            using (var sha = SHA256.Create())
-            {
-                var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(value ?? string.Empty));
-                var builder = new StringBuilder(bytes.Length * 2);
-                foreach (var b in bytes)
-                {
-                    builder.Append(b.ToString("x2"));
-                }
-
-                return builder.ToString();
-            }
-        }
-
-        public static string MaskSensitiveValue(string value)
-        {
-            return SecretRedactor.MaskCard(value);
-        }
-    }
 
     public sealed class RetryPolicy
     {

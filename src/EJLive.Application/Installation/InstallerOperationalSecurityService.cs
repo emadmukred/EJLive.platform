@@ -494,7 +494,7 @@ internal static class InstallerOperationalSecurityService
 
             if (!process.WaitForExit(timeoutMs))
             {
-                try { process.Kill(); } catch { }
+                try { process.Kill(); } catch (InvalidOperationException) { /* EJLIVE: teardown race, pid already exited (SS14) */ }
                 return (false, -2, fileName + " timed out.");
             }
 
