@@ -81,26 +81,26 @@ jobs:
           done
 
       # The job is a FAIL if any rule produced at least one error verdict.
+      # We avoid YAML's merge-key interpretation by putting the python
+      # script in a separate file via `python3 -c` (single-quoted,
+      # no heredoc) so the YAML parser never sees `<<`.
       - name: summarise
         if: always()
         run: |
-          python3 - <<'PY'
-import json, os, pathlib
+          python3 -c 'import json, pathlib, sys
+          bad = 0
+          for name in ("arch.json", "impl.json", "changelog.json"):
+              p = pathlib.Path(name)
+              if not p.exists() or p.stat().st_size == 0:
+                  continue
+              try:
+                  verdicts = json.loads(p.read_text())
+              except Exception:
+                  continue
+              if any(v.get("severity") == "error" for v in verdicts):
+                  bad += 1
+          if bad > 0:
+              print(f"incoming-rules: {bad} rule set(s) reported violations.")
+              sys.exit(1)
+          print("incoming-rules: clean.")'
 
-bad = 0
-for name in ("arch.json", "impl.json", "changelog.json"):
-    p = pathlib.Path(name)
-    if not p.exists() or p.stat().st_size == 0:
-        continue
-    try:
-        d = json.loads(p.read_text())
-    except Exception:
-        continue
-    if any(v.get("severity") == "error" for v in d):
-        bad += 1
-
-if bad > 0:
-    print(f"::error title=incoming-rules::{bad} rule set(s) reported violations. See the annotations above.")
-    raise SystemExit(1)
-print("incoming-rules: clean.")
-PY
