@@ -354,6 +354,8 @@ EJLive.Verification,src/EJLive.Verification/Properties/AssemblyInfo.cs,17,359d95
 (reference),src/_reference/orphan-projects/EJLive.Setup/Program.cs,282,,linked-reference
 (reference),src/_reference/orphan-projects/EJLive.Setup/SetupWizardForm.cs,194,,linked-reference
 (reference),src/_reference/orphan-projects/EJLive.Vendors/Common/IVendorAdapter.cs,63,,linked-reference
+(reference),src/_reference/uncompiled/EJLive.Business/BusinessAdapters.cs,78,,linked-reference
+(reference),src/_reference/uncompiled/EJLive.Business/UnifiedServiceGateway.cs,152,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Client.WinForms/Agent/AgentBootstrapper.cs,1395,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Client.WinForms/Agent/AgentTrayContext.cs,77,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Client.WinForms/Agent/AutoAdminSetup.cs,42,,linked-reference
@@ -499,6 +501,7 @@ EJLive.Verification,src/EJLive.Verification/Properties/AssemblyInfo.cs,17,359d95
 (reference),src/_reference/uncompiled/EJLive.Server.WinForms/JournalViewerForm.bind.cs,20,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server.WinForms/JournalViewerForm.cs,298,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server.WinForms/Models/DashboardModuleDefinition.cs,97,,linked-reference
+(reference),src/_reference/uncompiled/EJLive.Server.WinForms/Models/ServerModels.cs,93,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server.WinForms/ServerAdapters.cs,45,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server.WinForms/ServerMainForm.Designer.cs,885,,linked-reference
 (reference),src/_reference/uncompiled/EJLive.Server.WinForms/ServerMainForm.bind.cs,21,,linked-reference
