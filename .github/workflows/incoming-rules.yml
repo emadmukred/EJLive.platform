@@ -84,22 +84,23 @@ jobs:
       - name: summarise
         if: always()
         run: |
-          bad=0
-          for f in arch.json impl.json changelog.json; do
-            if [ -s "$f" ]; then
-              python3 -c "
-                import json, pathlib
-                p = pathlib.Path('$f')
-                try:
-                    d = json.loads(p.read_text())
-                except Exception:
-                    raise SystemExit(0)
-                raise SystemExit(1 if any(v.get('severity') == 'error' for v in d) else 0)
-              " && continue || bad=$((bad + 1))
-            fi
-          done
-          if [ "$bad" -gt 0 ]; then
-            echo "::error title=incoming-rules:: $bad rule set(s) reported violations. See the annotations above."
-            exit 1
-          fi
-          echo "incoming-rules: clean."
+          python3 - <<'PY'
+import json, os, pathlib
+
+bad = 0
+for name in ("arch.json", "impl.json", "changelog.json"):
+    p = pathlib.Path(name)
+    if not p.exists() or p.stat().st_size == 0:
+        continue
+    try:
+        d = json.loads(p.read_text())
+    except Exception:
+        continue
+    if any(v.get("severity") == "error" for v in d):
+        bad += 1
+
+if bad > 0:
+    print(f"::error title=incoming-rules::{bad} rule set(s) reported violations. See the annotations above.")
+    raise SystemExit(1)
+print("incoming-rules: clean.")
+PY
