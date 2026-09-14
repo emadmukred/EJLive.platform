@@ -52,7 +52,7 @@ JournalSyncTrackerService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Servi
 JournalSyncTrackingService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/JournalSyncTrackingService.cs,3,0,orphan,
 JournalTransferIntelligenceService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/JournalTransferIntelligenceService.cs,1,0,orphan,
 LabelMappingService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/LabelMappingService.cs,0,0,reference-only,AppBootstrapper.cs
-LanguageManager,EJLive.Shared.UI,EJLive.Core,src/EJLive.Core/Shared/UI/LanguageManager.cs,1,0,orphan,
+LanguageManager,EJLive.Shared.UI,EJLive.Core,src/EJLive.Core/Shared/UI/LanguageManager.cs,2,0,orphan,
 LocalConfigurationStore,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/ClientServiceMissingComponents.cs,0,0,orphan,
 LogRedactionEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/LogRedactionEngine.cs,5,0,orphan,
 MergedTraceCorrelationService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/MergedTraceCorrelationService.cs,1,0,orphan,

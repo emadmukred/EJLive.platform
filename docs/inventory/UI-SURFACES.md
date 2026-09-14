@@ -8,6 +8,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Core | GradientPanel | src/EJLive.Core/Shared/ThemeManager.cs | 0 | 0 | 0 |
 | EJLive.Installer.WinForms | InstallerForm | src/EJLive.Installer.WinForms/InstallerForm.cs | 1 | 2 | 0 |
 | EJLive.Monitoring.WinForms | MainDashboardForm | src/EJLive.Monitoring.WinForms/MainDashboardForm.cs | 16 | 1 | 0 |
+| EJLive.Server.WinForms | ATMCardPanel | src/EJLive.Server.WinForms/ATMCardPanel.cs | 13 | 1 | 1 |
 | EJLive.Server.WinForms | ATMDetailDrawerForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 8 | 1 | 0 |
 | EJLive.Server.WinForms | ATMDetailForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 8 | 1 | 0 |
 | EJLive.Server.WinForms | JournalStudioForm | src/EJLive.Server.WinForms/JournalStudioForm.cs | 32 | 9 | 0 |

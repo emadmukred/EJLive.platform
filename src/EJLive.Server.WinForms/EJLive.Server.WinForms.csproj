@@ -37,6 +37,7 @@
          declarations were missing their opening braces (CS1519/CS1001).
          Re-implement any Business-side need as extension methods over the
          canonical Core types, never as cross-assembly `partial`. -->
+    <Compile Include="ATMCardPanel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="PromptTextDialog.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

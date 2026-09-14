@@ -1406,60 +1406,15 @@ public sealed class ServerMainForm : Form
 
     private Control CreateAtmCard(ATMInfo atm)
     {
-        var accent = atm.GetCardColor();
-        var card = new Panel
+        // Wave 1 / SS-17 promotion: ATMCardPanel replaces the inline TableLayoutPanel
+        // card builder; it carries the 7-colour palette, blink animation for the
+        // Syncing state, hover border and a typed double-click event that we wire
+        // straight into the ATM detail drawer.
+        var card = new ATMCardPanel(atm)
         {
-            Width = 270,
-            Height = 178,
-            Margin = new Padding(8),
-            Padding = new Padding(0),
-            BackColor = SoftStatusColor(atm),
-            Cursor = Cursors.Hand
+            Margin = new Padding(8)
         };
-
-        var colorBar = new Panel { Dock = DockStyle.Top, Height = 6, BackColor = accent };
-        var body = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 7,
-            Padding = new Padding(10, 8, 10, 8),
-            BackColor = Color.Transparent
-        };
-        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
-        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
-        for (var i = 0; i < 7; i++)
-            body.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / 7));
-
-        var id = CardLabel(atm.ATM_ID ?? "UNKNOWN", 10F, FontStyle.Bold, Color.FromArgb(31, 41, 55));
-        var type = CardLabel(atm.ATM_Type ?? "ATM", 8.5F, FontStyle.Regular, Color.FromArgb(100, 116, 139), ContentAlignment.MiddleRight);
-        var status = CardLabel(atm.GetStatusLabel(), 8.5F, FontStyle.Bold, accent, ContentAlignment.MiddleCenter);
-        var name = CardLabel(atm.ATM_Name ?? atm.ATM_ID ?? "Unnamed ATM", 8.5F, FontStyle.Regular, Color.FromArgb(31, 41, 55), ContentAlignment.MiddleCenter);
-        var network = CardLabel($"Network: {atm.NetworkType}", 8F, FontStyle.Regular, Color.FromArgb(100, 116, 139), ContentAlignment.MiddleCenter);
-        var heartbeat = CardLabel($"Heartbeat: {ElapsedUtc(atm.LastHeartbeatUtc)}", 8F, FontStyle.Regular, Color.FromArgb(100, 116, 139), ContentAlignment.MiddleCenter);
-        var lastData = CardLabel($"Last data: {ElapsedUtc(atm.LastDataReceivedUtc)}", 8F, FontStyle.Regular, Color.FromArgb(100, 116, 139), ContentAlignment.MiddleCenter);
-        var health = CardLabel($"Health: {atm.HealthScore}%", 8F, FontStyle.Bold, Color.FromArgb(31, 41, 55), ContentAlignment.MiddleCenter);
-        var stats = CardLabel($"OK {atm.ApprovedTransactions} | Failed {atm.FailedTransactions} | Cards {atm.CardsCaptured}", 8F, FontStyle.Regular, Color.FromArgb(71, 85, 105), ContentAlignment.MiddleCenter);
-
-        body.Controls.Add(id, 0, 0);
-        body.Controls.Add(type, 1, 0);
-        body.Controls.Add(status, 0, 1);
-        body.SetColumnSpan(status, 2);
-        body.Controls.Add(name, 0, 2);
-        body.SetColumnSpan(name, 2);
-        body.Controls.Add(network, 0, 3);
-        body.SetColumnSpan(network, 2);
-        body.Controls.Add(heartbeat, 0, 4);
-        body.SetColumnSpan(heartbeat, 2);
-        body.Controls.Add(lastData, 0, 5);
-        body.SetColumnSpan(lastData, 2);
-        body.Controls.Add(stats, 0, 6);
-        body.Controls.Add(health, 1, 6);
-
-        card.Controls.Add(body);
-        card.Controls.Add(colorBar);
-        card.DoubleClick += (_, _) => new ATMDetailDrawerForm(atm).Show(this);
-        body.DoubleClick += (_, _) => new ATMDetailDrawerForm(atm).Show(this);
+        card.OnDoubleClickCard += (_, clicked) => new ATMDetailDrawerForm(clicked).Show(this);
         return card;
     }
 

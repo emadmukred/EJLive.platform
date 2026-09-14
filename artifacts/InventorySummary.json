@@ -15,8 +15,8 @@
   "EJLive.UnifiedLauncher",
   "EJLive.Verification"
  ],
- "compiled_files": 299,
- "compiled_lines": 54904,
+ "compiled_files": 300,
+ "compiled_lines": 55051,
  "cross_assembly_keys": [],
  "cross_assembly_partial_splits": 0,
  "cycles": [],
@@ -39,7 +39,7 @@
   "PERMISSIONS": 4,
   "PROTOCOL": 158,
   "TESTS": 44,
-  "UI-SURFACES": 93,
+  "UI-SURFACES": 94,
   "VENDORS": 77
  },
  "legal_partial_splits": 0,

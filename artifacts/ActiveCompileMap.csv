@@ -237,11 +237,12 @@ EJLive.Server,src/EJLive.Server/Services/ClientTelemetryStateService.cs,386,2329
 EJLive.Server,src/EJLive.Server/Services/JournalAnalyticsService.cs,225,527e9fa4a3e9fcdd610f902b97e24fb0,compiled
 EJLive.Server,src/EJLive.Server/Services/RemoteControlService.cs,591,920550602a43125cea63a48e37a3a770,compiled
 EJLive.Server,src/EJLive.Server/Services/ServerAuditService.cs,144,46cd4c1292882d642de688b982f5c0bc,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/ATMCardPanel.cs,192,f95e7d87420ba1d778453501dce1b9be,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/JournalStudioForm.cs,844,caf66fbd24b33a2a0e7c2e24c314842c,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Program.cs,11,4aea7781604a48793ad6636c64f483f9,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/PromptTextDialog.cs,74,7eabcc9b4d4bbcddd86c26da04117a8a,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Properties/AssemblyInfo.cs,13,d84a079a86320661099677bf13157040,compiled
-EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.cs,2351,6701ada11f0cf0d58245b294329c1a72,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.cs,2306,4f8c98ed3d3e1fe3cfe1033f94c17edf,compiled
 EJLive.Shared,src/EJLive.Shared/AppConfig.cs,137,37a09961813dab3c8e2baecdb735da94,compiled
 EJLive.Shared,src/EJLive.Shared/AppConstants.cs,158,c01a4cfb256728946493da25858f1d8e,compiled
 EJLive.Shared,src/EJLive.Shared/AppLogger.cs,168,b59c36cbe7026b19c66c7f426b687abe,compiled
