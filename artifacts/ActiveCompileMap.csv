@@ -52,7 +52,7 @@ EJLive.Core,src/EJLive.Core/Communication/Protocol.cs,137,e4eea860fb3b1508c773ea
 EJLive.Core,src/EJLive.Core/Config/AgentConfiguration.cs,213,bf3769940cca80704f1f7961888546a9,compiled
 EJLive.Core,src/EJLive.Core/Constants.cs,89,f3a541a6bd01e4d0a953c7b4b6376f5f,compiled
 EJLive.Core,src/EJLive.Core/Data/DatabaseMigrationContracts.cs,281,a61ca9ffd5a161456f50fe8d399edd5a,compiled
-EJLive.Core,src/EJLive.Core/Data/DatabaseMigrationsRunner.cs,244,ce004d353d32012b25edc5cefe561684,compiled
+EJLive.Core,src/EJLive.Core/Data/DatabaseMigrationsRunner.cs,247,a8b136695e039e437dd93250fb5e2150,compiled
 EJLive.Core,src/EJLive.Core/Data/JournalOffsetStore.cs,110,d497e8048f14381d576f644b977d4797,compiled
 EJLive.Core,src/EJLive.Core/Engine/ATMRealTimeStatusReducer.cs,345,358e403026872a8bd5d7a4d1152ef132,compiled
 EJLive.Core,src/EJLive.Core/Engine/CashDistributionParser.cs,210,bf02b9c8c4b2e116bede8975d06a6904,compiled
@@ -154,12 +154,12 @@ EJLive.Core,src/EJLive.Core/Server/IngestionPipelineContracts.cs,265,f66a80e66d5
 EJLive.Core,src/EJLive.Core/Server/ServerCoreServices.cs,298,5a00facb796dcd7c3e791b545d951075,compiled
 EJLive.Core,src/EJLive.Core/Services/AgentConfigurationXmlService.cs,230,478413a7c831f8b834aedcdf01d91177,compiled
 EJLive.Core,src/EJLive.Core/Services/AlertManager.cs,10,fd99bdef49929b73c827894fb220e5c4,compiled
-EJLive.Core,src/EJLive.Core/Services/AuditLogger.cs,186,f9a0d9d88533dbe3859fdd63eff91c22,compiled
+EJLive.Core,src/EJLive.Core/Services/AuditLogger.cs,186,f6619e43ab26a31267b03c49af02dad7,compiled
 EJLive.Core,src/EJLive.Core/Services/ClientTelemetryAnalyticsService.cs,190,dc3dc7a17be138c5d8cec5aeddde5f78,compiled
 EJLive.Core,src/EJLive.Core/Services/CommandSigningEngine.cs,198,5ca13a87368a75f5813f38607d7de57a,compiled
 EJLive.Core,src/EJLive.Core/Services/ControlledDiagnosticCommandService.cs,86,0f7c24b8fe09effc19f8823abc96628a,compiled
-EJLive.Core,src/EJLive.Core/Services/CoreServices.cs,107,c9a66e280322e485dc8cb04fe7c28fbb,compiled
-EJLive.Core,src/EJLive.Core/Services/DatabaseManager.cs,753,60cacca57c90da5f63c651e21479a681,compiled
+EJLive.Core,src/EJLive.Core/Services/CoreServices.cs,106,558977b170a3a708c740c17dea2ad779,compiled
+EJLive.Core,src/EJLive.Core/Services/DatabaseManager.cs,766,97f3c3ecfba05f31c4a8b9f082023202,compiled
 EJLive.Core,src/EJLive.Core/Services/GhostRemote2Service.cs,78,967a6b6cc750bf12fdac7c9c09b6d130,compiled
 EJLive.Core,src/EJLive.Core/Services/IJournalSyncService.cs,9,205f8a327e09f283d108b8a678aa2c63,compiled
 EJLive.Core,src/EJLive.Core/Services/JournalReadService.cs,107,130c4ece0596b5c0f6d78b04b0fbf814,compiled

@@ -40,7 +40,7 @@ InstallerStartupManager,EJLive.Application.Installation,EJLive.Application,src/E
 InstallerWindowsPolicyService,EJLive.Application.Installation,EJLive.Application,src/EJLive.Application/Installation/InstallerPlatformServices.cs,1,0,orphan,
 JournalAnalyticsService,EJLive.Core.Engine,EJLive.Server.WinForms,src/EJLive.Server.WinForms/Models/ServerModels.cs,6,4,host,ServerMainForm.cs
 JournalEngine,EJLive.Sovereign.Engine,EJLive.Core,src/EJLive.Core/Services/SovereignEngineCompatibility.cs,1,0,orphan,
-JournalOffsetStore,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/ClientServiceMissingComponents.cs,2,1,registry,FileWatcherOffsetTests.cs
+JournalOffsetStore,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/ClientServiceMissingComponents.cs,3,1,registry,FileWatcherOffsetTests.cs
 JournalReadService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/JournalReadService.cs,1,0,orphan,
 JournalSyncAlertService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/CoreServices.cs,2,1,host,ServerMainForm.cs
 JournalSyncDashboardService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/CoreServices.cs,0,0,reference-only,ServerMainForm.cs

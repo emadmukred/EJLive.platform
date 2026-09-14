@@ -1,10 +1,13 @@
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 
 namespace EJLive.Core.Data;
 
 /// <summary>
 /// Manages incremental database schema migrations for the EJLive SQLite database.
 /// Applies migrations idempotently and tracks applied versions in a migrations table.
+/// Wave 1 (D-06): migrated from <c>System.Data.SQLite</c> to <c>Microsoft.Data.Sqlite</c>
+/// so the assembly pins one ADO.NET provider (DEP-1 holds). The public surface and
+/// migration number naming are unchanged.
 /// </summary>
 public sealed class DatabaseMigrationsRunner
 {
@@ -29,7 +32,7 @@ public sealed class DatabaseMigrationsRunner
         {
             throw new ArgumentException("A database file path is required.", nameof(dbPath));
         }
-        return new DatabaseMigrationsRunner($"Data Source={dbPath};Version=3;");
+        return new DatabaseMigrationsRunner($"Data Source={dbPath}");
     }
 
     /// <summary>
@@ -60,7 +63,7 @@ public sealed class DatabaseMigrationsRunner
     public int GetCurrentVersion()
     {
         EnsureMigrationsTable();
-        using var conn = new SQLiteConnection(_connectionString);
+        using var conn = new SqliteConnection(_connectionString);
         conn.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MAX(version) FROM __migrations;";
@@ -70,7 +73,7 @@ public sealed class DatabaseMigrationsRunner
 
     private void EnsureMigrationsTable()
     {
-        using var conn = new SQLiteConnection(_connectionString);
+        using var conn = new SqliteConnection(_connectionString);
         conn.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = """
@@ -85,7 +88,7 @@ public sealed class DatabaseMigrationsRunner
 
     private HashSet<int> GetAppliedVersions()
     {
-        using var conn = new SQLiteConnection(_connectionString);
+        using var conn = new SqliteConnection(_connectionString);
         conn.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT version FROM __migrations;";
@@ -98,19 +101,19 @@ public sealed class DatabaseMigrationsRunner
 
     private void ApplyMigration(SchemaMigration migration)
     {
-        using var conn = new SQLiteConnection(_connectionString);
+        using var conn = new SqliteConnection(_connectionString);
         conn.Open();
         using var tx = conn.BeginTransaction();
         try
         {
             using var cmd = conn.CreateCommand();
-            cmd.Transaction = tx;
+            cmd.Transaction = (SqliteTransaction)tx;
             cmd.CommandText = migration.Sql;
             cmd.ExecuteNonQuery();
 
-            cmd.CommandText = "INSERT INTO __migrations (version, name) VALUES (@v, @n);";
-            cmd.Parameters.AddWithValue("@v", migration.Version);
-            cmd.Parameters.AddWithValue("@n", migration.Name);
+            cmd.CommandText = "INSERT INTO __migrations (version, name) VALUES ($v, $n);";
+            cmd.Parameters.AddWithValue("$v", migration.Version);
+            cmd.Parameters.AddWithValue("$n", migration.Name);
             cmd.ExecuteNonQuery();
 
             tx.Commit();
