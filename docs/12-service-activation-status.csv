@@ -76,6 +76,7 @@ SequenceValidationService,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/
 ServerAuditService,EJLive.Server.Services,EJLive.Server,src/EJLive.Server/Services/ServerAuditService.cs,1,0,orphan,
 ServerEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/OperationalEngines.cs,6,4,host,Program.cs
 ServiceRegistry,EJLive.Client.WinForms.Services,EJLive.Client.WinForms,src/EJLive.Client.WinForms/Services/ServiceRegistry.cs,2,0,orphan,
+SmartAnalysisService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/SmartAnalysisService.cs,3,1,host,MainDashboardForm.cs
 SystemBackupService,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/SystemBackupService.cs,1,1,registry,AgentHeadlessController.cs
 TerminalAgentManagementService,EJLive.Core.Server,EJLive.Core,src/EJLive.Core/Server/ServerCoreServices.cs,0,0,orphan,
 TestAuditStore,EJLive.Tests.Track13,EJLive.Tests,src/EJLive.Tests/Track13/RemoteAssistanceTests.cs,0,1,registry,RemoteAssistanceTests.cs
@@ -98,4 +99,4 @@ VendorPathRegistry,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/Ven
 VendorRootCapabilityService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/VendorRootCapabilityService.cs,2,0,reference-only,ServerMainForm.cs
 VendorRootProfileCatalogService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/CoreServices.cs,0,0,orphan,
 XfsAdapterRegistry,EJLive.Core.Xfs,EJLive.Core,src/EJLive.Core/Xfs/XfsAdapterRegistry.cs,1,1,registry,AtmJournalEndToEndTests.cs
-XfsLogAnalysisService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/XfsLogAnalysisService.cs,3,1,registry,UnifiedRuntimeTests.cs
+XfsLogAnalysisService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/XfsLogAnalysisService.cs,4,2,registry,SmartAnalysisService.cs
