@@ -58,26 +58,26 @@ jobs:
 
       # Publish every verdict as a GitHub Actions annotation so the PR
       # view shows the offending file, the rule, and the message inline.
+      # The python script is a one-liner to keep YAML block literals
+      # straightforward (no inner quotes or `<<` tokens).
       - name: publish annotations
         if: always()
         run: |
           for f in arch.json impl.json changelog.json; do
             if [ ! -s "$f" ]; then continue; fi
-            python3 -c "
-              import json, sys, pathlib
-              p = pathlib.Path('$f')
-              try:
-                  verdicts = json.loads(p.read_text())
-              except json.JSONDecodeError:
-                  print(f'::warning::{p} is not valid JSON; tool returned non-JSON output.')
-                  sys.exit(0)
-              for v in verdicts:
-                  sev = 'error' if v.get('severity') == 'error' else 'warning'
-                  f = v.get('file', '?').replace('%','%25')
-                  r = v.get('rule', '?')
-                  m = v.get('message', '?').replace('%','%25').replace('\n',' ')
-                  print(f'::{sev} file={f}::{r}: {m}')
-            "
+            python3 -c 'import json, pathlib, sys
+          p = pathlib.Path("'"$f"'")
+          try:
+              verdicts = json.loads(p.read_text())
+          except json.JSONDecodeError:
+              print("::warning::" + str(p) + " is not valid JSON")
+              sys.exit(0)
+          for v in verdicts:
+              sev = "error" if v.get("severity") == "error" else "warning"
+              file = v.get("file", "?").replace("%", "%25")
+              rule = v.get("rule", "?")
+              msg = v.get("message", "?").replace("%", "%25").replace(chr(10), " ")
+              print("::" + sev + " file=" + file + "::" + rule + ": " + msg)'
           done
 
       # The job is a FAIL if any rule produced at least one error verdict.
