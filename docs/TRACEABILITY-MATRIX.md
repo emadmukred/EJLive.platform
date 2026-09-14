@@ -43,6 +43,7 @@ deliberately tolerated under `docs/DEBT-LEDGER.md`.
 | Build / package scripts | "deployment procedures" | `tools/build/build.ps1`, `tools/gates/run-gate.ps1`, `tools/package/package.bat` (was `src/Package.bat`, paths repaired), `tools/package/Package.bat` (legacy archive) | exists |
 | Inventory tooling | "inventory regeneration per push" | `tools/inventory/ejlive_inventory.py` (12 artefacts) + `tools/inventory/service_activation.py`; CI enforces `--check` | exists |
 | Safety policy | "no unsafe vocabulary" | `tools/gates/ejlive_static_gate.py` `SEC-1` (loaded terms), `SEC-2` (`unsafe`), `SEC-3` (weak crypto), `GIT-3` (literal credentials); `RunUnsafeTermScanProbe` | exists — 0 violations, 3 recorded `// safe:`/`// safe-file:` reasons |
+| Incoming rules (auto-applied) | "every upload checked against binding rules" | `docs/incoming-rules/{00_CHANGELOG_Corrections.md, 01_eJLIVE_Architecture_Analysis_Prompt.md, 02_eJLIVE_Coding_Implementation_Prompt.md}`, `tools/incoming/incoming_rules.py`, `.github/workflows/incoming-rules.yml`, `tools/hooks/pre-commit` | exists — runs on every push and on every pre-commit; per-rule verdicts published as GitHub Actions annotations |
 
 ## Deliberate deviations from "promote everything now"
 

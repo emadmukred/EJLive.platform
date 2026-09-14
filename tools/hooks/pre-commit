@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""
+pre-commit — runs the incoming-rules toolchain against staged changes.
+
+Install (one-time, per developer):
+    ln -s ../../tools/hooks/pre-commit .git/hooks/pre-commit
+
+This is the local companion of .github/workflows/incoming-rules.yml. The CI
+job runs the same checks on every push; running it before commit keeps a
+violation from ever reaching the remote.
+
+Staged files are obtained via `git diff --cached --name-only --diff-filter=ACMR`.
+The toolchain is invoked once per file with all three rule sets; exit code
+2 (any rule violation) blocks the commit.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+TOOL = ROOT / "tools" / "incoming" / "incoming_rules.py"
+
+
+def staged_files() -> list[str]:
+    """Return the list of staged files (add/copy/modify/rename) relative to ROOT."""
+    out = subprocess.check_output(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+        cwd=str(ROOT),
+    )
+    return [line.strip() for line in out.decode("utf-8", errors="replace").splitlines() if line.strip()]
+
+
+def check_one(rel: str) -> int:
+    target = ROOT / rel
+    if not target.exists():
+        # Deleted files are not checked.
+        return 0
+    cmd = [
+        sys.executable,
+        str(TOOL),
+        "--upload",
+        str(target),
+        "--check-architecture",
+        "--check-implementation",
+        "--check-changelog",
+    ]
+    proc = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+    if proc.returncode == 0:
+        return 0
+    print(f"\n::incoming-rule violation:: {rel}")
+    try:
+        data = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        print(proc.stdout)
+        return proc.returncode
+    for v in data:
+        print(f"  [{v['severity']}] {v['rule']}: {v['message']}")
+    return proc.returncode
+
+
+def main() -> int:
+    files = staged_files()
+    if not files:
+        return 0
+
+    failed = 0
+    for rel in files:
+        code = check_one(rel)
+        if code != 0:
+            failed += 1
+
+    if failed:
+        print(f"\npre-commit blocked: {failed} file(s) violated incoming rules.")
+        print("See docs/incoming-rules/README.md for the rule documents and remediation paths.")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -23,6 +23,7 @@ jobs:
   structure:
     name: ledgers + repository rules (no compiler)
     runs-on: ubuntu-latest
+    needs: incoming-rules
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,7 +33,7 @@ jobs:
         run: python3 tools/inventory/ejlive_inventory.py --check
       - name: service activation ledger is current
         run: python3 tools/inventory/service_activation.py --check
-      - name: static gate (38 rules)
+      - name: static gate (41 rules)
         run: python3 tools/gates/ejlive_static_gate.py --verbose
       - name: artefact integrity (compile map, summary, probe and test ledgers agree)
         run: python3 tools/gates/check_artefacts.py

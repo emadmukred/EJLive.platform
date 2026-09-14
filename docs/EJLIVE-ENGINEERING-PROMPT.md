@@ -587,3 +587,34 @@ listed there with the exact input needed — G-1 (specification corpus not prese
    `Samples/*.LOG`, and a 64 MB transfer interrupted at 50 % resumes correctly.
 9. No UI thread handler above 50 ms, no `.Result`, no `unsafe`, no WPF, no web UI, one parser per vendor.
 10. PR merges only with CI green; commits carry `SS-nn` references for spec-traceable changes.
+
+## SS19 · Incoming rules (auto-applied to every upload)
+
+Three binding documents and a toolchain apply these rules automatically on
+every push and pre-commit. Adding a rule means updating one of the documents
+below and the corresponding check in `tools/incoming/incoming_rules.py`; the
+CI job `.github/workflows/incoming-rules.yml` runs the tool on every push,
+and the pre-commit hook (`tools/hooks/pre-commit`) runs it locally so a
+violation never reaches GitHub.
+
+| document | scope |
+|---|---|
+| `docs/incoming-rules/00_CHANGELOG_Corrections.md` | every correction applied to the repo, its finding, its fix, its current status (CLOSED / RESURFACED). The incoming toolchain refuses any upload that re-introduces a CLOSED entry. |
+| `docs/incoming-rules/01_eJLIVE_Architecture_Analysis_Prompt.md` | architectural rules (A–K: project topology, compile maps, type ownership, wire protocol, data layer, UI surface, security, concurrency, patterns, waves, acceptance). |
+| `docs/incoming-rules/02_eJLIVE_Coding_Implementation_Prompt.md` | implementation rules (K–T: file shape, SQL, parsing, network, observability, code patterns, anti-patterns, language, tests, definition of done). |
+
+Run it locally:
+
+```bash
+python3 tools/incoming/incoming_rules.py --upload src/ --check-architecture
+python3 tools/incoming/incoming_rules.py --upload src/ --check-implementation
+python3 tools/incoming/incoming_rules.py --upload src/ --check-changelog
+```
+
+Exit codes: `0` = clean; `2` = at least one violation (per-rule JSON written
+to stdout; CI mirrors it as a GitHub Actions annotation); `3` = internal
+error.
+
+When a rule fails, the PR view shows the offending file, the rule ID, and a
+one-line message. There is no override; the repo rule is "fix the tree or
+record named debt in `docs/DEBT-LEDGER.md`".

@@ -1,0 +1,105 @@
+name: Incoming rules (apply 00/01/02 on every push)
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One live run per ref; a superseded push is cancelled to save runners.
+concurrency:
+  group: incoming-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  rules:
+    name: incoming rules (00/01/02)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: architecture rules
+        run: |
+          set +e
+          python3 tools/incoming/incoming_rules.py \
+              --upload src/ \
+              --check-architecture > arch.json
+          echo "exit_arch=$?"
+        continue-on-error: true
+
+      - name: implementation rules
+        run: |
+          set +e
+          python3 tools/incoming/incoming_rules.py \
+              --upload src/ \
+              --check-implementation > impl.json
+          echo "exit_impl=$?"
+        continue-on-error: true
+
+      - name: changelog rules
+        run: |
+          set +e
+          python3 tools/incoming/incoming_rules.py \
+              --upload src/ \
+              --check-changelog > changelog.json
+          echo "exit_chl=$?"
+        continue-on-error: true
+
+      # Publish every verdict as a GitHub Actions annotation so the PR
+      # view shows the offending file, the rule, and the message inline.
+      - name: publish annotations
+        if: always()
+        run: |
+          for f in arch.json impl.json changelog.json; do
+            if [ ! -s "$f" ]; then continue; fi
+            python3 -c "
+              import json, sys, pathlib
+              p = pathlib.Path('$f')
+              try:
+                  verdicts = json.loads(p.read_text())
+              except json.JSONDecodeError:
+                  print(f'::warning::{p} is not valid JSON; tool returned non-JSON output.')
+                  sys.exit(0)
+              for v in verdicts:
+                  sev = 'error' if v.get('severity') == 'error' else 'warning'
+                  f = v.get('file', '?').replace('%','%25')
+                  r = v.get('rule', '?')
+                  m = v.get('message', '?').replace('%','%25').replace('\n',' ')
+                  print(f'::{sev} file={f}::{r}: {m}')
+            "
+          done
+
+      # The job is a FAIL if any rule produced at least one error verdict.
+      - name: summarise
+        if: always()
+        run: |
+          bad=0
+          for f in arch.json impl.json changelog.json; do
+            if [ -s "$f" ]; then
+              python3 -c "
+                import json, pathlib
+                p = pathlib.Path('$f')
+                try:
+                    d = json.loads(p.read_text())
+                except Exception:
+                    raise SystemExit(0)
+                raise SystemExit(1 if any(v.get('severity') == 'error' for v in d) else 0)
+              " && continue || bad=$((bad + 1))
+            fi
+          done
+          if [ "$bad" -gt 0 ]; then
+            echo "::error title=incoming-rules:: $bad rule set(s) reported violations. See the annotations above."
+            exit 1
+          fi
+          echo "incoming-rules: clean."
