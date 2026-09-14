@@ -1,5 +1,7 @@
 using System.Drawing;
-using System.Windows.Forms;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace EJLive.Core.Models
 {
@@ -129,22 +131,11 @@ namespace EJLive.Core.Models
     }
 
     /// <summary>
-    /// Thin type twin of <c>EJLive.Shared.LightUiTheme</c> — the consumer path
-    /// (Server.WinForms / Monitoring) imports <c>EJLive.Core.Models</c>, so the real
-    /// implementation in <c>EJLive.Shared</c> is invisible to those projects. The
-    /// <c>Apply(Form)</c> method is a no-op here; the surface implementations call
-    /// the Shared type directly.
+    /// LightUiTheme was promoted to <c>EJLive.Core.UI.LightUiTheme</c> in Wave 4
+    /// (SS-26). Wave 5 (SS-27) confirms no production consumer references this
+    /// stub type any more — the canonical light palette lives in the
+    /// <c>EJLive.Core.UI</c> assembly which every WinForms surface now references.
     /// </summary>
-    public static class LightUiTheme
-    {
-        public static Color Window => Color.FromArgb(30, 30, 35);
-        public static Color Surface => Color.FromArgb(40, 40, 48);
-        public static Color SurfaceAlt => Color.FromArgb(25, 25, 30);
-        public static Color Text => Color.White;
-        public static Color Muted => Color.Gray;
-        public static Color Border => Color.FromArgb(60, 60, 68);
-        public static void Apply(Form form) { }
-    }
 
     /// <summary>
     /// Thin type twin of <c>EJLive.Shared.SecurityHelper</c>. The bodies here are
