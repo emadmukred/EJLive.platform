@@ -96,6 +96,8 @@ full workflow, exit codes, and how to add a new rule.
 | `d669605` | Wave 2 (D-01 + D-07) | archived `BusinessAdapters.cs`, `UnifiedServiceGateway.cs`, `Models/ServerModels.cs`; 14 cross-assembly partial splits collapsed to 0; canonical `MsgType` stays in `EJLive.Core.Engine.CommunicationProtocol` |
 | `944076a` | Wave 2 follow-up | regenerated `ActiveCompileMap` ledger after the D-01 archive |
 | `fe574b2` | Wave 1 (SS-17) | promoted `ATMCardPanel` from archive to `EJLive.Server.WinForms`; replaces the inline `CreateAtmCard` |
+| `826ef7f` | Wave 2 (SS-19) | auto-apply incoming rules (00/01/02) on every push and pre-commit |
+| `62ee89d`, `50da199`, `51e6397`, `02f5287`, `3991fc4`, `c447957`, `d3c4642`, `d8b37c8`, `8108258` | Wave 2 follow-ups | consolidated `incoming-rules` job into `ci.yml` (cross-workflow `needs:` is unsupported in GitHub Actions); fixed YAML merge-key + shell-quoting issues in the annotation step |
 
 ## Shipped executables
 
