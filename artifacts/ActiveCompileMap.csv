@@ -38,7 +38,7 @@ EJLive.Client.Service,src/EJLive.Client.Service/RuntimeAgentConfigResolver.cs,22
 EJLive.Client.Service,src/EJLive.Client.Service/StableServiceProgram.cs,80,89b160ec39ca56cab8d385c4fc8416d9,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/SystemBackupService.cs,1479,0cf1ea5f0739fbe1d6c260a48e70c426,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/TimeSyncScheduler.cs,63,f7939e57346ab734438e30a4faf00c98,compiled
-EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientMainForm.cs,425,5ff113c183447b49d1c5c30893f07a11,compiled
+EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientMainForm.cs,414,9f0823ed66b23a62cd1734cddc00803f,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientStartupPlanner.cs,47,c384b561a27333c81132f8a766963687,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/Program.cs,11,98631d6e7e791a9ec616f595fbafa767,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/Properties/AssemblyInfo.cs,13,61fb4c191c4fbb5bc1349157679e6d96,compiled
@@ -220,6 +220,11 @@ EJLive.Core,src/EJLive.Core/Xfs/Adapters/OoxfsRuntimeAdapter.cs,51,8bff9e90a032a
 EJLive.Core,src/EJLive.Core/Xfs/XfsAdapterRegistry.cs,51,ce5d8a93b3bf0d7664fd6da8cd151ea5,compiled
 EJLive.Core,src/EJLive.Core/Xfs/XfsEventModels.cs,74,ae7800470768246c506df95087c33504,compiled
 EJLive.Core,src/EJLive.Core/Xfs/XfsModels.cs,49,56ae30e544634606e83188b57d2344dc,compiled
+EJLive.Core.UI,src/EJLive.Core.UI/ControlRenderingExtensions.cs,22,99d9ed1f3bcc6d4ccd6a98948063f41e,compiled
+EJLive.Core.UI,src/EJLive.Core.UI/LightUiTheme.cs,75,d5eda418a1517b710ac3fb10bf9a951f,compiled
+EJLive.Core.UI,src/EJLive.Core.UI/OwnerDrawnCharts.cs,101,8bd3751d464187da95dcc5300a72d18b,compiled
+EJLive.Core.UI,src/EJLive.Core.UI/Properties/AssemblyInfo.cs,8,a1565f39ca60d388deda934e3b7fc080,compiled
+EJLive.Core.UI,src/EJLive.Core.UI/UiHelpers.cs,167,7b2a9ed68357a09b665628de19468fec,compiled
 EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/InstallerAutomationRunner.cs,477,ebe5523a5c58ff5f12223e2e043c766f,compiled
 EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/InstallerForm.cs,128,79800e639a96167e5c09b43da939671c,compiled
 EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/InstallerOperationalSecurityService.cs,510,0a071ac89bf1e159181d4e905ad6b0a2,compiled
@@ -228,7 +233,7 @@ EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/Program.cs,51,30250531fb
 EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/Properties/AssemblyInfo.cs,13,fb495f7564cbd8361b3b658dd9a37331,compiled
 EJLive.LegacyReference,src/EJLive.LegacyReference/LegacyReferenceMarker.cs,9,fd15e026f74366ececd83f5f3237f3b1,compiled
 EJLive.LegacyReference,src/EJLive.LegacyReference/Properties/AssemblyInfo.cs,13,672dfd7cffad5e1a132a5f49c26ee8b8,compiled
-EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/MainDashboardForm.cs,788,50e272ecfa33038a3a6240cdd49fcc0d,compiled
+EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/MainDashboardForm.cs,789,ae9985d513410388b6359dcaac3b7efa,compiled
 EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/Models/DashboardModels.cs,79,4fb8dd6e196cb7a759640503b16d2084,compiled
 EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/Program.cs,11,14c1216c316f0957d9c569e23208d063,compiled
 EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/Properties/AssemblyInfo.cs,13,8cf521fca9a716aa743b688e2872c2a7,compiled
@@ -237,12 +242,12 @@ EJLive.Server,src/EJLive.Server/Services/ClientTelemetryStateService.cs,386,2329
 EJLive.Server,src/EJLive.Server/Services/JournalAnalyticsService.cs,225,527e9fa4a3e9fcdd610f902b97e24fb0,compiled
 EJLive.Server,src/EJLive.Server/Services/RemoteControlService.cs,591,920550602a43125cea63a48e37a3a770,compiled
 EJLive.Server,src/EJLive.Server/Services/ServerAuditService.cs,144,46cd4c1292882d642de688b982f5c0bc,compiled
-EJLive.Server.WinForms,src/EJLive.Server.WinForms/ATMCardPanel.cs,192,f95e7d87420ba1d778453501dce1b9be,compiled
-EJLive.Server.WinForms,src/EJLive.Server.WinForms/JournalStudioForm.cs,844,caf66fbd24b33a2a0e7c2e24c314842c,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/ATMCardPanel.cs,191,e8472a774fd348b7a6ae0c5e8e03a6e5,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/JournalStudioForm.cs,752,239dd7233aed015ded0feb92166e0948,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Program.cs,11,4aea7781604a48793ad6636c64f483f9,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/PromptTextDialog.cs,74,7eabcc9b4d4bbcddd86c26da04117a8a,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Properties/AssemblyInfo.cs,13,d84a079a86320661099677bf13157040,compiled
-EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.cs,2306,4f8c98ed3d3e1fe3cfe1033f94c17edf,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.cs,2255,b4a87957248c5f63314f095323c4bf69,compiled
 EJLive.Shared,src/EJLive.Shared/AppConfig.cs,137,37a09961813dab3c8e2baecdb735da94,compiled
 EJLive.Shared,src/EJLive.Shared/AppConstants.cs,158,c01a4cfb256728946493da25858f1d8e,compiled
 EJLive.Shared,src/EJLive.Shared/AppLogger.cs,168,b59c36cbe7026b19c66c7f426b687abe,compiled

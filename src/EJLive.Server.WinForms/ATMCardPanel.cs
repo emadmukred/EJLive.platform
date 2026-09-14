@@ -2,13 +2,14 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using EJLive.Core.Models;
-using EJLive.Shared;
+using EJLive.Core.UI;
 
 namespace EJLive.Server.WinForms;
 
 /// <summary>
 /// Interactive ATM card (Wave 1 / SS-17 promotion from
-/// <c>src/_reference/uncompiled/EJLive.Server.WinForms/ATMCardPanel.cs</c>).
+/// <c>src/_reference/uncompiled/EJLive.Server.WinForms/ATMCardPanel.cs</c>,
+/// Wave 4 light-palette refresh).
 ///
 /// Renders one ATM on the Network Map with a 7-colour status palette
 /// (green/yellow/blue/orange/red/gray/dark-gray) and a blink animation while
@@ -20,8 +21,10 @@ namespace EJLive.Server.WinForms;
 ///     the elapsed formatter lives here as a private static helper so the
 ///     server-only WinForms layer owns its UI formatting (Core stays free of
 ///     string-display methods).
-///   * Comments translated to English (operator-visible copy stays in
-///     <see cref="LanguageManager"/>; source prose is English only).
+///   * Wave 4: palette moved to <see cref="LightUiTheme"/> (canonical light
+///     palette in <c>EJLive.Core.UI</c>) and the per-state BackColor switch
+///     uses the same accent the status badge carries, so the card body
+///     harmonises with the status colour rather than fighting it.
 /// </summary>
 public class ATMCardPanel : Panel
 {
@@ -59,16 +62,13 @@ public class ATMCardPanel : Panel
         Margin = new Padding(6);
         BorderStyle = BorderStyle.None;
 
-        // Top colour bar — accent for the current ATMCardState.
         _colorBar = new Panel { Height = 5, Dock = DockStyle.Top };
 
-        // Header row: ATM id (left) + vendor type (right).
         _headerPanel = new Panel { Height = 32, Dock = DockStyle.Top, Padding = new Padding(8, 6, 8, 0) };
-        _lblId = new Label { AutoSize = true, ForeColor = LightUiTheme.Text, Font = new Font("Consolas", 10F, FontStyle.Bold) };
+        _lblId = new Label { AutoSize = true, ForeColor = LightUiTheme.Ink, Font = new Font("Consolas", 10F, FontStyle.Bold) };
         _lblType = new Label { AutoSize = true, ForeColor = LightUiTheme.Muted, Font = new Font("Segoe UI", 8F), Dock = DockStyle.Right };
         _headerPanel.Controls.AddRange(new Control[] { _lblId, _lblType });
 
-        // Status line (accent-coloured).
         _lblStatus = new Label
         {
             Height = 20,
@@ -78,12 +78,12 @@ public class ATMCardPanel : Panel
             Padding = new Padding(4, 0, 4, 0)
         };
 
-        _lblName = new Label { Height = 18, Dock = DockStyle.Top, ForeColor = LightUiTheme.Text, Font = new Font("Segoe UI", 9F), TextAlign = ContentAlignment.MiddleCenter };
+        _lblName = new Label { Height = 18, Dock = DockStyle.Top, ForeColor = LightUiTheme.Ink, Font = new Font("Segoe UI", 9F), TextAlign = ContentAlignment.MiddleCenter };
         _lblNetwork = new Label { Height = 16, Dock = DockStyle.Top, ForeColor = LightUiTheme.Muted, Font = new Font("Segoe UI", 7.5F), TextAlign = ContentAlignment.MiddleCenter };
         _lblHB = new Label { Height = 16, Dock = DockStyle.Top, ForeColor = LightUiTheme.Muted, Font = new Font("Segoe UI", 7.5F), TextAlign = ContentAlignment.MiddleCenter };
         _lblLatency = new Label { Height = 16, Dock = DockStyle.Top, ForeColor = LightUiTheme.Muted, Font = new Font("Segoe UI", 7.5F), TextAlign = ContentAlignment.MiddleCenter };
-        _lblLastJournal = new Label { Height = 18, Dock = DockStyle.Top, ForeColor = Color.FromArgb(25, 135, 84), Font = new Font("Segoe UI", 7.5F), TextAlign = ContentAlignment.MiddleCenter };
-        _lblLastError = new Label { Height = 16, Dock = DockStyle.Top, ForeColor = Color.FromArgb(180, 35, 24), Font = new Font("Consolas", 7.5F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter };
+        _lblLastJournal = new Label { Height = 18, Dock = DockStyle.Top, ForeColor = LightUiTheme.Healthy, Font = new Font("Segoe UI", 7.5F), TextAlign = ContentAlignment.MiddleCenter };
+        _lblLastError = new Label { Height = 16, Dock = DockStyle.Top, ForeColor = LightUiTheme.Failed, Font = new Font("Consolas", 7.5F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter };
         _lblSyncStats = new Label { Height = 16, Dock = DockStyle.Bottom, ForeColor = LightUiTheme.Muted, Font = new Font("Segoe UI", 7F), TextAlign = ContentAlignment.MiddleCenter };
 
         Controls.AddRange(new Control[]
@@ -92,12 +92,10 @@ public class ATMCardPanel : Panel
             _lblHB, _lblLatency, _lblLastJournal, _lblLastError, _lblSyncStats
         });
 
-        // Drill-down events.
         DoubleClick += (_, _) => OnDoubleClickCard?.Invoke(this, _atm);
         _lblStatus.DoubleClick += (_, _) => OnDoubleClickCard?.Invoke(this, _atm);
         AttachHoverEffect();
 
-        // Blink timer for the Syncing state (started/stopped in UpdateATM).
         _blinkTimer = new Timer { Interval = 800 };
         _blinkTimer.Tick += BlinkTick;
     }
@@ -122,20 +120,25 @@ public class ATMCardPanel : Panel
         _lblStatus.Text = atm.GetStatusLabel();
         _lblStatus.ForeColor = cardColor;
         _lblNetwork.Text = $"NET {atm.NetworkType} | {atm.BranchName ?? "—"}";
-        _lblHB.Text = $"HB {FormatElapsed(atm.LastHeartbeatUtc)} | EJ {FormatElapsed(atm.LastSyncUtc)}";
+        _lblHB.Text = $"HB {UiHelpers.ElapsedUtc(atm.LastHeartbeatUtc)} | EJ {UiHelpers.ElapsedUtc(atm.LastSyncUtc)}";
         _lblLatency.Text = $"LAT {atm.Latency_ms} ms";
         _lblLastJournal.Text = !string.IsNullOrEmpty(atm.LastJournalFile) ? $"FILE {atm.LastJournalFile}" : string.Empty;
         _lblLastError.Text = !string.IsNullOrEmpty(atm.LastErrorCode) ? $"WARN {atm.LastErrorCode}" : string.Empty;
         _lblSyncStats.Text = $"OK:{atm.ApprovedTransactions} FAIL:{atm.FailedTransactions} CARD:{atm.CardsCaptured}";
 
-        // Background by state.
-        BackColor = state == ATMCardState.ConnectedActive
-            ? Color.FromArgb(232, 245, 233)
-            : state == ATMCardState.CriticalOffline
-                ? Color.FromArgb(255, 235, 238)
-                : LightUiTheme.Surface;
+        // Card body uses a soft state colour so the operator reads the
+        // status at a glance (the badge carries the saturated accent).
+        BackColor = state switch
+        {
+            ATMCardState.ConnectedActive => SoftColor(LightUiTheme.Healthy),
+            ATMCardState.ConnectedIdle => SoftColor(LightUiTheme.Warning),
+            ATMCardState.Syncing or ATMCardState.WaitingReply => SoftColor(LightUiTheme.Syncing),
+            ATMCardState.Supervisor => SoftColor(LightUiTheme.Supervisor),
+            ATMCardState.RecentlyDisconnected or ATMCardState.WarningOffline => SoftColor(LightUiTheme.Failed),
+            ATMCardState.CriticalOffline => Color.FromArgb(241, 245, 249),
+            _ => LightUiTheme.Surface
+        };
 
-        // Blink on Syncing only.
         if (_blinkTimer is not null)
         {
             if (state == ATMCardState.Syncing && !_blinkTimer.Enabled)
@@ -149,10 +152,16 @@ public class ATMCardPanel : Panel
         Invalidate();
     }
 
+    private static Color SoftColor(Color accent)
+        => Color.FromArgb(
+            (int)Math.Min(255, accent.R + 32),
+            (int)Math.Min(255, accent.G + 32),
+            (int)Math.Min(255, accent.B + 32));
+
     private void BlinkTick(object? sender, EventArgs e)
     {
         _blinkState = !_blinkState;
-        _colorBar.BackColor = _blinkState ? Color.FromArgb(10, 132, 255) : Color.FromArgb(0, 80, 200);
+        _colorBar.BackColor = _blinkState ? LightUiTheme.Accent : LightUiTheme.Syncing;
     }
 
     private void AttachHoverEffect()
@@ -161,7 +170,7 @@ public class ATMCardPanel : Panel
         {
             if (IsDisposed) return;
             using var g = CreateGraphics();
-            ControlPaint.DrawBorder(g, ClientRectangle, Color.FromArgb(99, 99, 102), ButtonBorderStyle.Solid);
+            ControlPaint.DrawBorder(g, ClientRectangle, LightUiTheme.Accent, ButtonBorderStyle.Solid);
         };
     }
 
@@ -178,15 +187,5 @@ public class ATMCardPanel : Panel
         if (disposing)
             _blinkTimer?.Dispose();
         base.Dispose(disposing);
-    }
-
-    private static string FormatElapsed(DateTime utc)
-    {
-        if (utc == DateTime.MinValue) return "-";
-        var elapsed = DateTime.UtcNow - utc;
-        if (elapsed.TotalSeconds < 60) return "now";
-        if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes} min ago";
-        if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours} hr ago";
-        return utc.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
     }
 }

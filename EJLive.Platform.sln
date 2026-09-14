@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EJLive.Client.WinForms", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EJLive.Core", "src\EJLive.Core\EJLive.Core.csproj", "{5CA916B7-6528-42E2-2BE8-0CD7F57345A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EJLive.Core.UI", "src\EJLive.Core.UI\EJLive.Core.UI.csproj", "{087AC430-9CC8-4389-951A-5208C955163C}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EJLive.Installer.WinForms", "src\EJLive.Installer.WinForms\EJLive.Installer.WinForms.csproj", "{0F2A695B-7069-20A3-626A-E1F10D21EF57}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EJLive.LegacyReference", "src\EJLive.LegacyReference\EJLive.LegacyReference.csproj", "{5EDB3E8B-C6D4-CD19-CECC-A3D6F6DE6B97}"

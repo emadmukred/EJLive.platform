@@ -1,6 +1,7 @@
 using EJLive.Core;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
+using EJLive.Core.UI;
 using EJLive.Core.Xfs;
 using EJLive.Server.Services;
 
@@ -57,18 +58,18 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildOverviewTab()
     {
         var tab = new TabPage("Overview");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh", RefreshOverview));
-        actions.Controls.Add(Ui.Button("Open Overview Window", () => OpenDetachedGridWindow("Overview", _overviewGrid)));
-        actions.Controls.Add(Ui.Button("Raise Health Review", () => MessageBox.Show(this, "Health review queued.", "Monitoring")));
-        var summary = Ui.CardRow(5);
-        _totalValue = Ui.AddMetricCard(summary, "Total ATMs", "0", Color.FromArgb(46, 134, 222));
-        _onlineValue = Ui.AddMetricCard(summary, "Online", "0", Color.FromArgb(16, 172, 132));
-        _syncingValue = Ui.AddMetricCard(summary, "Syncing", "0", Color.FromArgb(255, 159, 67));
-        _offlineValue = Ui.AddMetricCard(summary, "Offline", "0", Color.FromArgb(238, 82, 83));
-        _healthValue = Ui.AddMetricCard(summary, "Avg Health", "0%", Color.FromArgb(95, 39, 205));
-        _overviewGrid = Ui.Grid();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh", RefreshOverview));
+        actions.Controls.Add(UiHelpers.Button("Open Overview Window", () => OpenDetachedGridWindow("Overview", _overviewGrid)));
+        actions.Controls.Add(UiHelpers.Button("Raise Health Review", () => MessageBox.Show(this, "Health review queued.", "Monitoring")));
+        var summary = UiHelpers.CardRow(5);
+        _totalValue = UiHelpers.AddMetricCard(summary, "Total ATMs", "0", Color.FromArgb(46, 134, 222));
+        _onlineValue = UiHelpers.AddMetricCard(summary, "Online", "0", Color.FromArgb(16, 172, 132));
+        _syncingValue = UiHelpers.AddMetricCard(summary, "Syncing", "0", Color.FromArgb(255, 159, 67));
+        _offlineValue = UiHelpers.AddMetricCard(summary, "Offline", "0", Color.FromArgb(238, 82, 83));
+        _healthValue = UiHelpers.AddMetricCard(summary, "Avg Health", "0%", Color.FromArgb(95, 39, 205));
+        _overviewGrid = UiHelpers.Grid();
         _overviewGrid.Columns.Add("ATM", "ATM");
         _overviewGrid.Columns.Add("Status", "Status");
         _overviewGrid.Columns.Add("Health", "Health");
@@ -84,12 +85,12 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildCashMatrixTab()
     {
         var tab = new TabPage("Cash Matrix");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh Matrix", RefreshTerminalDashboards));
-        actions.Controls.Add(Ui.Button("Open Matrix Window", () => OpenDetachedGridWindow("Cash Matrix", _cashMatrixGrid)));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh Matrix", RefreshTerminalDashboards));
+        actions.Controls.Add(UiHelpers.Button("Open Matrix Window", () => OpenDetachedGridWindow("Cash Matrix", _cashMatrixGrid)));
 
-        _cashMatrixGrid = Ui.Grid();
+        _cashMatrixGrid = UiHelpers.Grid();
         _cashMatrixGrid.Columns.Add("ATM", "ATM");
         _cashMatrixGrid.Columns.Add("Branch", "Branch");
         _cashMatrixGrid.Columns.Add("Region", "Region");
@@ -117,12 +118,12 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildTerminalListTab()
     {
         var tab = new TabPage("Terminal List");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh List", RefreshTerminalDashboards));
-        actions.Controls.Add(Ui.Button("Open List Window", () => OpenDetachedGridWindow("Terminal List", _terminalListGrid)));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh List", RefreshTerminalDashboards));
+        actions.Controls.Add(UiHelpers.Button("Open List Window", () => OpenDetachedGridWindow("Terminal List", _terminalListGrid)));
 
-        _terminalListGrid = Ui.Grid();
+        _terminalListGrid = UiHelpers.Grid();
         _terminalListGrid.Columns.Add("ATM", "ATM");
         _terminalListGrid.Columns.Add("Branch", "Branch");
         _terminalListGrid.Columns.Add("Region", "Region");
@@ -148,10 +149,10 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildOperationalMapTab()
     {
         var tab = new TabPage("Operational Map");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh Map", RefreshOperationalMap));
-        actions.Controls.Add(Ui.Button("Raise Health Review", () => MessageBox.Show(this, "Map health review queued.", "Monitoring")));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh Map", RefreshOperationalMap));
+        actions.Controls.Add(UiHelpers.Button("Raise Health Review", () => MessageBox.Show(this, "Map health review queued.", "Monitoring")));
         _mapPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -181,7 +182,7 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildDeviceStateTab()
     {
         var tab = new TabPage("Device State");
-        var grid = Ui.Grid();
+        var grid = UiHelpers.Grid();
         grid.Columns.Add("Device", "Device");
         grid.Columns.Add("Layer", "Layer");
         grid.Columns.Add("State", "State");
@@ -196,7 +197,7 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildSyncTab()
     {
         var tab = new TabPage("Realtime Sync");
-        var grid = Ui.Grid();
+        var grid = UiHelpers.Grid();
         grid.Columns.Add("Queue", "Queue");
         grid.Columns.Add("Pending", "Pending");
         grid.Columns.Add("Retry", "Retry");
@@ -210,15 +211,15 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildXfsEventsTab()
     {
         var tab = new TabPage("XFS Events");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Load NCR Sample", () => LoadXfs("NCR ERROR DISPENSER TIMEOUT")));
-        actions.Controls.Add(Ui.Button("Load GRG Sample", () => LoadXfs("GRG TRACE JOURNAL OPEN")));
-        actions.Controls.Add(Ui.Button("Load Wincor Sample", () => LoadXfs("WINCOR WOSA/XFS SP ERROR: CDM CASH UNIT EMPTY")));
-        actions.Controls.Add(Ui.Button("Load Hyosung Sample", () => LoadXfs("HYOSUNG HCDM DISPENSE FAULT: TAKE CASH TIMEOUT")));
-        actions.Controls.Add(Ui.Button("Open XFS Window", () => OpenDetachedGridWindow("XFS Events", _xfsGrid)));
-        actions.Controls.Add(Ui.Button("Clear", () => _xfsGrid.Rows.Clear()));
-        _xfsGrid = Ui.Grid();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Load NCR Sample", () => LoadXfs("NCR ERROR DISPENSER TIMEOUT")));
+        actions.Controls.Add(UiHelpers.Button("Load GRG Sample", () => LoadXfs("GRG TRACE JOURNAL OPEN")));
+        actions.Controls.Add(UiHelpers.Button("Load Wincor Sample", () => LoadXfs("WINCOR WOSA/XFS SP ERROR: CDM CASH UNIT EMPTY")));
+        actions.Controls.Add(UiHelpers.Button("Load Hyosung Sample", () => LoadXfs("HYOSUNG HCDM DISPENSE FAULT: TAKE CASH TIMEOUT")));
+        actions.Controls.Add(UiHelpers.Button("Open XFS Window", () => OpenDetachedGridWindow("XFS Events", _xfsGrid)));
+        actions.Controls.Add(UiHelpers.Button("Clear", () => _xfsGrid.Rows.Clear()));
+        _xfsGrid = UiHelpers.Grid();
         _xfsGrid.Columns.Add("Vendor", "Vendor");
         _xfsGrid.Columns.Add("Component", "Component");
         _xfsGrid.Columns.Add("Severity", "Severity");
@@ -232,12 +233,12 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildVendorLogsTab()
     {
         var tab = new TabPage("Vendor Logs");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Analyze Log", AnalyzeVendorLog));
-        actions.Controls.Add(Ui.Button("Extract Probable Cause", AnalyzeVendorLog));
-        actions.Controls.Add(Ui.Button("Clear", () => _vendorLog.Clear()));
-        _vendorLog = Ui.LogBox();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Analyze Log", AnalyzeVendorLog));
+        actions.Controls.Add(UiHelpers.Button("Extract Probable Cause", AnalyzeVendorLog));
+        actions.Controls.Add(UiHelpers.Button("Clear", () => _vendorLog.Clear()));
+        _vendorLog = UiHelpers.LogBox();
         _vendorLog.Text = "Paste NCR, GRG, Diebold, or Wincor log text here.";
         root.Controls.Add(_vendorLog);
         root.Controls.Add(actions);
@@ -248,12 +249,12 @@ public sealed class MainDashboardForm : Form
     private TabPage BuildReportsTab()
     {
         var tab = new TabPage("Reports");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh Reports", RefreshReportsIndex));
-        actions.Controls.Add(Ui.Button("Load Latest Ops Bundle", LoadLatestOpsBundleSummary));
-        actions.Controls.Add(Ui.Button("Open Windows Summary", () => OpenDetachedGridWindow("Ops Windows", _reportsWindowGrid)));
-        actions.Controls.Add(Ui.Button("Open Files Index", () => OpenDetachedGridWindow("Report Files", _reportsFilesGrid)));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh Reports", RefreshReportsIndex));
+        actions.Controls.Add(UiHelpers.Button("Load Latest Ops Bundle", LoadLatestOpsBundleSummary));
+        actions.Controls.Add(UiHelpers.Button("Open Windows Summary", () => OpenDetachedGridWindow("Ops Windows", _reportsWindowGrid)));
+        actions.Controls.Add(UiHelpers.Button("Open Files Index", () => OpenDetachedGridWindow("Report Files", _reportsFilesGrid)));
         _reportsInfo = new Label
         {
             AutoSize = true,
@@ -262,7 +263,7 @@ public sealed class MainDashboardForm : Form
         };
         actions.Controls.Add(_reportsInfo);
 
-        _reportsWindowGrid = Ui.Grid();
+        _reportsWindowGrid = UiHelpers.Grid();
         _reportsWindowGrid.Columns.Add("Window", "Window");
         _reportsWindowGrid.Columns.Add("Hours", "Hours");
         _reportsWindowGrid.Columns.Add("Fleet", "Fleet");
@@ -275,7 +276,7 @@ public sealed class MainDashboardForm : Form
         _reportsWindowGrid.Columns.Add("TelWarn", "Telemetry Warnings");
         _reportsWindowGrid.Columns.Add("TelErr", "Telemetry Errors");
 
-        _reportsFilesGrid = Ui.Grid();
+        _reportsFilesGrid = UiHelpers.Grid();
         _reportsFilesGrid.Columns.Add("File", "File");
         _reportsFilesGrid.Columns.Add("Category", "Category");
         _reportsFilesGrid.Columns.Add("Modified", "Modified");
@@ -682,7 +683,7 @@ public sealed class MainDashboardForm : Form
             Font = Font
         };
 
-        var detachedGrid = Ui.Grid();
+        var detachedGrid = UiHelpers.Grid();
         detachedGrid.Columns.Clear();
         foreach (DataGridViewColumn column in source.Columns)
             detachedGrid.Columns.Add(column.Name, column.HeaderText);

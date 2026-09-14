@@ -2,6 +2,7 @@ using EJLive.Core;
 using EJLive.Core.Engine;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
+using EJLive.Core.UI;
 using EJLive.Server.Services;
 using EJLive.Shared;
 using System.Collections.Concurrent;
@@ -157,21 +158,21 @@ public sealed class ServerMainForm : Form
     private TabPage BuildFleetTab()
     {
         var tab = new TabPage("Fleet");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh Fleet", RefreshFleet));
-        actions.Controls.Add(Ui.Button("Open ATM Details", () => new ATMDetailForm(CurrentAtm()).Show(this)));
-        actions.Controls.Add(Ui.Button("Open Detail Drawer", () => new ATMDetailDrawerForm(CurrentAtm()).Show(this)));
-        actions.Controls.Add(Ui.Button("Broadcast Message", () => { _serverEngine.Broadcast("Server broadcast from EJLive."); AppendLog("Broadcast message sent."); }));
-        actions.Controls.Add(Ui.Button("Start Server", StartServer));
-        actions.Controls.Add(Ui.Button("Stop Server", StopServer));
-        var summary = Ui.CardRow(5);
-        _totalAtmsValue = Ui.AddMetricCard(summary, "Total ATMs", "0", Color.FromArgb(46, 134, 222));
-        _connectedAtmsValue = Ui.AddMetricCard(summary, "Connected", "0", Color.FromArgb(16, 172, 132));
-        _syncingAtmsValue = Ui.AddMetricCard(summary, "Syncing", "0", Color.FromArgb(255, 159, 67));
-        _offlineAtmsValue = Ui.AddMetricCard(summary, "Offline", "0", Color.FromArgb(238, 82, 83));
-        _fleetHealthValue = Ui.AddMetricCard(summary, "Avg Health", "0%", Color.FromArgb(95, 39, 205));
-        _fleetGrid = Ui.Grid();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh Fleet", RefreshFleet));
+        actions.Controls.Add(UiHelpers.Button("Open ATM Details", () => new ATMDetailForm(CurrentAtm()).Show(this)));
+        actions.Controls.Add(UiHelpers.Button("Open Detail Drawer", () => new ATMDetailDrawerForm(CurrentAtm()).Show(this)));
+        actions.Controls.Add(UiHelpers.Button("Broadcast Message", () => { _serverEngine.Broadcast("Server broadcast from EJLive."); AppendLog("Broadcast message sent."); }));
+        actions.Controls.Add(UiHelpers.Button("Start Server", StartServer));
+        actions.Controls.Add(UiHelpers.Button("Stop Server", StopServer));
+        var summary = UiHelpers.CardRow(5);
+        _totalAtmsValue = UiHelpers.AddMetricCard(summary, "Total ATMs", "0", Color.FromArgb(46, 134, 222));
+        _connectedAtmsValue = UiHelpers.AddMetricCard(summary, "Connected", "0", Color.FromArgb(16, 172, 132));
+        _syncingAtmsValue = UiHelpers.AddMetricCard(summary, "Syncing", "0", Color.FromArgb(255, 159, 67));
+        _offlineAtmsValue = UiHelpers.AddMetricCard(summary, "Offline", "0", Color.FromArgb(238, 82, 83));
+        _fleetHealthValue = UiHelpers.AddMetricCard(summary, "Avg Health", "0%", Color.FromArgb(95, 39, 205));
+        _fleetGrid = UiHelpers.Grid();
         _fleetGrid.Columns.Add("ATM_ID", "ATM Id");
         _fleetGrid.Columns.Add("Name", "Name");
         _fleetGrid.Columns.Add("Type", "Type");
@@ -188,11 +189,11 @@ public sealed class ServerMainForm : Form
     private TabPage BuildNetworkMapTab()
     {
         var tab = new TabPage("Network Map");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh Map", RefreshNetworkMap));
-        actions.Controls.Add(Ui.Button("Open Selected ATM", () => new ATMDetailDrawerForm(CurrentAtm()).Show(this)));
-        actions.Controls.Add(Ui.Button("Broadcast Status Check", () =>
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh Map", RefreshNetworkMap));
+        actions.Controls.Add(UiHelpers.Button("Open Selected ATM", () => new ATMDetailDrawerForm(CurrentAtm()).Show(this)));
+        actions.Controls.Add(UiHelpers.Button("Broadcast Status Check", () =>
         {
             _serverEngine.Broadcast("STATUS_CHECK");
             AppendLog("Status check broadcast sent.");
@@ -229,14 +230,14 @@ public sealed class ServerMainForm : Form
     private TabPage BuildJournalViewerTab()
     {
         var tab = new TabPage("Journal Studio (SS-10.5)");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Open Journal Studio", () => new JournalStudioForm().Show(this)));
-        actions.Controls.Add(Ui.Button("Load Today", () => AppendLog("Today's journals loaded.")));
-        actions.Controls.Add(Ui.Button("Archive Eligible Journals", RunJournalArchive));
-        actions.Controls.Add(Ui.Button("Open Archive Folder", () => OpenFolder(AppConstants.DefaultArchivePath)));
-        actions.Controls.Add(Ui.Button("Open Smart Storage", () => OpenFolder(_smartStorageRoot)));
-        _log = Ui.LogBox();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Open Journal Studio", () => new JournalStudioForm().Show(this)));
+        actions.Controls.Add(UiHelpers.Button("Load Today", () => AppendLog("Today's journals loaded.")));
+        actions.Controls.Add(UiHelpers.Button("Archive Eligible Journals", RunJournalArchive));
+        actions.Controls.Add(UiHelpers.Button("Open Archive Folder", () => OpenFolder(AppConstants.DefaultArchivePath)));
+        actions.Controls.Add(UiHelpers.Button("Open Smart Storage", () => OpenFolder(_smartStorageRoot)));
+        _log = UiHelpers.LogBox();
         root.Controls.Add(_log);
         root.Controls.Add(actions);
         tab.Controls.Add(root);
@@ -246,17 +247,17 @@ public sealed class ServerMainForm : Form
     private TabPage BuildSyncDashboardTab()
     {
         var tab = new TabPage("Sync Dashboard");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Open Sync Dashboard", () => new SyncDashboardForm(_syncTracking.Records).Show(this)));
-        actions.Controls.Add(Ui.Button("Retry Failed", RetryFailedSync));
-        actions.Controls.Add(Ui.Button("Verify Checksums", VerifySyncChecksums));
-        var summary = Ui.CardRow(4);
-        _syncOpenValue = Ui.AddMetricCard(summary, "Open Sync", "0", Color.FromArgb(46, 134, 222));
-        _syncFailedValue = Ui.AddMetricCard(summary, "Failed Sync", "0", Color.FromArgb(238, 82, 83));
-        _syncCompletedValue = Ui.AddMetricCard(summary, "Completed", "0", Color.FromArgb(16, 172, 132));
-        _syncProgressValue = Ui.AddMetricCard(summary, "Avg Progress", "0%", Color.FromArgb(255, 159, 67));
-        _syncGrid = Ui.Grid();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Open Sync Dashboard", () => new SyncDashboardForm(_syncTracking.Records).Show(this)));
+        actions.Controls.Add(UiHelpers.Button("Retry Failed", RetryFailedSync));
+        actions.Controls.Add(UiHelpers.Button("Verify Checksums", VerifySyncChecksums));
+        var summary = UiHelpers.CardRow(4);
+        _syncOpenValue = UiHelpers.AddMetricCard(summary, "Open Sync", "0", Color.FromArgb(46, 134, 222));
+        _syncFailedValue = UiHelpers.AddMetricCard(summary, "Failed Sync", "0", Color.FromArgb(238, 82, 83));
+        _syncCompletedValue = UiHelpers.AddMetricCard(summary, "Completed", "0", Color.FromArgb(16, 172, 132));
+        _syncProgressValue = UiHelpers.AddMetricCard(summary, "Avg Progress", "0%", Color.FromArgb(255, 159, 67));
+        _syncGrid = UiHelpers.Grid();
         _syncGrid.Columns.Add("SyncId", "Sync Id");
         _syncGrid.Columns.Add("ATM", "ATM");
         _syncGrid.Columns.Add("File", "File");
@@ -273,14 +274,14 @@ public sealed class ServerMainForm : Form
     private TabPage BuildDeliveryTrackerTab()
     {
         var tab = new TabPage("Delivery Tracker");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Refresh", () => RefreshDeliveryTracker("all")));
-        actions.Controls.Add(Ui.Button("Pending Only", () => RefreshDeliveryTracker("pending")));
-        actions.Controls.Add(Ui.Button("Failed Only", () => RefreshDeliveryTracker("failed")));
-        actions.Controls.Add(Ui.Button("Open Smart Storage", () => OpenFolder(_smartStorageRoot)));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Refresh", () => RefreshDeliveryTracker("all")));
+        actions.Controls.Add(UiHelpers.Button("Pending Only", () => RefreshDeliveryTracker("pending")));
+        actions.Controls.Add(UiHelpers.Button("Failed Only", () => RefreshDeliveryTracker("failed")));
+        actions.Controls.Add(UiHelpers.Button("Open Smart Storage", () => OpenFolder(_smartStorageRoot)));
 
-        _deliveryGrid = Ui.Grid();
+        _deliveryGrid = UiHelpers.Grid();
         _deliveryGrid.Columns.Add("TransferId", "Transfer Id");
         _deliveryGrid.Columns.Add("ATM", "ATM");
         _deliveryGrid.Columns.Add("Type", "Type");
@@ -302,33 +303,33 @@ public sealed class ServerMainForm : Form
     private TabPage BuildRemoteCommandsTab()
     {
         var tab = new TabPage("Remote Commands");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
         _commandTarget = new ComboBox { Width = 220, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(4) };
         actions.Controls.Add(new Label { Text = "Target", AutoSize = true, Padding = new Padding(4, 8, 0, 0) });
         actions.Controls.Add(_commandTarget);
-        actions.Controls.Add(Ui.Button("Refresh Targets", RefreshCommandTargets));
-        actions.Controls.Add(Ui.Button("Ping", () => SendRemoteCommand(AppConstants.CMD_PING)));
-        actions.Controls.Add(Ui.Button("Ping (Tracked)", SendPingTracked));
-        actions.Controls.Add(Ui.Button("Connectivity Probe", SendConnectivityProbe));
-        actions.Controls.Add(Ui.Button("Sync Time", () => SendRemoteCommand(AppConstants.CMD_SYNC_TIME)));
-        actions.Controls.Add(Ui.Button("Capture Screen", () => SendRemoteCommand(AppConstants.CMD_SCREENSHOT)));
-        actions.Controls.Add(Ui.Button("Start Remote Session", () => SendRemoteCommand(AppConstants.CMD_REMOTE_SESSION_START)));
-        actions.Controls.Add(Ui.Button("Stop Remote Session", () => SendRemoteCommand(AppConstants.CMD_REMOTE_SESSION_STOP)));
-        actions.Controls.Add(Ui.Button("RDP Start", SendWindowsRemoteStart));
-        actions.Controls.Add(Ui.Button("RDP Check", SendWindowsRemoteCheck));
-        actions.Controls.Add(Ui.Button("RDP Stop", SendWindowsRemoteStop));
-        actions.Controls.Add(Ui.Button("Change Password", SendChangePassword));
-        actions.Controls.Add(Ui.Button("Change Win Password", SendChangeWindowsPassword));
-        actions.Controls.Add(Ui.Button("Request Journal", SendJournalRequest));
-        actions.Controls.Add(Ui.Button("Image -> Inbox", () => SendImageToTarget(ImageDistributionMode.InboxStaging)));
-        actions.Controls.Add(Ui.Button("Image -> Direct", () => SendImageToTarget(ImageDistributionMode.DirectApply)));
-        actions.Controls.Add(Ui.Button("Dist Folder -> Inbox", DistributeImagesFromServerFoldersInbox));
-        actions.Controls.Add(Ui.Button("Dist Folder -> Direct", DistributeImagesFromServerFoldersDirect));
-        actions.Controls.Add(Ui.Button("Sync Images", SendSyncImages));
-        actions.Controls.Add(Ui.Button("Force Sync", () => SendRemoteCommand(AppConstants.CMD_FORCE_SYNC)));
-        actions.Controls.Add(Ui.Button("Restart", () => SendRemoteCommand(AppConstants.CMD_RESTART)));
-        actions.Controls.Add(Ui.Button("Tracked Restart", SendTrackedRestart));
+        actions.Controls.Add(UiHelpers.Button("Refresh Targets", RefreshCommandTargets));
+        actions.Controls.Add(UiHelpers.Button("Ping", () => SendRemoteCommand(AppConstants.CMD_PING)));
+        actions.Controls.Add(UiHelpers.Button("Ping (Tracked)", SendPingTracked));
+        actions.Controls.Add(UiHelpers.Button("Connectivity Probe", SendConnectivityProbe));
+        actions.Controls.Add(UiHelpers.Button("Sync Time", () => SendRemoteCommand(AppConstants.CMD_SYNC_TIME)));
+        actions.Controls.Add(UiHelpers.Button("Capture Screen", () => SendRemoteCommand(AppConstants.CMD_SCREENSHOT)));
+        actions.Controls.Add(UiHelpers.Button("Start Remote Session", () => SendRemoteCommand(AppConstants.CMD_REMOTE_SESSION_START)));
+        actions.Controls.Add(UiHelpers.Button("Stop Remote Session", () => SendRemoteCommand(AppConstants.CMD_REMOTE_SESSION_STOP)));
+        actions.Controls.Add(UiHelpers.Button("RDP Start", SendWindowsRemoteStart));
+        actions.Controls.Add(UiHelpers.Button("RDP Check", SendWindowsRemoteCheck));
+        actions.Controls.Add(UiHelpers.Button("RDP Stop", SendWindowsRemoteStop));
+        actions.Controls.Add(UiHelpers.Button("Change Password", SendChangePassword));
+        actions.Controls.Add(UiHelpers.Button("Change Win Password", SendChangeWindowsPassword));
+        actions.Controls.Add(UiHelpers.Button("Request Journal", SendJournalRequest));
+        actions.Controls.Add(UiHelpers.Button("Image -> Inbox", () => SendImageToTarget(ImageDistributionMode.InboxStaging)));
+        actions.Controls.Add(UiHelpers.Button("Image -> Direct", () => SendImageToTarget(ImageDistributionMode.DirectApply)));
+        actions.Controls.Add(UiHelpers.Button("Dist Folder -> Inbox", DistributeImagesFromServerFoldersInbox));
+        actions.Controls.Add(UiHelpers.Button("Dist Folder -> Direct", DistributeImagesFromServerFoldersDirect));
+        actions.Controls.Add(UiHelpers.Button("Sync Images", SendSyncImages));
+        actions.Controls.Add(UiHelpers.Button("Force Sync", () => SendRemoteCommand(AppConstants.CMD_FORCE_SYNC)));
+        actions.Controls.Add(UiHelpers.Button("Restart", () => SendRemoteCommand(AppConstants.CMD_RESTART)));
+        actions.Controls.Add(UiHelpers.Button("Tracked Restart", SendTrackedRestart));
 
         _remotePreview = new PictureBox
         {
@@ -355,7 +356,7 @@ public sealed class ServerMainForm : Form
         previewPanel.Controls.Add(_remotePreview);
         previewPanel.Controls.Add(_remotePreviewStatus);
 
-        _commandGrid = Ui.Grid();
+        _commandGrid = UiHelpers.Grid();
         _commandGrid.Columns.Add("Time", "Time");
         _commandGrid.Columns.Add("Target", "Target");
         _commandGrid.Columns.Add("Command", "Command");
@@ -374,13 +375,13 @@ public sealed class ServerMainForm : Form
     private TabPage BuildAlertsTab()
     {
         var tab = new TabPage("Alerts");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Raise Test Alert", () => { _alerts.Raise(AlertSeverity.Warning, "Test Alert", "Manual test alert", "Server"); RefreshAlerts(); }));
-        actions.Controls.Add(Ui.Button("Mark Read", () => AppendLog("Alert marked read.")));
-        actions.Controls.Add(Ui.Button("Export Alerts", ExportAlertsCsv));
-        actions.Controls.Add(Ui.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
-        _alertGrid = Ui.Grid();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Raise Test Alert", () => { _alerts.Raise(AlertSeverity.Warning, "Test Alert", "Manual test alert", "Server"); RefreshAlerts(); }));
+        actions.Controls.Add(UiHelpers.Button("Mark Read", () => AppendLog("Alert marked read.")));
+        actions.Controls.Add(UiHelpers.Button("Export Alerts", ExportAlertsCsv));
+        actions.Controls.Add(UiHelpers.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
+        _alertGrid = UiHelpers.Grid();
         _alertGrid.Columns.Add("Severity", "Severity");
         _alertGrid.Columns.Add("Category", "Category");
         _alertGrid.Columns.Add("Recommendation", "Recommended Action");
@@ -397,12 +398,12 @@ public sealed class ServerMainForm : Form
     private TabPage BuildArchiveTab()
     {
         var tab = new TabPage("Archive");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Run Archive", () => AppendLog("Archive cycle completed.")));
-        actions.Controls.Add(Ui.Button("Archive Eligible Journals", RunJournalArchive));
-        actions.Controls.Add(Ui.Button("Open Archive Folder", () => OpenFolder(AppConstants.DefaultArchivePath)));
-        actions.Controls.Add(Ui.Button("Cleanup Report", CreateArchiveCleanupReport));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Run Archive", () => AppendLog("Archive cycle completed.")));
+        actions.Controls.Add(UiHelpers.Button("Archive Eligible Journals", RunJournalArchive));
+        actions.Controls.Add(UiHelpers.Button("Open Archive Folder", () => OpenFolder(AppConstants.DefaultArchivePath)));
+        actions.Controls.Add(UiHelpers.Button("Cleanup Report", CreateArchiveCleanupReport));
         root.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Archive manager keeps server journal copies, monthly folders, and reports.", TextAlign = ContentAlignment.MiddleCenter });
         root.Controls.Add(actions);
         tab.Controls.Add(root);
@@ -412,14 +413,14 @@ public sealed class ServerMainForm : Form
     private TabPage BuildReportsTab()
     {
         var tab = new TabPage("Reports");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Shift Ops Report", () => ExportOperationalWindowReport("shift", 8)));
-        actions.Controls.Add(Ui.Button("Daily Ops Report", () => ExportOperationalWindowReport("day", 24)));
-        actions.Controls.Add(Ui.Button("Weekly Ops Report", () => ExportOperationalWindowReport("week", 168)));
-        actions.Controls.Add(Ui.Button("Fleet Health Report", ExportFleetHealthReport));
-        actions.Controls.Add(Ui.Button("Combined Ops Report", ExportOperationalWindowsBundleReport));
-        actions.Controls.Add(Ui.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Shift Ops Report", () => ExportOperationalWindowReport("shift", 8)));
+        actions.Controls.Add(UiHelpers.Button("Daily Ops Report", () => ExportOperationalWindowReport("day", 24)));
+        actions.Controls.Add(UiHelpers.Button("Weekly Ops Report", () => ExportOperationalWindowReport("week", 168)));
+        actions.Controls.Add(UiHelpers.Button("Fleet Health Report", ExportFleetHealthReport));
+        actions.Controls.Add(UiHelpers.Button("Combined Ops Report", ExportOperationalWindowsBundleReport));
+        actions.Controls.Add(UiHelpers.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
         root.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Reports combine journal sync, alerts, uptime, and transaction analysis.", TextAlign = ContentAlignment.MiddleCenter });
         root.Controls.Add(actions);
         tab.Controls.Add(root);
@@ -429,8 +430,8 @@ public sealed class ServerMainForm : Form
     private TabPage BuildOpsAnalyticsTab()
     {
         var tab = new TabPage("Ops Analytics");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
         _opsAnalyticsSummary = new Label
         {
             AutoSize = true,
@@ -438,14 +439,14 @@ public sealed class ServerMainForm : Form
             ForeColor = Color.FromArgb(71, 85, 105)
         };
 
-        actions.Controls.Add(Ui.Button("Refresh", () => RefreshOpsAnalytics(24)));
-        actions.Controls.Add(Ui.Button("Last 1h", () => RefreshOpsAnalytics(1)));
-        actions.Controls.Add(Ui.Button("Last 24h", () => RefreshOpsAnalytics(24)));
-        actions.Controls.Add(Ui.Button("Export JSON", ExportOpsAnalyticsSnapshot));
-        actions.Controls.Add(Ui.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
+        actions.Controls.Add(UiHelpers.Button("Refresh", () => RefreshOpsAnalytics(24)));
+        actions.Controls.Add(UiHelpers.Button("Last 1h", () => RefreshOpsAnalytics(1)));
+        actions.Controls.Add(UiHelpers.Button("Last 24h", () => RefreshOpsAnalytics(24)));
+        actions.Controls.Add(UiHelpers.Button("Export JSON", ExportOpsAnalyticsSnapshot));
+        actions.Controls.Add(UiHelpers.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
         actions.Controls.Add(_opsAnalyticsSummary);
 
-        _opsAnalyticsGrid = Ui.Grid();
+        _opsAnalyticsGrid = UiHelpers.Grid();
         _opsAnalyticsGrid.Columns.Add("ATM", "ATM");
         _opsAnalyticsGrid.Columns.Add("Type", "Type");
         _opsAnalyticsGrid.Columns.Add("Conn", "Connection");
@@ -470,8 +471,8 @@ public sealed class ServerMainForm : Form
     private TabPage BuildCommandAuditTab()
     {
         var tab = new TabPage("Command Audit");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
 
         _commandAuditAtmFilter = new ComboBox
         {
@@ -505,14 +506,14 @@ public sealed class ServerMainForm : Form
         actions.Controls.Add(_commandAuditAtmFilter);
         actions.Controls.Add(new Label { Text = "Scope", AutoSize = true, Padding = new Padding(4, 8, 0, 0) });
         actions.Controls.Add(_commandAuditScopeFilter);
-        actions.Controls.Add(Ui.Button("Refresh", () => RefreshCommandAudit(24)));
-        actions.Controls.Add(Ui.Button("Last 1h", () => RefreshCommandAudit(1)));
-        actions.Controls.Add(Ui.Button("Last 24h", () => RefreshCommandAudit(24)));
-        actions.Controls.Add(Ui.Button("Export CSV", ExportCommandAuditCsv));
-        actions.Controls.Add(Ui.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
+        actions.Controls.Add(UiHelpers.Button("Refresh", () => RefreshCommandAudit(24)));
+        actions.Controls.Add(UiHelpers.Button("Last 1h", () => RefreshCommandAudit(1)));
+        actions.Controls.Add(UiHelpers.Button("Last 24h", () => RefreshCommandAudit(24)));
+        actions.Controls.Add(UiHelpers.Button("Export CSV", ExportCommandAuditCsv));
+        actions.Controls.Add(UiHelpers.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
         actions.Controls.Add(_commandAuditSummary);
 
-        _commandAuditGrid = Ui.Grid();
+        _commandAuditGrid = UiHelpers.Grid();
         _commandAuditGrid.Columns.Add("Time", "Time");
         _commandAuditGrid.Columns.Add("ATM", "ATM");
         _commandAuditGrid.Columns.Add("Action", "Action");
@@ -531,8 +532,8 @@ public sealed class ServerMainForm : Form
     private TabPage BuildTelemetryTab()
     {
         var tab = new TabPage("Telemetry");
-        var root = Ui.Stack();
-        var actions = Ui.Flow();
+        var root = UiHelpers.Stack();
+        var actions = UiHelpers.Flow();
         _telemetrySummary = new Label
         {
             AutoSize = true,
@@ -540,22 +541,22 @@ public sealed class ServerMainForm : Form
             ForeColor = Color.FromArgb(71, 85, 105)
         };
 
-        actions.Controls.Add(Ui.Button("Refresh", () => RefreshTelemetry(24)));
-        actions.Controls.Add(Ui.Button("Last 1h", () => RefreshTelemetry(1)));
-        actions.Controls.Add(Ui.Button("Last 24h", () => RefreshTelemetry(24)));
-        actions.Controls.Add(Ui.Button("Export Timeline CSV", ExportTelemetryTimelineCsv));
-        actions.Controls.Add(Ui.Button("Export ATM Summary CSV", ExportTelemetryAtmSummaryCsv));
-        actions.Controls.Add(Ui.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
+        actions.Controls.Add(UiHelpers.Button("Refresh", () => RefreshTelemetry(24)));
+        actions.Controls.Add(UiHelpers.Button("Last 1h", () => RefreshTelemetry(1)));
+        actions.Controls.Add(UiHelpers.Button("Last 24h", () => RefreshTelemetry(24)));
+        actions.Controls.Add(UiHelpers.Button("Export Timeline CSV", ExportTelemetryTimelineCsv));
+        actions.Controls.Add(UiHelpers.Button("Export ATM Summary CSV", ExportTelemetryAtmSummaryCsv));
+        actions.Controls.Add(UiHelpers.Button("Open Reports Folder", () => OpenFolder(AppConstants.DefaultReportsPath)));
         actions.Controls.Add(_telemetrySummary);
 
-        _telemetryTimelineGrid = Ui.Grid();
+        _telemetryTimelineGrid = UiHelpers.Grid();
         _telemetryTimelineGrid.Columns.Add("Time", "Time");
         _telemetryTimelineGrid.Columns.Add("ATM", "ATM");
         _telemetryTimelineGrid.Columns.Add("Severity", "Severity");
         _telemetryTimelineGrid.Columns.Add("Type", "Type");
         _telemetryTimelineGrid.Columns.Add("Detail", "Detail");
 
-        _telemetryAtmGrid = Ui.Grid();
+        _telemetryAtmGrid = UiHelpers.Grid();
         _telemetryAtmGrid.Columns.Add("ATM", "ATM");
         _telemetryAtmGrid.Columns.Add("Total", "Total");
         _telemetryAtmGrid.Columns.Add("Warnings", "Warnings");
@@ -590,10 +591,10 @@ public sealed class ServerMainForm : Form
         AddRow(panel, "Storage Path", new TextBox { Text = ATMPaths.SERVER_DEFAULT_DRIVE + @"\" + ATMPaths.SERVER_EJOURNAL_FILES, Dock = DockStyle.Fill });
         AddRow(panel, "Archive Path", new TextBox { Text = AppConstants.DefaultArchivePath, Dock = DockStyle.Fill });
         AddRow(panel, "Max Connections", new NumericUpDown { Minimum = 1, Maximum = 5000, Value = 100 });
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Save Server Settings", () => AppendLog("Server settings saved.")));
-        actions.Controls.Add(Ui.Button("Initialize Database", () => { DatabaseManager.Instance.Initialize(AppConstants.DefaultDatabasePath); AppendLog("Database initialized."); }));
-        var root = Ui.Stack();
+        var actions = UiHelpers.Flow();
+        actions.Controls.Add(UiHelpers.Button("Save Server Settings", () => AppendLog("Server settings saved.")));
+        actions.Controls.Add(UiHelpers.Button("Initialize Database", () => { DatabaseManager.Instance.Initialize(AppConstants.DefaultDatabasePath); AppendLog("Database initialized."); }));
+        var root = UiHelpers.Stack();
         root.Controls.Add(actions);
         root.Controls.Add(panel);
         tab.Controls.Add(root);
@@ -2241,7 +2242,7 @@ public sealed class SyncDashboardForm : Form
     {
         Text = "Sync Dashboard";
         Size = new Size(820, 520);
-        var grid = Ui.Grid();
+        var grid = UiHelpers.Grid();
         grid.Columns.Add("ATM", "ATM");
         grid.Columns.Add("File", "File");
         grid.Columns.Add("State", "State");
@@ -2252,55 +2253,3 @@ public sealed class SyncDashboardForm : Form
     }
 }
 
-internal static class Ui
-{
-    public static Panel Stack() => new() { Dock = DockStyle.Fill, Padding = new Padding(8) };
-    public static FlowLayoutPanel Flow() => new() { Dock = DockStyle.Top, Height = 58, Padding = new Padding(8), WrapContents = true };
-    public static Button Button(string text, Action action)
-    {
-        var button = new Button { Text = text, AutoSize = true, Height = 32, Margin = new Padding(4) };
-        button.Click += (_, _) => action();
-        return button;
-    }
-    public static TableLayoutPanel CardRow(int columns)
-    {
-        var row = new TableLayoutPanel { Dock = DockStyle.Top, Height = 92, ColumnCount = columns, Padding = new Padding(4) };
-        for (var i = 0; i < columns; i++)
-            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / columns));
-        return row;
-    }
-
-    public static Label AddMetricCard(TableLayoutPanel row, string title, string value, Color accent)
-    {
-        var card = new Panel { Dock = DockStyle.Fill, Margin = new Padding(4), Padding = new Padding(10), BackColor = Color.White };
-        var accentBar = new Panel { Dock = DockStyle.Left, Width = 4, BackColor = accent };
-        var titleLabel = new Label { Text = title, Dock = DockStyle.Top, Height = 22, ForeColor = Color.FromArgb(90, 90, 90), Font = new Font("Segoe UI", 8F) };
-        var valueLabel = new Label { Text = value, Dock = DockStyle.Fill, ForeColor = Color.FromArgb(35, 35, 35), Font = new Font("Segoe UI Semibold", 14F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft };
-        card.Controls.Add(valueLabel);
-        card.Controls.Add(titleLabel);
-        card.Controls.Add(accentBar);
-        row.Controls.Add(card);
-        return valueLabel;
-    }
-
-    public static DataGridView Grid()
-    {
-        var grid = new DataGridView { Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, SelectionMode = DataGridViewSelectionMode.FullRowSelect, RowHeadersVisible = false, BackgroundColor = Color.White, BorderStyle = BorderStyle.None };
-        grid.EnableDoubleBuffering();
-        grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(245, 247, 250);
-        grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
-        grid.EnableHeadersVisualStyles = false;
-        grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 251, 253);
-        return grid;
-    }
-    public static RichTextBox LogBox() => new() { Dock = DockStyle.Fill, Font = new Font("Consolas", 9F) };
-}
-
-internal static class ControlRenderingExtensions
-{
-    public static void EnableDoubleBuffering(this Control control)
-    {
-        var property = typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        property?.SetValue(control, true, null);
-    }
-}

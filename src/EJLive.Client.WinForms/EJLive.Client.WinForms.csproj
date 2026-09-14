@@ -13,6 +13,12 @@
       <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
+    <ProjectReference Include="..\EJLive.Core.UI\EJLive.Core.UI.csproj" />
+    <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Passive companion only: rendering plus read-only local health queries.
          Items must live inside an ItemGroup: a bare <Compile> under <Project> is MSB4067 at
          evaluation time, which kills restore before any project is compiled. -->

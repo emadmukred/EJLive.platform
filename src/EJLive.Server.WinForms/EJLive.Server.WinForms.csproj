@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
+    <ProjectReference Include="..\EJLive.Core.UI\EJLive.Core.UI.csproj" />
     <ProjectReference Include="..\EJLive.Server\EJLive.Server.csproj" />
     <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />
   </ItemGroup>

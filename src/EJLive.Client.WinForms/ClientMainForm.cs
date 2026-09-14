@@ -1,4 +1,5 @@
 using EJLive.Client.WinForms.Services;
+using EJLive.Core.UI;
 
 namespace EJLive.Client.WinForms;
 
@@ -252,7 +253,7 @@ public sealed class ClientMainForm : Form
         _atmValue.Text = EmptyAsDash(snapshot.AtmId);
         _sessionValue.Text = EmptyAsDash(snapshot.SessionId);
         _queueValue.Text = $"{Math.Max(0, snapshot.PendingOutboxItems):N0} item(s)";
-        _trafficValue.Text = $"↑ {FormatBytes(snapshot.TotalBytesSent)}   ↓ {FormatBytes(snapshot.TotalBytesReceived)}";
+        _trafficValue.Text = $"↑ {UiHelpers.FormatBytes(snapshot.TotalBytesSent)}   ↓ {UiHelpers.FormatBytes(snapshot.TotalBytesReceived)}";
         _errorValue.Text = EmptyAsDash(snapshot.LastError);
         _errorValue.ForeColor = string.IsNullOrWhiteSpace(snapshot.LastError) ? Muted : Failed;
 
@@ -387,18 +388,6 @@ public sealed class ClientMainForm : Form
     }
 
     private static string EmptyAsDash(string? value) => string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
-
-    private static string FormatBytes(long value)
-    {
-        var safe = Math.Max(0, value);
-        if (safe >= 1_073_741_824)
-            return $"{safe / 1_073_741_824d:F1} GB";
-        if (safe >= 1_048_576)
-            return $"{safe / 1_048_576d:F1} MB";
-        if (safe >= 1_024)
-            return $"{safe / 1_024d:F1} KB";
-        return $"{safe} B";
-    }
 
     private static string ClassifyHeartbeatServiceStatus(DateTime? lastHeartbeatUtc, out string detail)
     {

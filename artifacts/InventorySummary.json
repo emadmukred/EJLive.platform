@@ -1,12 +1,13 @@
 {
  "build_order": [
-  "EJLive.Client.WinForms",
   "EJLive.LegacyReference",
   "EJLive.Shared",
   "EJLive.Core",
   "EJLive.Business",
   "EJLive.Application",
   "EJLive.Client.Service",
+  "EJLive.Core.UI",
+  "EJLive.Client.WinForms",
   "EJLive.Installer.WinForms",
   "EJLive.Server",
   "EJLive.Monitoring.WinForms",
@@ -15,8 +16,8 @@
   "EJLive.UnifiedLauncher",
   "EJLive.Verification"
  ],
- "compiled_files": 300,
- "compiled_lines": 55051,
+ "compiled_files": 305,
+ "compiled_lines": 55270,
  "cross_assembly_keys": [],
  "cross_assembly_partial_splits": 0,
  "cycles": [],
@@ -43,7 +44,7 @@
   "VENDORS": 77
  },
  "legal_partial_splits": 0,
- "projects": 14,
+ "projects": 15,
  "reference_files": 242,
  "reference_lines": 724846,
  "stale_include_paths": {},

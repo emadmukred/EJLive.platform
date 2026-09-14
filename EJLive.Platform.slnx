@@ -6,6 +6,7 @@
     <Project Path="src/EJLive.Client.Service/EJLive.Client.Service.csproj" />
     <Project Path="src/EJLive.Client.WinForms/EJLive.Client.WinForms.csproj" />
     <Project Path="src/EJLive.Core/EJLive.Core.csproj" />
+    <Project Path="src/EJLive.Core.UI/EJLive.Core.UI.csproj" />
     <Project Path="src/EJLive.Installer.WinForms/EJLive.Installer.WinForms.csproj" />
     <Project Path="src/EJLive.LegacyReference/EJLive.LegacyReference.csproj" />
     <Project Path="src/EJLive.Monitoring.WinForms/EJLive.Monitoring.WinForms.csproj" />
