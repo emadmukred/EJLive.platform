@@ -182,6 +182,7 @@
     <Compile Include="Services\SecurityService.cs" />
     <Compile Include="Services\ServiceLocator.cs" />
     <Compile Include="Services\SmartAnalysisService.cs" />
+    <Compile Include="Services\SmartAnalysisHost.cs" />
     <Compile Include="Services\SovereignEngineCompatibility.cs" />
     <Compile Include="Services\UnifiedOperationalFusion.cs" />
     <Compile Include="Services\UnifiedOperationalReportingService.cs" />

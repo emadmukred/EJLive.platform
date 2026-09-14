@@ -1,5 +1,5 @@
 project,file,lines,md5,status
-EJLive.Application,src/EJLive.Application/EJLiveApplicationHost.cs,89,eeee1aef19c43fe7249de6dfb5793bea,compiled
+EJLive.Application,src/EJLive.Application/EJLiveApplicationHost.cs,107,4410ef7569f2107075b68d3baca415f2,compiled
 EJLive.Application,src/EJLive.Application/Installation/InstallerAutomationRunner.cs,524,7615890ad0f25297e16602b4ae680dd8,compiled
 EJLive.Application,src/EJLive.Application/Installation/InstallerOperationalSecurityService.cs,509,22953730831dac718f3672c944c088a2,compiled
 EJLive.Application,src/EJLive.Application/Installation/InstallerPlatformServices.cs,679,a411374d424fae16f9bad5a909392ef1,compiled
@@ -183,6 +183,7 @@ EJLive.Core,src/EJLive.Core/Services/RemoteDiagnosticCommandService.cs,78,a6d2f2
 EJLive.Core,src/EJLive.Core/Services/RoleBasedAccess.cs,476,7e79e3216498c842b6f138278cdac130,compiled
 EJLive.Core,src/EJLive.Core/Services/SecurityService.cs,150,248bcaa6223a613c9ca53fa912b44e2f,compiled
 EJLive.Core,src/EJLive.Core/Services/ServiceLocator.cs,38,456faad6b77bc36b266c3b869db9ce05,compiled
+EJLive.Core,src/EJLive.Core/Services/SmartAnalysisHost.cs,329,a9c51ee8ab222b6a7499a90b2a8d20b8,compiled
 EJLive.Core,src/EJLive.Core/Services/SmartAnalysisService.cs,289,48a04c94af7c6255613b066ec22fecc8,compiled
 EJLive.Core,src/EJLive.Core/Services/SovereignEngineCompatibility.cs,108,ba937d0c2ccf78fb2cfa4884a49b3a4d,compiled
 EJLive.Core,src/EJLive.Core/Services/UnifiedOperationalFusion.cs,326,306473d3d48c8319eae8d0500dd12002,compiled
@@ -243,7 +244,6 @@ EJLive.Server,src/EJLive.Server/Services/ClientTelemetryStateService.cs,386,2329
 EJLive.Server,src/EJLive.Server/Services/JournalAnalyticsService.cs,225,527e9fa4a3e9fcdd610f902b97e24fb0,compiled
 EJLive.Server,src/EJLive.Server/Services/RemoteControlService.cs,591,920550602a43125cea63a48e37a3a770,compiled
 EJLive.Server,src/EJLive.Server/Services/ServerAuditService.cs,144,46cd4c1292882d642de688b982f5c0bc,compiled
-EJLive.Server,src/EJLive.Server/Services/SmartAnalysisHost.cs,329,1442c538e4b2f4e69a1958bf2c1ac357,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/ATMCardPanel.cs,191,e8472a774fd348b7a6ae0c5e8e03a6e5,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/JournalStudioForm.cs,752,239dd7233aed015ded0feb92166e0948,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Program.cs,11,4aea7781604a48793ad6636c64f483f9,compiled
@@ -301,6 +301,7 @@ EJLive.Tests,src/EJLive.Tests/Track43/MonitoringDashboardEventBusTests.cs,143,5d
 EJLive.Tests,src/EJLive.Tests/Track43/NocDashboardEventBusTests.cs,143,47303d1bef34b0f425b9c8b2dc5b2479,compiled
 EJLive.Tests,src/EJLive.Tests/Track44/RegressionVerificationGateTests.cs,109,de93766df2df37df8bba0d50f1ec18cd,compiled
 EJLive.Tests,src/EJLive.Tests/Track45/ReleaseReadinessCheckerTests.cs,138,fa81b12f2e3aefbe2f0ae7cc15a833dd,compiled
+EJLive.Tests,src/EJLive.Tests/Track46/SmartAnalysisServiceTests.cs,175,f1f166c6f170bb276fb6d935e7cb8d3a,compiled
 EJLive.Tests,src/EJLive.Tests/UnifiedRuntimeTests.cs,2275,0b923951c04d8f21576e4660f0fa33c9,compiled
 EJLive.Tests,src/EJLive.Tests/V5EnhancedDifferenceTests.cs,353,c45d9838a065e32dcb1f9f8f200e98a5,compiled
 EJLive.UnifiedLauncher,src/EJLive.UnifiedLauncher/Program.cs,102,225ae2223f3f087b59d5661467e6ee33,compiled

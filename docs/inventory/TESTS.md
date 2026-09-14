@@ -37,6 +37,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Tests | SecureHandshakeTests | 5 | src/EJLive.Tests/Track04/SecureHandshakeTests.cs |
 | EJLive.Tests | SecurityHardeningTests | 27 | src/EJLive.Tests/Track16/SecurityHardeningTests.cs |
 | EJLive.Tests | SecurityHelperTests | 5 | src/EJLive.Tests/SecurityHelperTests.cs |
+| EJLive.Tests | SmartAnalysisServiceTests | 10 | src/EJLive.Tests/Track46/SmartAnalysisServiceTests.cs |
 | EJLive.Tests | StatusReducerContractTests | 7 | src/EJLive.Tests/StatusReducerContractTests.cs |
 | EJLive.Tests | StatusSnapshotTests | 10 | src/EJLive.Tests/StatusSnapshotTests.cs |
 | EJLive.Tests | StructuredLoggerTests | 12 | src/EJLive.Tests/Track17/StructuredLoggerTests.cs |
@@ -46,4 +47,4 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Tests | WindowsPolicyEnforcerTests | 10 | src/EJLive.Tests/Track12/WindowsPolicyEnforcerTests.cs |
 | EJLive.Tests | verifies | 8 | src/EJLive.Tests/PlatformRuntimeIntegrationTests.cs |
 
-371 executable cases in 41 files. Acceptance gate: `dotnet test` green AND `EJLive.Verification` probes green (see docs/CI.md).
+381 executable cases in 42 files. Acceptance gate: `dotnet test` green AND `EJLive.Verification` probes green (see docs/CI.md).

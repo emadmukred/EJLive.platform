@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EJLive.Core.Services;
 
-namespace EJLive.Server.Services;
+namespace EJLive.Core.Services;
 
 /// <summary>
 /// Wave 5 — REST + upload host for the smart content/value analysis pipeline

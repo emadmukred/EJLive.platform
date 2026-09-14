@@ -82,6 +82,7 @@
     <Compile Include="Track43\NocDashboardEventBusTests.cs" />
     <Compile Include="Track44\RegressionVerificationGateTests.cs" />
     <Compile Include="Track45\ReleaseReadinessCheckerTests.cs" />
+    <Compile Include="Track46\SmartAnalysisServiceTests.cs" />
     <Compile Include="UnifiedRuntimeTests.cs" />
     <Compile Include="V5EnhancedDifferenceTests.cs" />
   </ItemGroup>

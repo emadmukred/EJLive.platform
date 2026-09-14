@@ -1,12 +1,14 @@
 using EJLive.Business;
 using EJLive.Core;
 using EJLive.Core.Models;
+using EJLive.Core.Services;
 
 namespace EJLive.Application;
 
 public sealed class EJLiveApplicationHost : IDisposable
 {
     private readonly UnifiedBusinessRuntime _runtime;
+    private SmartAnalysisHost? _smartHost;
 
     public EJLiveApplicationHost(UnifiedBusinessRuntime runtime)
     {
@@ -14,6 +16,7 @@ public sealed class EJLiveApplicationHost : IDisposable
     }
 
     public UnifiedBusinessRuntime Runtime => _runtime;
+    public SmartAnalysisHost? SmartAnalysisHost => _smartHost;
 
     public static EJLiveApplicationHost Create(string? databasePath = null)
     {
@@ -67,8 +70,23 @@ public sealed class EJLiveApplicationHost : IDisposable
         return _runtime.RegisterAtm(atmId, "Demo Terminal", AppConstants.ATM_TYPE_NCR, "127.0.0.1");
     }
 
+    /// <summary>
+    /// Wave 5 / SS-27 — start the smart-analysis HTTP host on
+    /// <paramref name="prefix"/>. Returns the live host so callers can stop
+    /// it explicitly; pass <c>null</c> to leave the host stopped.
+    /// </summary>
+    public SmartAnalysisHost? StartSmartAnalysis(string prefix, string uploadRoot)
+    {
+        if (_smartHost is not null) return _smartHost;
+        _smartHost = new SmartAnalysisHost(_runtime.SmartAnalysis, prefix, uploadRoot);
+        _smartHost.OnLog += msg => System.Console.WriteLine(msg);
+        _smartHost.Start();
+        return _smartHost;
+    }
+
     public void Dispose()
     {
+        _smartHost?.Dispose();
         _runtime.Dispose();
     }
 }
