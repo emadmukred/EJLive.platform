@@ -101,6 +101,8 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 
 ## frame and header probes
 
+- `:00] WITHDRAWAL AMOUNT=200 SAR\n[09:01] NC` <- `src/EJLive.Tests/Track46/SmartAnalysisServiceTests.cs`
+- `:\n` <- `src/EJLive.Server.WinForms/JournalStudioForm.cs`
 - `:\n` <- `src/EJLive.UnifiedLauncher/Program.cs`
 - `:\n` <- `src/_reference/orphan-projects/EJLive.Launcher/Program.cs`
 - `:\n` <- `src/_reference/orphan-projects/EJLive.Monitoring/MainDashboardForm.cs`
@@ -159,5 +161,3 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 - `MsgType.ChunkAck, sequence.ToString(), BitConverter.GetBytes(sequen` <- `src/_reference/corrupted/EJLive.Core/Services/GhostRemoteEngine.cs`
 - `MsgType.ChunkAck, sequence.ToString(), BitConverter.GetBytes(sequen` <- `src/_reference/corrupted/EJLive.Core/Services/ImageSyncEngine.cs`
 - `MsgType.Command &&` <- `src/EJLive.Client.Service/AgentHeadlessController.cs`
-- `MsgType.Command &&` <- `src/EJLive.Verification/Program.cs`
-- `MsgType.Command)` <- `src/_reference/exact-duplicates/EJLive.Core/Transport/NetworkEngine.cs`

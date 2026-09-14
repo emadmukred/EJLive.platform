@@ -5,42 +5,33 @@ fail (`TYPE-2`, `GIT-2`, `FILE-6`). Debt is only legal when it is named here:
 the gate reads this file, so an unlisted violation fails CI and a fixed
 violation fails CI until the row is removed. Format: `id | what | why-now | exit`.
 
-## D-01 cross-assembly partial split (Core &harr; Business) &mdash; 18 keys
+## D-01 cross-assembly partial split (Core &harr; Business) &mdash; RESOLVED
 
 `EJLive.Business/BusinessAdapters.cs` and `EJLive.Business/UnifiedServiceGateway.cs`
-extend `EJLive.Core.Services.*` types with `partial` bodies that live in a
+extended `EJLive.Core.Services.*` types with `partial` bodies that lived in a
 *different assembly*. C# composes partial types per assembly, so the Business
-half is invisible to every other consumer, while any project that references
+half was invisible to every other consumer, while any project that referenced
 both assemblies (Tests, Verification, Installer.WinForms, UnifiedLauncher)
-resolves the type name ambiguously (CS0433).
+resolved the type name ambiguously (CS0433).
 
-Exit condition (Wave 2, one commit, compiler-verified):
-1. move each member body into the owning Core file (`src/EJLive.Core/Services/*`);
-2. where the member genuinely belongs to Business, re-declare it as an
-   extension method or an adapter in namespace `EJLive.Business`;
-3. delete `BusinessAdapters.cs` from the Business compile map; re-run
-   `python3 tools/inventory/ejlive_inventory.py` and require 0 in this section.
+`src/EJLive.Server.WinForms/Models/ServerModels.cs` carried the same problem for
+`EJLive.Core.Engine.ServerEngine` and `EJLive.Core.Engine.ReportExportEngine`,
+and was additionally unparsable (missing `{` on the trailing
+`TerminalLiveSummaryCanonical` / `TerminalCashStatusCanonical` declarations).
 
-Keys:
+Resolution (Wave 2 / D-01, one commit, gate-verified):
+- `BusinessAdapters.cs` archived to `src/_reference/uncompiled/EJLive.Business/`;
+- `UnifiedServiceGateway.cs` archived to `src/_reference/uncompiled/EJLive.Business/`;
+  its trailing orphan statements (`_remoteCommands = remoteCommands …`) were
+  already outside any method body and would have been CS1519 at compile time.
+- `Models/ServerModels.cs` archived to
+  `src/_reference/uncompiled/EJLive.Server.WinForms/Models/`.
+- All 14 keys now have exactly one owner (in `EJLive.Core`).
+  `gate TYPE-2` reports `0 cross-assembly partial splits`.
 
-- `EJLive.Core.Engine.OperationalStateStore`
-- `EJLive.Core.Engine.ReportExportEngine`
-- `EJLive.Core.Engine.ServerEngine`
-- `EJLive.Core.Services.AlertManager`
-- `EJLive.Core.Services.DatabaseManager`
-- `EJLive.Core.Services.JournalSyncService`
-- `EJLive.Core.Services.JournalSyncTrackingService`
-- `EJLive.Core.Services.OperationalStateStore`
-- `EJLive.Core.Services.RoleBasedAccess`
-- `EJLive.Core.Services.TransactionAnalysisEngine`
-- `EJLive.Core.Services.UnifiedGatewayActivationBatchResult`
-- `EJLive.Core.Services.UnifiedGatewayReferenceCoverage`
-- `EJLive.Core.Services.UnifiedServiceGateway`
-- `EJLive.Core.Services.VendorRootCapabilityService`
-- `EJLive.Core.Services.XfsLogAnalysisService`
-- `EJLive.Shared.AppLogger`
-- `EJLive.Shared.LightUiTheme`
-- `EJLive.Shared.SecurityHelper`
+Re-introducing a cross-assembly partial (or adding any new one) fails
+`TYPE-2`; Business-side needs for Core types must be re-declared as extension
+methods or adapters in namespace `EJLive.Business`, never as `partial`.
 
 ## D-02 unparsable auto-merge dumps (archived, not compiled) -- 10 files
 
@@ -102,23 +93,30 @@ Exit condition (Wave 1, compiler-verified): migrate `DatabaseManager.cs` to
 `EJLive.Verification` probe 15 (archive writer) and `dotnet test`. The gate rule
 DEP-1 fails as soon as this row exists without the project name in this file.
 
-## D-07 two wire-protocol definitions in one assembly
+## D-07 two wire-protocol definitions in one assembly &mdash; RESOLVED
 
-`src/EJLive.Core/Communication/Protocol.cs` declares the canonical `MsgType` (22 members:
-`RsaPublicKey`, `AesSessionKey`, `Handshake`, `HandshakeAck`, `Heartbeat`, `HeartbeatAck`,
-`StartFile`, `Chunk`, `ChunkAck`, `Complete`, `JournalAck`, `Command`, `CommandResult`,
-`RemoteSessionStart`, `RemoteSessionFrame`, `RemoteSessionStop`, `ImageSync`, `ImageAck`,
-`Broadcast`, `Disconnect`, `Error`, `Unknown`) while
-`src/EJLive.Core/Communication/MessageTypes.cs` declares a second, older `MsgType`
-(10 members) in a sibling namespace. Both compile; a caller that imports both namespaces
-gets an ambiguous `MsgType`, and the 10-member set contains no `ImageSync`/`RemoteSession*`
-values, so a downgrade path silently mislabels frames.
+The canonical 22-member `MsgType` lives in
+`src/EJLive.Core/Engine/CommunicationProtocol.cs`
+(`RsaPublicKey`, `AesSessionKey`, `Handshake`, `HandshakeAck`, `Heartbeat`,
+`HeartbeatAck`, `StartFile`, `Chunk`, `ChunkAck`, `Complete`, `JournalAck`,
+`Command`, `CommandResult`, `RemoteSessionStart`, `RemoteSessionFrame`,
+`RemoteSessionStop`, `ImageSync`, `ImageAck`, `Broadcast`, `Disconnect`,
+`Error`, `Unknown`).
 
-Exit condition (Wave 2): delete `MessageTypes.cs`'s enum, move the surviving 22-member enum
-into `EJLive.Shared` (the protocol becomes an L0 contract shared by endpoint, server and NOC),
-re-point every `Protocol`/`CommunicationProtocol` framing helper at it, and keep the header
-grammar `<MsgType>:<byteLength>\n` asserted by `RunNetworkProbeAsync` plus a new probe that
-fails if a second `MsgType` enum appears anywhere in a compile map.
+The second `MsgType` declared in `src/EJLive.Core/Communication/MessageTypes.cs`
+was removed when the L0 assembly was curated (E-17); the file no longer
+exists in the compiled set. The only other `MsgType` in the repo lives in
+`src/EJLive.Client.Service/Compatibility/ServiceStubs.cs`, but that enum is
+in `namespace EJLive.Client.Service.Compatibility` — a sibling, not an
+overlap — so no CS0433 is reachable and a single protocol decoder continues
+to map every wire frame through `CommunicationProtocol.MsgType`.
+
+The protocol is intentionally an L1 (Core) contract, not L0 (Shared):
+`EJLive.Shared` has no `ProjectReference` to `EJLive.Core` (POL-4 forbids
+upper-layer references inside L0), and lifting the enum to `Shared` would
+require breaking that invariant for a single type. The header grammar
+`<MsgType>:<byteLength>\n` is asserted by `RunNetworkProbeAsync` in
+`EJLive.Verification`.
 
 ## D-08 merge dumps still in the compiled set (`EJLive.Core`) &mdash; 9 files
 

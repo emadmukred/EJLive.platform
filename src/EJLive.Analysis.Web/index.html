@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EJLive Smart Analysis</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>EJLive Smart Analysis</h1>
+    <p class="subtitle">Upload a journal payload, run the XFS rule pipeline, derive a value summary, re-sort and re-organise findings.</p>
+    <div id="health-pill" class="pill">health: …</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Upload</h2>
+      <label class="field">
+        <span>Vendor hint</span>
+        <input id="vendor" placeholder="NCR / GRG / Wincor / Hyosung" />
+      </label>
+      <label class="field">
+        <span>Source label</span>
+        <input id="source" placeholder="atm-001 / batch-nightly / drag-drop" />
+      </label>
+      <textarea id="payload" rows="10" placeholder="Paste journal text here, or pick a file below."></textarea>
+      <div class="row">
+        <input type="file" id="file" accept=".log,.txt,.journal,*" />
+        <button id="analyze-text">Analyze text</button>
+        <button id="analyze-file">Analyze file</button>
+        <button id="load-sample">Load sample</button>
+        <button id="clear" class="ghost">Clear</button>
+      </div>
+    </section>
+
+    <section class="card" id="summary-card" hidden>
+      <h2>2. Summary</h2>
+      <div class="metric-row">
+        <div class="metric critical"><span class="value" id="m-critical">0</span><span class="label">Critical</span></div>
+        <div class="metric warning"><span class="value" id="m-warning">0</span><span class="label">Warnings</span></div>
+        <div class="metric info"><span class="value" id="m-info">0</span><span class="label">Info</span></div>
+        <div class="metric accent"><span class="value" id="m-lines">0</span><span class="label">Lines</span></div>
+      </div>
+      <p id="trace-id" class="muted">trace: —</p>
+    </section>
+
+    <section class="card" id="value-card" hidden>
+      <h2>3. Value summary</h2>
+      <table id="value-table">
+        <tbody>
+          <tr><th>Source</th><td id="v-source">—</td></tr>
+          <tr><th>Withdrawals</th><td id="v-withdrawals">0</td></tr>
+          <tr><th>Deposits</th><td id="v-deposits">0</td></tr>
+          <tr><th>Dispense amount</th><td id="v-dispense">0</td></tr>
+          <tr><th>Deposit amount</th><td id="v-deposit">0</td></tr>
+          <tr><th>Errors / faults</th><td id="v-errors">0</td></tr>
+          <tr><th>Cards captured</th><td id="v-cards">0</td></tr>
+          <tr><th>Paper warnings</th><td id="v-paper">0</td></tr>
+        </tbody>
+      </table>
+
+      <div class="row">
+        <div class="half">
+          <h3>Cassette moves</h3>
+          <table id="cassette-table"><thead><tr><th>Slot</th><th>Notes</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="half">
+          <h3>Hourly density</h3>
+          <table id="hourly-table"><thead><tr><th>Hour</th><th>Lines</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="findings-card" hidden>
+      <div class="row spread">
+        <h2>4. Findings</h2>
+        <div class="row">
+          <button id="sort-severity">Re-sort by severity</button>
+          <button id="sort-category">Group by category</button>
+        </div>
+      </div>
+      <table id="findings-table">
+        <thead>
+          <tr>
+            <th>Severity</th><th>Category</th><th>Code</th><th>Vendor</th><th>Recommended action</th><th>Source</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>5. Recent uploads</h2>
+      <table id="recent-table">
+        <thead><tr><th>Trace</th><th>Source</th><th>Vendor</th><th>Lines</th><th>C/W/I</th><th>Analysed at</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

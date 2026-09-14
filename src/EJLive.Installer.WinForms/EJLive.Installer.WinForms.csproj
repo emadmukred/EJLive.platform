@@ -4,6 +4,7 @@
     <ProjectReference Include="..\EJLive.Client.WinForms\EJLive.Client.WinForms.csproj" />
     <ProjectReference Include="..\EJLive.Client.Service\EJLive.Client.Service.csproj"
                       ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\EJLive.Core.UI\EJLive.Core.UI.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <OutputType>WinExe</OutputType>

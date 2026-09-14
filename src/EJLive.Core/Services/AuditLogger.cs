@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
 using System.IO;
 using System.Text;
 using EJLive.Core.Models;
 using EJLive.Shared;
+using Microsoft.Data.Sqlite;
 
 namespace EJLive.Core.Services
 {
@@ -26,13 +26,13 @@ namespace EJLive.Core.Services
                 return;
 
             DatabaseManager.Instance.ExecuteNonQuery(
-                "INSERT OR REPLACE INTO audit_log(entry_id,user_name,action,target,created_at_utc,details) VALUES(@id,@user,@action,@target,@created,@details)",
-                new SQLiteParameter("@id", entry.EntryId),
-                new SQLiteParameter("@user", entry.UserName),
-                new SQLiteParameter("@action", entry.Action),
-                new SQLiteParameter("@target", entry.Target),
-                new SQLiteParameter("@created", entry.CreatedAtUtc.ToString("O")),
-                new SQLiteParameter("@details", entry.Details));
+                "INSERT OR REPLACE INTO audit_log(entry_id,user_name,action,target,created_at_utc,details) VALUES($id,$user,$action,$target,$created,$details)",
+                new SqliteParameter("$id", entry.EntryId),
+                new SqliteParameter("$user", entry.UserName),
+                new SqliteParameter("$action", entry.Action),
+                new SqliteParameter("$target", entry.Target),
+                new SqliteParameter("$created", entry.CreatedAtUtc.ToString("O")),
+                new SqliteParameter("$details", entry.Details));
         }
 
         public static void Initialize(string logDirectory)

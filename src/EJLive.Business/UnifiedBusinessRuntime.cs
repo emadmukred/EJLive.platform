@@ -27,6 +27,7 @@ public sealed class UnifiedBusinessRuntime : IDisposable
     public UnifiedJournalStorageService JournalStorage { get; }
     public UnifiedRemoteCommandOrchestrator RemoteCommands { get; }
     public UnifiedClientServiceSupervisor ClientServiceSupervisor { get; } = new();
+    public SmartAnalysisService SmartAnalysis { get; } = new();
 
     public UnifiedBusinessRuntime()
     {

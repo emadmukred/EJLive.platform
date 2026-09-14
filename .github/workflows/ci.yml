@@ -20,9 +20,83 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
 
 jobs:
+  incoming-rules:
+    name: incoming rules (00/01/02)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: architecture rules
+        run: |
+          set +e
+          python3 tools/incoming/incoming_rules.py --upload src/ --check-architecture > arch.json
+          echo "exit_arch=$?"
+        continue-on-error: true
+
+      - name: implementation rules
+        run: |
+          set +e
+          python3 tools/incoming/incoming_rules.py --upload src/ --check-implementation > impl.json
+          echo "exit_impl=$?"
+        continue-on-error: true
+
+      - name: changelog rules
+        run: |
+          set +e
+          python3 tools/incoming/incoming_rules.py --upload src/ --check-changelog > changelog.json
+          echo "exit_chl=$?"
+        continue-on-error: true
+
+      - name: publish annotations
+        if: always()
+        run: |
+          cat > /tmp/annotate.py << 'PYEOF'
+          import json, os, pathlib, sys
+          p = pathlib.Path(os.environ["FNAME"])
+          try:
+              verdicts = json.loads(p.read_text())
+          except json.JSONDecodeError:
+              print("::warning::" + str(p) + " is not valid JSON")
+              sys.exit(0)
+          for v in verdicts:
+              sev = "error" if v.get("severity") == "error" else "warning"
+              file = v.get("file", "?").replace("%", "%25")
+              rule = v.get("rule", "?")
+              msg = v.get("message", "?").replace("%", "%25").replace(chr(10), " ")
+              print("::" + sev + " file=" + file + "::" + rule + ": " + msg)
+          PYEOF
+          for f in arch.json impl.json changelog.json; do
+            if [ ! -s "$f" ]; then continue; fi
+            FNAME="$f" python3 /tmp/annotate.py
+          done
+
+      - name: summarise
+        if: always()
+        run: |
+          python3 -c 'import json, pathlib, sys
+          bad = 0
+          for name in ("arch.json", "impl.json", "changelog.json"):
+              p = pathlib.Path(name)
+              if not p.exists() or p.stat().st_size == 0:
+                  continue
+              try:
+                  verdicts = json.loads(p.read_text())
+              except Exception:
+                  continue
+              if any(v.get("severity") == "error" for v in verdicts):
+                  bad += 1
+          if bad > 0:
+              print(f"incoming-rules: {bad} rule set(s) reported violations.")
+              sys.exit(1)
+          print("incoming-rules: clean.")'
+
   structure:
     name: ledgers + repository rules (no compiler)
     runs-on: ubuntu-latest
+    needs: incoming-rules
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,7 +106,7 @@ jobs:
         run: python3 tools/inventory/ejlive_inventory.py --check
       - name: service activation ledger is current
         run: python3 tools/inventory/service_activation.py --check
-      - name: static gate (38 rules)
+      - name: static gate (41 rules)
         run: python3 tools/gates/ejlive_static_gate.py --verbose
       - name: artefact integrity (compile map, summary, probe and test ledgers agree)
         run: python3 tools/gates/check_artefacts.py
