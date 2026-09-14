@@ -55,8 +55,8 @@ jobs:
         run: |
           for f in arch.json impl.json changelog.json; do
             if [ ! -s "$f" ]; then continue; fi
-            python3 -c 'import json, pathlib, sys
-              p = pathlib.Path("'"$f"'")
+            FNAME="$f" python3 -c 'import json, os, pathlib, sys
+              p = pathlib.Path(os.environ["FNAME"])
               try:
                   verdicts = json.loads(p.read_text())
               except json.JSONDecodeError:
