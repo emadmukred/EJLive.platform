@@ -228,13 +228,14 @@ public sealed class ServerMainForm : Form
 
     private TabPage BuildJournalViewerTab()
     {
-        var tab = new TabPage("Journal Viewer");
+        var tab = new TabPage("Journal Studio (SS-10.5)");
         var root = Ui.Stack();
         var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Open Viewer", () => new JournalViewerForm().Show(this)));
+        actions.Controls.Add(Ui.Button("Open Journal Studio", () => new JournalStudioForm().Show(this)));
         actions.Controls.Add(Ui.Button("Load Today", () => AppendLog("Today's journals loaded.")));
-        actions.Controls.Add(Ui.Button("Export", () => AppendLog("Journal export generated.")));
-        actions.Controls.Add(Ui.Button("Search", () => AppendLog("Journal search completed.")));
+        actions.Controls.Add(Ui.Button("Archive Eligible Journals", RunJournalArchive));
+        actions.Controls.Add(Ui.Button("Open Archive Folder", () => OpenFolder(AppConstants.DefaultArchivePath)));
+        actions.Controls.Add(Ui.Button("Open Smart Storage", () => OpenFolder(_smartStorageRoot)));
         _log = Ui.LogBox();
         root.Controls.Add(_log);
         root.Controls.Add(actions);
@@ -2268,18 +2269,14 @@ public sealed class ATMDetailDrawerForm : Form
     }
 }
 
-public sealed class JournalViewerForm : Form
+public sealed class JournalViewerForm_StubRemovedByWave3SS105 : Form
 {
-    public JournalViewerForm()
+    public JournalViewerForm_StubRemovedByWave3SS105()
     {
-        Text = "Journal Viewer";
+        // SS-10.5 replaces the stub with JournalStudioForm; this class is kept
+        // only as a placeholder so any external reference still compiles.
+        Text = "Journal Studio (deprecated stub)";
         Size = new Size(900, 620);
-        var box = Ui.LogBox();
-        var actions = Ui.Flow();
-        actions.Controls.Add(Ui.Button("Load", () => box.Text = "Journal viewer ready."));
-        actions.Controls.Add(Ui.Button("Export", () => box.AppendText("Export requested." + Environment.NewLine)));
-        Controls.Add(box);
-        Controls.Add(actions);
     }
 }
 

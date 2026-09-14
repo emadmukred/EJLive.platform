@@ -17,7 +17,7 @@ DashboardSnapshotService,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/D
 DatabaseManager,EJLive.Core.Services,EJLive.Business,src/EJLive.Business/BusinessAdapters.cs,20,2,registry,ActiveCore.cs
 DatabaseMigrationRunner,EJLive.Core.Data,EJLive.Core,src/EJLive.Core/Data/DatabaseMigrationContracts.cs,1,0,orphan,
 DatabaseMigrationsRunner,EJLive.Core.Data,EJLive.Core,src/EJLive.Core/Data/DatabaseMigrationsRunner.cs,0,1,registry,DatabaseMigrationsRunner.cs
-EjParserRegistry,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/EjParserRegistry.cs,9,2,registry,EjParserRegistry.cs
+EjParserRegistry,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/EjParserRegistry.cs,10,2,registry,EjParserRegistry.cs
 FileBasedCredentialStore,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/RoleBasedAccess.cs,0,0,orphan,
 FileDistributionEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/FileDistributionEngine.cs,1,1,registry,FileDistributionTests.cs
 FileWatcherEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/FileWatcherEngine.cs,5,0,reference-only,ClientSyncBridge.cs
@@ -54,7 +54,7 @@ JournalTransferIntelligenceService,EJLive.Core.Services,EJLive.Core,src/EJLive.C
 LabelMappingService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/LabelMappingService.cs,0,0,reference-only,AppBootstrapper.cs
 LanguageManager,EJLive.Shared.UI,EJLive.Core,src/EJLive.Core/Shared/UI/LanguageManager.cs,1,0,orphan,
 LocalConfigurationStore,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/ClientServiceMissingComponents.cs,0,0,orphan,
-LogRedactionEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/LogRedactionEngine.cs,4,0,orphan,
+LogRedactionEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/LogRedactionEngine.cs,5,0,orphan,
 MergedTraceCorrelationService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/MergedTraceCorrelationService.cs,1,0,orphan,
 MonitoringStateStore,EJLive.Shared,EJLive.Core,src/EJLive.Core/Shared/SharedPrimitives.cs,1,0,reference-only,MainDashboardForm.cs
 NcrMergedTraceCorrelationService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/MergedTraceCorrelationService.cs,1,0,orphan,
