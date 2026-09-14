@@ -6,9 +6,8 @@ none -- rule ARCH-4 holds
 
 ## Cross-assembly partial splits (CS0433 for dual consumers -- tracked debt)
 
-17 keys. Each must appear in `docs/DEBT-LEDGER.md` or the gate fails (ARCH-5).
+14 keys. Each must appear in `docs/DEBT-LEDGER.md` or the gate fails (ARCH-5).
 
-- `EJLive.Core.Engine.OperationalStateStore`: `EJLive.Core`, `EJLive.Server.WinForms`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Server.WinForms/Models/ServerModels.cs`
 - `EJLive.Core.Engine.ReportExportEngine`: `EJLive.Core`, `EJLive.Server.WinForms`, `src/EJLive.Core/Engine/OperationalEngines.cs`, `src/EJLive.Server.WinForms/Models/ServerModels.cs`
 - `EJLive.Core.Engine.ServerEngine`: `EJLive.Core`, `EJLive.Server.WinForms`, `src/EJLive.Core/Engine/OperationalEngines.cs`, `src/EJLive.Server.WinForms/Models/ServerModels.cs`
 - `EJLive.Core.Services.AlertManager`: `EJLive.Business`, `EJLive.Core`, `src/EJLive.Business/BusinessAdapters.cs`, `src/EJLive.Core/Services/CoreServices.cs`
@@ -23,5 +22,3 @@ none -- rule ARCH-4 holds
 - `EJLive.Core.Services.UnifiedServiceGateway`: `EJLive.Business`, `EJLive.Core`, `src/EJLive.Business/UnifiedServiceGateway.cs`, `src/EJLive.Core/Services/UnifiedServiceGateway.cs`
 - `EJLive.Core.Services.VendorRootCapabilityService`: `EJLive.Business`, `EJLive.Core`, `src/EJLive.Business/BusinessAdapters.cs`, `src/EJLive.Core/Services/VendorRootCapabilityService.cs`
 - `EJLive.Core.Services.XfsLogAnalysisService`: `EJLive.Business`, `EJLive.Core`, `src/EJLive.Business/BusinessAdapters.cs`, `src/EJLive.Core/Services/XfsLogAnalysisService.cs`
-- `EJLive.Shared.AppLogger`: `EJLive.Core`, `EJLive.Shared`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Shared/AppLogger.cs`
-- `EJLive.Shared.SecurityHelper`: `EJLive.Core`, `EJLive.Shared`, `src/EJLive.Core/Models/CoreAdapters.cs`, `src/EJLive.Shared/SecurityHelper.cs`

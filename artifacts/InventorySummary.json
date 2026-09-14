@@ -16,9 +16,8 @@
   "EJLive.Verification"
  ],
  "compiled_files": 301,
- "compiled_lines": 56708,
+ "compiled_lines": 54371,
  "cross_assembly_keys": [
-  "EJLive.Core.Engine.OperationalStateStore",
   "EJLive.Core.Engine.ReportExportEngine",
   "EJLive.Core.Engine.ServerEngine",
   "EJLive.Core.Services.AlertManager",
@@ -32,11 +31,9 @@
   "EJLive.Core.Services.UnifiedGatewayReferenceCoverage",
   "EJLive.Core.Services.UnifiedServiceGateway",
   "EJLive.Core.Services.VendorRootCapabilityService",
-  "EJLive.Core.Services.XfsLogAnalysisService",
-  "EJLive.Shared.AppLogger",
-  "EJLive.Shared.SecurityHelper"
+  "EJLive.Core.Services.XfsLogAnalysisService"
  ],
- "cross_assembly_partial_splits": 17,
+ "cross_assembly_partial_splits": 14,
  "cycles": [],
  "duplicate_type_keys": 0,
  "duplicate_type_list": [],
@@ -60,7 +57,7 @@
   "UI-SURFACES": 93,
   "VENDORS": 77
  },
- "legal_partial_splits": 1,
+ "legal_partial_splits": 0,
  "projects": 14,
  "reference_files": 239,
  "reference_lines": 724523,

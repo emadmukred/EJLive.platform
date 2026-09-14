@@ -3,6 +3,21 @@ using EJLive.Core.Models;
 
 namespace EJLive.Core.Services;
 
+/// <summary>
+/// Single-pass journal-evidence analyser that classifies every line of a vendor journal
+/// into one of the <see cref="JournalSignalKind"/> categories and assembles a report
+/// consumed by the Journal Studio (SS-10.5), the NOC alert rail, and the dashboard
+/// fleet summary.
+/// </summary>
+/// <remarks>
+/// Wave 1 (SS-04 D-08): the previous version was a merge dump with two orphan record
+/// header lines deleted (leaving bare parameter lists that broke <c>CS1001</c>/<c>CS1002</c>),
+/// and two competing <c>RemoteCommandPolicyDecision</c> shapes (<c>Approved</c> vs
+/// <c>Allowed</c>) that depended on which vendor copy won. The body is rewritten as
+/// <c>JournalEvidenceReport</c> = the 10-argument record the analyser fills, with the
+/// thinner twin at <see cref="Models.JournalEvidenceReport"/> kept as the resolution-only
+/// stub for callers that import <c>EJLive.Core.Models</c> directly.
+/// </remarks>
 public sealed class UnifiedJournalEvidenceAnalyzer
 {
     private static readonly Regex AmountPattern = new(
@@ -137,7 +152,10 @@ public sealed class UnifiedJournalEvidenceAnalyzer
     }
 }
 
-
+/// <summary>
+/// Fleet-readiness rollup: per-ATM heartbeat/data-age thresholds, failed sync records,
+/// average health score. Drives the NOC dashboard KPI strip (SS-10.3).
+/// </summary>
 public sealed class UnifiedFleetReadinessService
 {
     public FleetReadinessAssessment Assess(IEnumerable<ATMInfo> atms, IEnumerable<JournalSyncRecord> syncRecords, DateTime? nowUtc = null)
@@ -200,6 +218,11 @@ public sealed class UnifiedFleetReadinessService
     }
 }
 
+/// <summary>
+/// Cross-domain fusion snapshot: joins journal evidence, fleet readiness, and an
+/// optional command-policy decision. Consumed by the server-side dispatcher and the
+/// Journal Studio renderers.
+/// </summary>
 public sealed class UnifiedOperationalFusionService
 {
     private readonly UnifiedJournalEvidenceAnalyzer _journalAnalyzer = new();
@@ -271,6 +294,7 @@ public sealed record OperationalFinding(
     string Source,
     string Message);
 
+public sealed record JournalEvidenceReport(
     string AtmId,
     string Vendor,
     int LineCount,
@@ -289,6 +313,7 @@ public sealed record FleetReadinessAssessment(
     OperationalFindingSeverity OverallSeverity,
     IReadOnlyList<OperationalFinding> Findings);
 
+public sealed record RemoteCommandPolicyDecision(
     bool Allowed,
     RemoteCommandRisk Risk,
     string Reason,
