@@ -20,9 +20,17 @@
 > Measured state of the tree this contract was written against (regenerated, not typed):
 > 14 projects · 301 compiled files / 56 708 lines · 239 linked-reference files / 724 523
 > lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
-> type keys · 17 cross-assembly partial splits (D-01) · 10 unparsable dumps archived (D-02)
+> type keys · 14 cross-assembly partial splits (D-01) — RESOLVED in Wave 2 · 10 unparsable dumps archived (D-02)
 > · 19 database tables · 22 wire message types · 23 verification probes · 371 test cases
 > · 99 service-activation rows · 41 gate rules, all PASS.
+>
+> Wave 1 commits on this branch:
+> - `67db886` (SS-04 / D-08): rebuilt the 8 merge dumps in `EJLive.Core/Models` and `Services/UnifiedOperationalFusion.cs` against real call sites.
+> - `e9607c9` (D-06): unified the SQLite provider on `Microsoft.Data.Sqlite` 8.0.5.
+> Wave 2 commits on this branch:
+> - pending (D-01): archived `BusinessAdapters.cs`, `UnifiedServiceGateway.cs`, `Models/ServerModels.cs`; 14 cross-assembly partial splits collapsed to 0 (`TYPE-2` empty).
+> Wave 3 commits on this branch:
+> - `0f00399` (SS-10.5): built `JournalStudioForm` (vendor-aware load, virtual-mode grid, anomaly + analytics + reconciliation tabs, CSV/JSON export, owner-drawn charts).
 
 ---
 
@@ -101,7 +109,7 @@ column is what compiles today.
 
 | normative | current owner (verified) | disposition |
 |---|---|---|
-| `ATMInfo` | `Core/ATMInfo.cs` | keep; add `ATMStatus`→`ATMState` alias removal in Wave 2 (`ATMStatus`, `ATMOperationalState`, `ATMState` are three enums for one idea) |
+| `ATMInfo` | `Core/ATMInfo.cs` | keep; `ATMStatus`, `ATMOperationalState`, `ATMState` are three enums for one idea — to be unified to a single `ATMState` in a Wave-2 follow-up |
 | `ATMTransaction` / `Transaction` | `Core/Models/UnifiedModels.cs:444`, `Core/Models/Transaction.cs` (four partials) | collapse to one `EjTransaction` record; keep `ATMTransaction` as a deprecated alias for one release |
 | `TransactionKind` | `CommandType`, `ATMType`, `JournalFileType`, `FraudType` fragments | introduce one `TransactionKind` (Deposit, Withdrawal, Balance, Transfer, Reversal, Inquiry, Maintenance, Other) + `ToLegacy` mapper |
 | `JournalEntry` + offsets | `Core/Data/JournalOffsetStore.cs`, `Core/Engine/JournalOutbox.cs` | keep |
@@ -138,7 +146,7 @@ All timestamps are UTC `DateTimeOffset`; local display happens only inside a con
 persisted value. `VendorRaw` keeps the original line for audit replay and is redacted before display to
 `Observer`/`Auditor` roles (SS9).
 
-## SS5 · Wire protocol (single source: `EJLive.Shared` — TARGET of Wave 1, see DEBT D-07)
+## SS5 · Wire protocol (single source: `EJLive.Core/Engine/CommunicationProtocol.cs` — **D-07 RESOLVED** in Wave 2)
 
 **Envelope.** One frame per `NetworkStream`, no nesting:
 
@@ -375,7 +383,7 @@ rule scoped to 5656, `Private` profile) → companion probe (`EJLive.Client.exe`
 and any failure triggers the recorded rollback set. `--install --service EJLive.Client.Service --silent` is the
 unattended contract used by `tools/package/package.bat`.
 
-### SS10.5 Electronic Journal Analysis Log Studio (TARGET — build in Wave 1)
+### SS10.5 Electronic Journal Analysis Log Studio (DELIVERED — `JournalStudioForm`, commit `0f00399`)
 
 Single tool window (`JournalStudioForm`, host: `EJLive.Server.WinForms`, menu *View → Journal Studio*):
 
@@ -401,7 +409,7 @@ studio never renders an unredacted PAN; every anomaly row carries offset evidenc
 ## SS11 · Data layer
 
 Engine: SQLite, WAL, `synchronous=NORMAL`, `cache_size=4000`, `temp_store=MEMORY` — set as one PRAGMA per
-statement (a merged PRAGMA list is a syntax error). **DEBT D-06**: single provider (`Microsoft.Data.Sqlite`).
+statement (a merged PRAGMA list is a syntax error). **D-06 RESOLVED** (commit `e9607c9`): single provider (`Microsoft.Data.Sqlite` 8.0.5) across `EJLive.Core`.
 
 Tables (19, code-owned; every one needs a `CREATE` in `DatabaseSchema.cs`/a migration **and** a DML consumer —
 `DB-1`):
@@ -557,8 +565,8 @@ logs 14 files × 8 MB.
 |---|---|---|
 | 0 — done (this branch) | build graph repair: 654 MB → 68 MB, 29 csproj → 14, curated explicit compile maps, archive `src/_reference/`, ledgers (12), static gate (41 rules), CI, this document | `gate: PASS`, `ledgers fresh`, 0 intra-assembly duplicate keys, 0 stale includes, 0 unparsable files in a map |
 | 1 — restore lost capability | promote archived surface into the compiled tree behind a build gate: `Server.WinForms` 5 → its 44 archived files, `Monitoring`/`Installer`/`Client` companions, `UnifiedLauncher`, `Verification`; rewrite the 10 unparsable dumps (DEBT D-02) and the 8 merge dumps still compiled in `EJLive.Core` (DEBT D-08, `python3 tools/gates/check_merge_dumps.py --report` must end empty) from SS5/SS7/SS9; **build after each file group** | `dotnet build` green; 371 + new tests green; 23 probes green; `orphan` + `reference-only` rows strictly decreasing |
-| 2 — namespace & provider repair | DEBT D-01 (17 cross-assembly partial splits), D-06 (one SQLite provider), D-07 (single `MsgType` + protocol in `EJLive.Shared`), remove `ServiceLocator` reflection | `TYPE-2` empty, `DEP-1` clean, protocol ledger maps to one owner |
-| 3 — build the new | Journal Studio (SS10.5), `outbox_dead_letters` + retention job UI, audit-chain verifier UI, adaptive chunking tuning, `active_compile_map` table replacing the CSV dependency | features covered by tests + probes, targets in SS13 measured |
+| 2 — namespace & provider repair | DEBT D-01 (14 cross-assembly partial splits — RESOLVED), D-06 (one SQLite provider — RESOLVED in Wave 1), D-07 (single `MsgType` in `EJLive.Core.Engine.CommunicationProtocol` — RESOLVED in Wave 2, the legacy 10-member `MessageTypes.cs` was removed during L0 curation), remove `ServiceLocator` reflection | `TYPE-2` empty, `DEP-1` clean, protocol ledger maps to one owner |
+| 3 — build the new | Journal Studio (SS10.5 — DELIVERED in `0f00399`), `outbox_dead_letters` + retention job UI, audit-chain verifier UI, adaptive chunking tuning, `active_compile_map` table replacing the CSV dependency | features covered by tests + probes, targets in SS13 measured |
 
 Traceability: `docs/TRACEABILITY-MATRIX.md` maps every artefact class of the specification corpus to a file and a
 status (`exists` / `partial` / `missing` / `debt`). Gaps that cannot be closed from the repository alone are

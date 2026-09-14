@@ -4,7 +4,6 @@ EJLive.Application,src/EJLive.Application/Installation/InstallerAutomationRunner
 EJLive.Application,src/EJLive.Application/Installation/InstallerOperationalSecurityService.cs,509,22953730831dac718f3672c944c088a2,compiled
 EJLive.Application,src/EJLive.Application/Installation/InstallerPlatformServices.cs,679,a411374d424fae16f9bad5a909392ef1,compiled
 EJLive.Application,src/EJLive.Application/Properties/AssemblyInfo.cs,17,2fab0e42e4f29368d2cc6bdb11951474,compiled
-EJLive.Business,src/EJLive.Business/BusinessAdapters.cs,78,781bd8d575a73e8f66a5cab18ca10f52,compiled
 EJLive.Business,src/EJLive.Business/OriginalSourceCatalog.cs,209,16dd747dedeb633cdbe38efd1462de57,compiled
 EJLive.Business,src/EJLive.Business/Properties/AssemblyInfo.cs,17,a5d9078bbc8521ec5d62aeae08df4fc9,compiled
 EJLive.Business,src/EJLive.Business/StableBusinessRuntime.cs,33,1466daa6ebfcfd7743e2151a9e31fda0,compiled
@@ -18,7 +17,6 @@ EJLive.Business,src/EJLive.Business/UnifiedOperationalFusionService.cs,67,cfdf41
 EJLive.Business,src/EJLive.Business/UnifiedProjectIntegrationAuditService.cs,89,141e1d318656b1da318dad9749434c21,compiled
 EJLive.Business,src/EJLive.Business/UnifiedRemoteCommandOrchestrator.cs,140,b6b9e04fa94d14418f8027decfc1c1eb,compiled
 EJLive.Business,src/EJLive.Business/UnifiedRemoteCommandPolicy.cs,111,a1d88f3cf6832cf205a751e52449aa4c,compiled
-EJLive.Business,src/EJLive.Business/UnifiedServiceGateway.cs,152,cd7b1677b9ae01260be02bc0bc5999c6,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/AgentConfiguration.cs,11,71231d7490ad5a022b8c2d2d270a13aa,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/AgentConfigurationXmlService.cs,372,2d1a33336b9dd1bbfc1720c9bcc27c7d,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/AgentHeadlessController.cs,815,dd50fdb890d005bbc5b7d358a689cc75,compiled
@@ -240,7 +238,6 @@ EJLive.Server,src/EJLive.Server/Services/JournalAnalyticsService.cs,225,527e9fa4
 EJLive.Server,src/EJLive.Server/Services/RemoteControlService.cs,591,920550602a43125cea63a48e37a3a770,compiled
 EJLive.Server,src/EJLive.Server/Services/ServerAuditService.cs,144,46cd4c1292882d642de688b982f5c0bc,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/JournalStudioForm.cs,844,caf66fbd24b33a2a0e7c2e24c314842c,compiled
-EJLive.Server.WinForms,src/EJLive.Server.WinForms/Models/ServerModels.cs,93,70c06a1713e2d6e58a1c5bd19a8433bd,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Program.cs,11,4aea7781604a48793ad6636c64f483f9,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/PromptTextDialog.cs,74,7eabcc9b4d4bbcddd86c26da04117a8a,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Properties/AssemblyInfo.cs,13,d84a079a86320661099677bf13157040,compiled

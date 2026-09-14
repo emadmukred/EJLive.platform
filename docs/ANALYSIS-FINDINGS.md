@@ -22,8 +22,8 @@ correction is re-verified by `tools/gates/ejlive_static_gate.py`.
 | E-08 | 23 files referenced by the compiled set were uncompiled (usage closure broken): `Core/ActiveCore.cs`, models, `Logger`, `Protocol`, plus 3 `Client.WinForms` types that `EJLive.Tests` and `Core/Services/ServiceLocator.cs` resolve | high | **C-08** 26 promotions by usage closure (23 by closure + 3 required by tests/reflection) (parsable files only); the 3 archived-but-required files (`ClientStartupPlanner`, `ServiceRegistry`, `FileDeliveryConfirmationTracker`) promoted back into `EJLive.Client.WinForms` |
 | E-09 | `EJLive.Monitoring.WinForms` targeted `net10.0-windows7.0`, enabled `UseWPF=True` and `AllowUnsafeBlocks=True` in a Windows-Forms-only, no-unsafe platform | blocker vs repo rules | **C-09** retargeted `net8.0-windows`, WPF and unsafe removed; `NAME-1`/`SEC-1` hold it |
 | E-10 | `EJLive.LegacyReference.csproj` linked non-existent paths (`src_update.zip`, `legacy/original/**`, whole project folders) and had no real reference globs | medium | **C-10** rewritten as the read-only link project over `src/_reference/**` with a fresh `AssemblyInfo` |
-| E-11 | Cross-assembly `partial` split: `EJLive.Business/BusinessAdapters.cs` and `UnifiedServiceGateway.cs` extend `EJLive.Core.Services.*` types from another assembly (18 keys) — invisible to other consumers, ambiguous to any project referencing both | high | **D-01** retained as named debt with a mechanical exit (fold members into Core, or re-declare in `EJLive.Business`); `TYPE-2` fails if the row is removed before the fix or a new key appears |
-| E-12 | Two wire-protocol definitions in one assembly: `Core/Communication/Protocol.cs` `MsgType` (22 members, canonical) and `Core/Communication/MessageTypes.cs` `MsgType` (10) | high | **D-07** canonical set fixed in prompt SS5; legacy enum archived in Wave 2; protocol ledger (`docs/inventory/PROTOCOL.md`) maps every literal |
+| E-11 | Cross-assembly `partial` split: `EJLive.Business/BusinessAdapters.cs` and `UnifiedServiceGateway.cs` extended `EJLive.Core.Services.*` types from another assembly (14 keys at resolution time) — invisible to other consumers, ambiguous to any project referencing both. `Models/ServerModels.cs` carried the same problem for 2 `EJLive.Core.Engine.*` keys and was additionally unparsable. | high | **D-01** resolved in Wave 2: three source files archived to `src/_reference/uncompiled/`, 14 keys now have one owner each; `TYPE-2` reports 0 cross-assembly partial splits |
+| E-12 | Two wire-protocol definitions in one assembly: `Core/Communication/Protocol.cs` `MsgType` (22 members, canonical) and `Core/Communication/MessageTypes.cs` `MsgType` (10) | high | **D-07** resolved in Wave 2: the legacy 10-member `MessageTypes.cs` was removed when the L0 assembly was curated (E-17); the sibling `Client.Service.Compatibility.CommunicationProtocol.MsgType` enum lives in a different namespace and does not create CS0433; the canonical 22-member enum stays in `EJLive.Core.Engine.CommunicationProtocol` because L0 (Shared) cannot reference L1 (Core) under POL-4 |
 | E-13 | Two ADO.NET providers pinned in `EJLive.Core` (`System.Data.SQLite.Core` 1.0.118 + `Microsoft.Data.Sqlite` 8.0.5) and used by different files in the same assembly | medium | **D-06** `DEP-1` rule + exit condition; `DEP-2` keeps the rest of the package graph version-coherent |
 | E-14 | Security hygiene: 25 `process.Kill(); catch { }` teardown sites swallowing failures; 7 weak-hash call sites without a stated reason; a real credential literal in `EJLive.Tests/UnifiedRuntimeTests.cs`; an unused `(string, bool dummy)` constructor overload | medium | **C-11** typed handlers with inline reasons; `// safe:`/`// safe-file:` justifications recorded; fixture literal annotated as synthetic; overload replaced by `FromDatabaseFile` factory; `GIT-3`/`POL-3`/`SEC-3` now guard all four classes |
 | E-15 | No CI, no ledgers, no gate, no docs: every "strict repository rule" (one parser per vendor, no unsafe vocabulary, inventory regeneration per push) was unenforced convention | blocker (drift) | **C-12** `.github/workflows/ci.yml`, 12 generated ledgers, 39-rule static gate, `tools/build` + `tools/package` + `tools/gates` scripts, this findings file, `TRACEABILITY-MATRIX.md`, `CI.md`, `README.md`, `EJLIVE-ENGINEERING-PROMPT.md` |
@@ -36,13 +36,13 @@ correction is re-verified by `tools/gates/ejlive_static_gate.py`.
 
 | id | subject | exit |
 |---|---|---|
-| D-01 | cross-assembly partial splits (18 keys) | Wave 2 |
+| D-01 | cross-assembly partial splits (14 keys) | RESOLVED in Wave 2 — three files archived, all 14 keys now have exactly one owner in `EJLive.Core` |
 | D-02 | 10 unparsable merge dumps, archived | Wave 1 rewrite from prompt SS5/SS7/SS9 |
 | D-03 | oversized single-owner dumps still compiled (`CoreServices.cs`, `UnifiedModels.cs`) | Wave 3 split |
-| D-04 | 237 archived files = capability backlog (656 k lines) | Wave 1, per-file with build gate |
+| D-04 | 239 archived files = capability backlog (725 k lines) | Wave 1, per-file with build gate |
 | D-05 | retired `EJLive.Server.exe` name still probed by archived setup code | packaging contract fixed in prompt SS16 |
-| D-06 | two SQLite providers in one assembly | Wave 1 |
-| D-07 | two `MsgType` enums, protocol split across two files | Wave 2 |
+| D-06 | two SQLite providers in one assembly | RESOLVED in Wave 1 (commit `e9607c9`) — `Microsoft.Data.Sqlite` 8.0.5 only |
+| D-07 | two `MsgType` enums, protocol split across two files | RESOLVED in Wave 2 — legacy file removed during L0 curation (E-17); sibling stubs in `Client.Service.Compatibility` namespace do not collide |
 
 ## Constraints on this pass (stated, not hidden)
 
