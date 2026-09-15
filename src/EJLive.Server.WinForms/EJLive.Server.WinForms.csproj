@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
     <ProjectReference Include="..\EJLive.Core.UI\EJLive.Core.UI.csproj" />
@@ -43,6 +43,7 @@
     <Compile Include="PromptTextDialog.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerMainForm.cs" />
+    <Compile Include="ServerMainForm.Designer.cs" />
     <Compile Include="JournalStudioForm.cs" />
     <Compile Include="JournalStudioForm.Designer.cs" />
     <Compile Include="JournalStudioBulkAnalyzer.cs" />

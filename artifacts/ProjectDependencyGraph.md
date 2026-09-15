@@ -29,14 +29,14 @@ Cycles detected: none (acyclic OK)
 | EJLive.Application | net8.0-windows | - | - | 5 | 1823 | ok |
 | EJLive.Business | net8.0-windows | - | - | 12 | 1194 | ok |
 | EJLive.Client.Service | net8.0-windows | Exe | - | 20 | 4091 | ok |
-| EJLive.Client.WinForms | net8.0-windows | WinExe | true | 7 | 1051 | AssemblyName=EJLive.Client |
+| EJLive.Client.WinForms | net8.0-windows | WinExe | true | 8 | 1302 | AssemblyName=EJLive.Client |
 | EJLive.Core | net8.0-windows | - | true | 188 | 30743 | ok |
 | EJLive.Core.UI | net8.0-windows | - | true | 5 | 373 | ok |
 | EJLive.Installer.WinForms | net8.0-windows | WinExe | true | 6 | 1200 | AssemblyName=EJLive.Installer |
 | EJLive.LegacyReference | net8.0 | - | - | 2 | 22 | ok |
-| EJLive.Monitoring.WinForms | net8.0-windows | WinExe | true | 4 | 1086 | AssemblyName=EJLive.Monitoring |
+| EJLive.Monitoring.WinForms | net8.0-windows | WinExe | true | 5 | 1626 | AssemblyName=EJLive.Monitoring |
 | EJLive.Server | net8.0-windows | - | - | 5 | 1456 | ok |
-| EJLive.Server.WinForms | net8.0-windows | WinExe | true | 8 | 3930 | ok |
+| EJLive.Server.WinForms | net8.0-windows | WinExe | true | 9 | 4706 | ok |
 | EJLive.Shared | net8.0-windows | - | - | 12 | 1833 | ok |
 | EJLive.Tests | net8.0-windows | - | true | 44 | 9026 | ok |
 | EJLive.UnifiedLauncher | net8.0-windows | WinExe | true | 1 | 102 | ok |

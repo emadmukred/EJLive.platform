@@ -36,11 +36,12 @@ EJLive.Client.Service,src/EJLive.Client.Service/Properties/AssemblyInfo.cs,17,e6
 EJLive.Client.Service,src/EJLive.Client.Service/RuntimeAgentConfigResolver.cs,223,07f210ebde907a07d10d12999195377f,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/SystemBackupService.cs,1479,0cf1ea5f0739fbe1d6c260a48e70c426,compiled
 EJLive.Client.Service,src/EJLive.Client.Service/TimeSyncScheduler.cs,63,f7939e57346ab734438e30a4faf00c98,compiled
-EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientMainForm.cs,414,9f0823ed66b23a62cd1734cddc00803f,compiled
+EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientMainForm.Designer.cs,407,b9170089a4ede6ed378531cac9fe3343,compiled
+EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientMainForm.cs,208,4fd703a20219970c807d8ef260d93059,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/ClientStartupPlanner.cs,47,c384b561a27333c81132f8a766963687,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/Program.cs,33,235885bd49b8b652bcbbb5942330ae1e,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/Properties/AssemblyInfo.cs,13,61fb4c191c4fbb5bc1349157679e6d96,compiled
-EJLive.Client.WinForms,src/EJLive.Client.WinForms/Services/ClientCompanionGateway.cs,375,7a245cb273625c356ec3827ebcec2ef4,compiled
+EJLive.Client.WinForms,src/EJLive.Client.WinForms/Services/ClientCompanionGateway.cs,425,913b4f95dba2717f71dc29d2a20ef9ed,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/Services/FileDeliveryConfirmationTracker.cs,147,959610ca073b301f5fa978159c4eb23c,compiled
 EJLive.Client.WinForms,src/EJLive.Client.WinForms/Services/ServiceRegistry.cs,22,80858381d10b0eccb0aecfd28043b14c,compiled
 EJLive.Core,src/EJLive.Core/ActiveCore.cs,336,4354cb1aab19f3bfc7f4e765e967fed1,compiled
@@ -244,7 +245,8 @@ EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/Program.cs,51,30250531fb
 EJLive.Installer.WinForms,src/EJLive.Installer.WinForms/Properties/AssemblyInfo.cs,13,fb495f7564cbd8361b3b658dd9a37331,compiled
 EJLive.LegacyReference,src/EJLive.LegacyReference/LegacyReferenceMarker.cs,9,fd15e026f74366ececd83f5f3237f3b1,compiled
 EJLive.LegacyReference,src/EJLive.LegacyReference/Properties/AssemblyInfo.cs,13,672dfd7cffad5e1a132a5f49c26ee8b8,compiled
-EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/MainDashboardForm.cs,961,0a9b0392ab61d97b9335c87e222a4b77,compiled
+EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/MainDashboardForm.Designer.cs,817,431fb06af08bb5f5a912bc15b1063ca7,compiled
+EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/MainDashboardForm.cs,684,9a6385fb31d18e78621f234f51250f72,compiled
 EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/Models/DashboardModels.cs,79,4fb8dd6e196cb7a759640503b16d2084,compiled
 EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/Program.cs,33,7b28f5d88d70072ad084adfba5a532ad,compiled
 EJLive.Monitoring.WinForms,src/EJLive.Monitoring.WinForms/Properties/AssemblyInfo.cs,13,8cf521fca9a716aa743b688e2872c2a7,compiled
@@ -260,7 +262,8 @@ EJLive.Server.WinForms,src/EJLive.Server.WinForms/JournalStudioForm.cs,706,8141c
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Program.cs,34,5b6482ea14dff4f95fb811276d02085b,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/PromptTextDialog.cs,74,7eabcc9b4d4bbcddd86c26da04117a8a,compiled
 EJLive.Server.WinForms,src/EJLive.Server.WinForms/Properties/AssemblyInfo.cs,13,d84a079a86320661099677bf13157040,compiled
-EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.cs,2264,e6a59064461c7421db994bee950fa3ab,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.Designer.cs,1139,d835725e2aba31b8e102a5c4591e990b,compiled
+EJLive.Server.WinForms,src/EJLive.Server.WinForms/ServerMainForm.cs,1901,4181b499ade96af870434e8b63e8ec16,compiled
 EJLive.Shared,src/EJLive.Shared/AppConfig.cs,152,0b1845a821f978ddaf829ee26b220edc,compiled
 EJLive.Shared,src/EJLive.Shared/AppConstants.cs,274,34bf26bbfca70cde4ce501fe340e4d8d,compiled
 EJLive.Shared,src/EJLive.Shared/AppLogger.cs,168,b59c36cbe7026b19c66c7f426b687abe,compiled

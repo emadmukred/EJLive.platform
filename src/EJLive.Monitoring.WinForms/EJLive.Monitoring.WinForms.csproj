@@ -32,6 +32,7 @@
          Explicit list, no globs: every source file in this project is either compiled here
          or linked reference under src/_reference/. -->
     <Compile Include="MainDashboardForm.cs" />
+    <Compile Include="MainDashboardForm.Designer.cs" />
     <Compile Include="Models\DashboardModels.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -7,306 +7,125 @@ using EJLive.Server.Services;
 
 namespace EJLive.Monitoring.WinForms;
 
-public sealed class MainDashboardForm : Form
+/// <summary>
+/// NOC / Windows Operations Console. Wave 5 / C-29 — Designer partial split
+/// (SS-10 process, proven on <c>JournalStudioForm</c>): this file carries
+/// behaviour only; the control tree lives in <c>MainDashboardForm.Designer.cs</c>
+/// and every event binding lives in <see cref="WireEvents"/>, so a designer
+/// regeneration of the sibling partial can never orphan a handler.
+///
+/// Control → function map (designer fields, driven by this partial):
+///   _overviewGrid + _totalValue/_onlineValue/_syncingValue/_offlineValue/_healthValue —
+///       fleet overview, refreshed by <see cref="RefreshOverview"/> / <see cref="UpdateSummary"/>
+///   _cashMatrixGrid / _terminalListGrid — per-terminal cash + status tables
+///   _mapPanel — operational map card wall (cards are runtime content, rebuilt per refresh)
+///   _xfsGrid / _vendorLog — XFS sample loader and vendor probable-cause analysis
+///   _reportsWindowGrid / _reportsFilesGrid / _reportsInfo — ops bundle + report index
+///   _smartUploadBox / _smartFindingsGrid / _smartCassetteGrid / _smartHourlyGrid /
+///       _smartCritical / _smartWarning / _smartInfo / _smartSummary — Smart Analysis (SS-27)
+/// </summary>
+public sealed partial class MainDashboardForm : Form
 {
     private readonly OperationalStateStore _stateStore = new();
     private readonly XfsLogAnalysisService _xfsLogAnalysis = new();
     private readonly OperationalReportCatalogService _reportCatalog = new();
     private readonly ClientTelemetryHistoryService _telemetryHistory = new();
-    private DataGridView _overviewGrid = null!;
-    private DataGridView _xfsGrid = null!;
-    private DataGridView _cashMatrixGrid = null!;
-    private DataGridView _terminalListGrid = null!;
-    private DataGridView _reportsFilesGrid = null!;
-    private DataGridView _reportsWindowGrid = null!;
-    private DataGridView _smartFindingsGrid = null!;
-    private DataGridView _smartCassetteGrid = null!;
-    private DataGridView _smartHourlyGrid = null!;
-    private RichTextBox _smartUploadBox = null!;
-    private Label _smartSummary = null!;
-    private Label _smartCritical = null!;
-    private Label _smartWarning = null!;
-    private Label _smartInfo = null!;
-    private TextBox _smartVendorBox = null!;
-    private FlowLayoutPanel _mapPanel = null!;
-    private RichTextBox _vendorLog = null!;
-    private Label _totalValue = null!;
-    private Label _onlineValue = null!;
-    private Label _syncingValue = null!;
-    private Label _offlineValue = null!;
-    private Label _healthValue = null!;
-    private Label _reportsInfo = null!;
     private DateTime _lastTelemetryRefreshUtc = DateTime.MinValue;
 
     public MainDashboardForm()
     {
-        Text = "EJLive Monitoring Dashboard";
-        MinimumSize = new Size(1060, 700);
-        Size = new Size(1180, 780);
-        StartPosition = FormStartPosition.CenterScreen;
-        Font = new Font("Segoe UI", 9F);
-        DoubleBuffered = true;
-        InitializeUi();
+        InitializeComponent();
+        WireEvents();
+        PrepareGrids();
+        PerformInitialRefresh();
     }
 
-    private void InitializeUi()
+    /// <summary>
+    /// Every event binding for this surface, in one place (SS-10). The designer
+    /// partial deliberately contains no bindings; a regenerated
+    /// <c>MainDashboardForm.Designer.cs</c> therefore cannot drop a handler.
+    /// </summary>
+    private void WireEvents()
     {
-        var tabs = new TabControl { Dock = DockStyle.Fill };
-        tabs.TabPages.Add(BuildOverviewTab());
-        tabs.TabPages.Add(BuildCashMatrixTab());
-        tabs.TabPages.Add(BuildTerminalListTab());
-        tabs.TabPages.Add(BuildOperationalMapTab());
-        tabs.TabPages.Add(BuildDeviceStateTab());
-        tabs.TabPages.Add(BuildSyncTab());
-        tabs.TabPages.Add(BuildXfsEventsTab());
-        tabs.TabPages.Add(BuildVendorLogsTab());
-        tabs.TabPages.Add(BuildReportsTab());
-        tabs.TabPages.Add(BuildSmartAnalysisTab());
-        Controls.Add(tabs);
+        _overviewRefreshButton.Click += RefreshOverview;
+        _overviewWindowButton.Click += () => OpenDetachedGridWindow("Overview", _overviewGrid);
+        _overviewReviewButton.Click += () => MessageBox.Show(this, "Health review queued.", "Monitoring");
+
+        _cashMatrixRefreshButton.Click += RefreshTerminalDashboards;
+        _cashMatrixWindowButton.Click += () => OpenDetachedGridWindow("Cash Matrix", _cashMatrixGrid);
+
+        _terminalListRefreshButton.Click += RefreshTerminalDashboards;
+        _terminalListWindowButton.Click += () => OpenDetachedGridWindow("Terminal List", _terminalListGrid);
+
+        _mapRefreshButton.Click += RefreshOperationalMap;
+        _mapReviewButton.Click += () => MessageBox.Show(this, "Map health review queued.", "Monitoring");
+
+        _xfsNcrButton.Click += () => LoadXfs("NCR ERROR DISPENSER TIMEOUT");
+        _xfsGrgButton.Click += () => LoadXfs("GRG TRACE JOURNAL OPEN");
+        _xfsWincorButton.Click += () => LoadXfs("WINCOR WOSA/XFS SP ERROR: CDM CASH UNIT EMPTY");
+        _xfsHyosungButton.Click += () => LoadXfs("HYOSUNG HCDM DISPENSE FAULT: TAKE CASH TIMEOUT");
+        _xfsWindowButton.Click += () => OpenDetachedGridWindow("XFS Events", _xfsGrid);
+        _xfsClearButton.Click += () => _xfsGrid.Rows.Clear();
+
+        _vendorAnalyzeButton.Click += AnalyzeVendorLog;
+        _vendorExtractButton.Click += AnalyzeVendorLog;
+        _vendorClearButton.Click += () => _vendorLog.Clear();
+
+        _reportsRefreshButton.Click += RefreshReportsIndex;
+        _reportsBundleButton.Click += LoadLatestOpsBundleSummary;
+        _reportsWindowSummaryButton.Click += () => OpenDetachedGridWindow("Ops Windows", _reportsWindowGrid);
+        _reportsFilesIndexButton.Click += () => OpenDetachedGridWindow("Report Files", _reportsFilesGrid);
+
+        _smartAnalyzeButton.Click += RunSmartAnalysis;
+        _smartReSortButton.Click += () => ReSortSmartFindings("severity");
+        _smartGroupButton.Click += () => ReSortSmartFindings("category");
+        _smartSampleButton.Click += LoadSmartAnalysisSample;
+        _smartClearButton.Click += ClearSmartAnalysis;
     }
 
-    private TabPage BuildOverviewTab()
+    /// <summary>
+    /// Runtime performance pass over the designer-built grids:
+    /// <see cref="ControlRenderingExtensions.EnableDoubleBuffering"/> is a
+    /// reflection tweak the designer cannot express, so it is applied here
+    /// (the visual theme it complements is set in the designer partial).
+    /// </summary>
+    private void PrepareGrids()
     {
-        var tab = new TabPage("Overview");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Refresh", RefreshOverview));
-        actions.Controls.Add(UiHelpers.Button("Open Overview Window", () => OpenDetachedGridWindow("Overview", _overviewGrid)));
-        actions.Controls.Add(UiHelpers.Button("Raise Health Review", () => MessageBox.Show(this, "Health review queued.", "Monitoring")));
-        var summary = UiHelpers.CardRow(5);
-        _totalValue = UiHelpers.AddMetricCard(summary, "Total ATMs", "0", Color.FromArgb(46, 134, 222));
-        _onlineValue = UiHelpers.AddMetricCard(summary, "Online", "0", Color.FromArgb(16, 172, 132));
-        _syncingValue = UiHelpers.AddMetricCard(summary, "Syncing", "0", Color.FromArgb(255, 159, 67));
-        _offlineValue = UiHelpers.AddMetricCard(summary, "Offline", "0", Color.FromArgb(238, 82, 83));
-        _healthValue = UiHelpers.AddMetricCard(summary, "Avg Health", "0%", Color.FromArgb(95, 39, 205));
-        _overviewGrid = UiHelpers.Grid();
-        _overviewGrid.Columns.Add("ATM", "ATM");
-        _overviewGrid.Columns.Add("Status", "Status");
-        _overviewGrid.Columns.Add("Health", "Health");
-        _overviewGrid.Columns.Add("LastHeartbeat", "Last Heartbeat");
-        root.Controls.Add(_overviewGrid);
-        root.Controls.Add(summary);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
+        _overviewGrid.EnableDoubleBuffering();
+        _cashMatrixGrid.EnableDoubleBuffering();
+        _terminalListGrid.EnableDoubleBuffering();
+        _deviceStateGrid.EnableDoubleBuffering();
+        _syncStatusGrid.EnableDoubleBuffering();
+        _xfsGrid.EnableDoubleBuffering();
+        _reportsWindowGrid.EnableDoubleBuffering();
+        _reportsFilesGrid.EnableDoubleBuffering();
+        _smartFindingsGrid.EnableDoubleBuffering();
+        _smartCassetteGrid.EnableDoubleBuffering();
+        _smartHourlyGrid.EnableDoubleBuffering();
+    }
+
+    /// <summary>
+    /// Seed + first paint, in the exact order the legacy tab builders applied
+    /// it (each <c>Build*Tab</c> finished with its own refresh call). The static
+    /// Device-State rows and the <c>DateTime.Now</c>-relative Realtime-Sync demo
+    /// rows live here because a designer partial cannot express relative dates.
+    /// </summary>
+    private void PerformInitialRefresh()
+    {
+        _deviceStateGrid.Rows.Add("Card Reader", "XFS", "Ready");
+        _deviceStateGrid.Rows.Add("Cash Dispenser", "XFS", "Ready");
+        _deviceStateGrid.Rows.Add("Journal File", "File System", "Watching");
+        _deviceStateGrid.Rows.Add("Network Link", "Transport", "Online");
+
+        _syncStatusGrid.Rows.Add("JournalOutbox", 3, 1, DateTime.Now.AddSeconds(-20));
+        _syncStatusGrid.Rows.Add("ImageSync", 0, 0, DateTime.Now.AddMinutes(-2));
+
         RefreshOverview();
-        return tab;
-    }
-
-    private TabPage BuildCashMatrixTab()
-    {
-        var tab = new TabPage("Cash Matrix");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Refresh Matrix", RefreshTerminalDashboards));
-        actions.Controls.Add(UiHelpers.Button("Open Matrix Window", () => OpenDetachedGridWindow("Cash Matrix", _cashMatrixGrid)));
-
-        _cashMatrixGrid = UiHelpers.Grid();
-        _cashMatrixGrid.Columns.Add("ATM", "ATM");
-        _cashMatrixGrid.Columns.Add("Branch", "Branch");
-        _cashMatrixGrid.Columns.Add("Region", "Region");
-        _cashMatrixGrid.Columns.Add("Vendor", "Vendor");
-        _cashMatrixGrid.Columns.Add("Source", "Source");
-        _cashMatrixGrid.Columns.Add("Updated", "Updated");
-        _cashMatrixGrid.Columns.Add("Cass1", "Cass1");
-        _cashMatrixGrid.Columns.Add("Cass2", "Cass2");
-        _cashMatrixGrid.Columns.Add("Cass3", "Cass3");
-        _cashMatrixGrid.Columns.Add("Cass4", "Cass4");
-        _cashMatrixGrid.Columns.Add("Remaining", "Remaining");
-        _cashMatrixGrid.Columns.Add("Loaded", "Loaded");
-        _cashMatrixGrid.Columns.Add("DispenseOut", "Dispense Out");
-        _cashMatrixGrid.Columns.Add("Reject", "Reject");
-        _cashMatrixGrid.Columns.Add("Retract", "Retract");
-        _cashMatrixGrid.Columns.Add("Band", "Cash Band");
-
-        root.Controls.Add(_cashMatrixGrid);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
         RefreshTerminalDashboards();
-        return tab;
-    }
-
-    private TabPage BuildTerminalListTab()
-    {
-        var tab = new TabPage("Terminal List");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Refresh List", RefreshTerminalDashboards));
-        actions.Controls.Add(UiHelpers.Button("Open List Window", () => OpenDetachedGridWindow("Terminal List", _terminalListGrid)));
-
-        _terminalListGrid = UiHelpers.Grid();
-        _terminalListGrid.Columns.Add("ATM", "ATM");
-        _terminalListGrid.Columns.Add("Branch", "Branch");
-        _terminalListGrid.Columns.Add("Region", "Region");
-        _terminalListGrid.Columns.Add("Vendor", "Vendor");
-        _terminalListGrid.Columns.Add("Network", "Network");
-        _terminalListGrid.Columns.Add("Status", "Status");
-        _terminalListGrid.Columns.Add("Connection", "Connection");
-        _terminalListGrid.Columns.Add("Health", "Health");
-        _terminalListGrid.Columns.Add("Supervisor", "Supervisor");
-        _terminalListGrid.Columns.Add("Alerts", "Alerts");
-        _terminalListGrid.Columns.Add("LastTx", "Last Tx");
-        _terminalListGrid.Columns.Add("LastHeartbeat", "Last Heartbeat");
-        _terminalListGrid.Columns.Add("LastSync", "Last Sync");
-        _terminalListGrid.Columns.Add("Remaining", "Remaining");
-
-        root.Controls.Add(_terminalListGrid);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
         RefreshTerminalDashboards();
-        return tab;
-    }
-
-    private TabPage BuildOperationalMapTab()
-    {
-        var tab = new TabPage("Operational Map");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Refresh Map", RefreshOperationalMap));
-        actions.Controls.Add(UiHelpers.Button("Raise Health Review", () => MessageBox.Show(this, "Map health review queued.", "Monitoring")));
-        _mapPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            WrapContents = true,
-            Padding = new Padding(12),
-            BackColor = Color.FromArgb(246, 248, 250)
-        };
-        var legend = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 34,
-            Text = "Green: active | Yellow: idle | Blue: syncing | Red: offline | Gray: critical",
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(12, 0, 0, 0),
-            ForeColor = Color.FromArgb(71, 85, 105),
-            BackColor = Color.FromArgb(241, 245, 249)
-        };
-        root.Controls.Add(_mapPanel);
-        root.Controls.Add(legend);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
         RefreshOperationalMap();
-        return tab;
-    }
-
-    private TabPage BuildDeviceStateTab()
-    {
-        var tab = new TabPage("Device State");
-        var grid = UiHelpers.Grid();
-        grid.Columns.Add("Device", "Device");
-        grid.Columns.Add("Layer", "Layer");
-        grid.Columns.Add("State", "State");
-        grid.Rows.Add("Card Reader", "XFS", "Ready");
-        grid.Rows.Add("Cash Dispenser", "XFS", "Ready");
-        grid.Rows.Add("Journal File", "File System", "Watching");
-        grid.Rows.Add("Network Link", "Transport", "Online");
-        tab.Controls.Add(grid);
-        return tab;
-    }
-
-    private TabPage BuildSyncTab()
-    {
-        var tab = new TabPage("Realtime Sync");
-        var grid = UiHelpers.Grid();
-        grid.Columns.Add("Queue", "Queue");
-        grid.Columns.Add("Pending", "Pending");
-        grid.Columns.Add("Retry", "Retry");
-        grid.Columns.Add("LastAck", "Last Ack");
-        grid.Rows.Add("JournalOutbox", 3, 1, DateTime.Now.AddSeconds(-20));
-        grid.Rows.Add("ImageSync", 0, 0, DateTime.Now.AddMinutes(-2));
-        tab.Controls.Add(grid);
-        return tab;
-    }
-
-    private TabPage BuildXfsEventsTab()
-    {
-        var tab = new TabPage("XFS Events");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Load NCR Sample", () => LoadXfs("NCR ERROR DISPENSER TIMEOUT")));
-        actions.Controls.Add(UiHelpers.Button("Load GRG Sample", () => LoadXfs("GRG TRACE JOURNAL OPEN")));
-        actions.Controls.Add(UiHelpers.Button("Load Wincor Sample", () => LoadXfs("WINCOR WOSA/XFS SP ERROR: CDM CASH UNIT EMPTY")));
-        actions.Controls.Add(UiHelpers.Button("Load Hyosung Sample", () => LoadXfs("HYOSUNG HCDM DISPENSE FAULT: TAKE CASH TIMEOUT")));
-        actions.Controls.Add(UiHelpers.Button("Open XFS Window", () => OpenDetachedGridWindow("XFS Events", _xfsGrid)));
-        actions.Controls.Add(UiHelpers.Button("Clear", () => _xfsGrid.Rows.Clear()));
-        _xfsGrid = UiHelpers.Grid();
-        _xfsGrid.Columns.Add("Vendor", "Vendor");
-        _xfsGrid.Columns.Add("Component", "Component");
-        _xfsGrid.Columns.Add("Severity", "Severity");
-        _xfsGrid.Columns.Add("Message", "Message");
-        root.Controls.Add(_xfsGrid);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
-        return tab;
-    }
-
-    private TabPage BuildVendorLogsTab()
-    {
-        var tab = new TabPage("Vendor Logs");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Analyze Log", AnalyzeVendorLog));
-        actions.Controls.Add(UiHelpers.Button("Extract Probable Cause", AnalyzeVendorLog));
-        actions.Controls.Add(UiHelpers.Button("Clear", () => _vendorLog.Clear()));
-        _vendorLog = UiHelpers.LogBox();
-        _vendorLog.Text = "Paste NCR, GRG, Diebold, or Wincor log text here.";
-        root.Controls.Add(_vendorLog);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
-        return tab;
-    }
-
-    private TabPage BuildReportsTab()
-    {
-        var tab = new TabPage("Reports");
-        var root = UiHelpers.Stack();
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Refresh Reports", RefreshReportsIndex));
-        actions.Controls.Add(UiHelpers.Button("Load Latest Ops Bundle", LoadLatestOpsBundleSummary));
-        actions.Controls.Add(UiHelpers.Button("Open Windows Summary", () => OpenDetachedGridWindow("Ops Windows", _reportsWindowGrid)));
-        actions.Controls.Add(UiHelpers.Button("Open Files Index", () => OpenDetachedGridWindow("Report Files", _reportsFilesGrid)));
-        _reportsInfo = new Label
-        {
-            AutoSize = true,
-            Padding = new Padding(8, 8, 0, 0),
-            ForeColor = Color.FromArgb(71, 85, 105)
-        };
-        actions.Controls.Add(_reportsInfo);
-
-        _reportsWindowGrid = UiHelpers.Grid();
-        _reportsWindowGrid.Columns.Add("Window", "Window");
-        _reportsWindowGrid.Columns.Add("Hours", "Hours");
-        _reportsWindowGrid.Columns.Add("Fleet", "Fleet");
-        _reportsWindowGrid.Columns.Add("Connected", "Connected");
-        _reportsWindowGrid.Columns.Add("Offline", "Offline");
-        _reportsWindowGrid.Columns.Add("SyncOpen", "Sync Open");
-        _reportsWindowGrid.Columns.Add("SyncFailed", "Sync Failed");
-        _reportsWindowGrid.Columns.Add("PendingDel", "Pending Delivery");
-        _reportsWindowGrid.Columns.Add("CmdFail", "Command Failures");
-        _reportsWindowGrid.Columns.Add("TelWarn", "Telemetry Warnings");
-        _reportsWindowGrid.Columns.Add("TelErr", "Telemetry Errors");
-
-        _reportsFilesGrid = UiHelpers.Grid();
-        _reportsFilesGrid.Columns.Add("File", "File");
-        _reportsFilesGrid.Columns.Add("Category", "Category");
-        _reportsFilesGrid.Columns.Add("Modified", "Modified");
-        _reportsFilesGrid.Columns.Add("SizeKB", "Size KB");
-
-        var split = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Horizontal,
-            SplitterDistance = 210
-        };
-        split.Panel1.Controls.Add(_reportsWindowGrid);
-        split.Panel2.Controls.Add(_reportsFilesGrid);
-
-        root.Controls.Add(split);
-        root.Controls.Add(actions);
-        tab.Controls.Add(root);
         RefreshReportsIndex();
         LoadLatestOpsBundleSummary();
-        return tab;
     }
 
     private void RefreshReportsIndex()
@@ -747,101 +566,6 @@ public sealed class MainDashboardForm : Form
     // Wave 5 — Smart Analysis tab (SS-27)
     // -----------------------------------------------------------------
 
-    private TabPage BuildSmartAnalysisTab()
-    {
-        var tab = new TabPage("Smart Analysis");
-        var root = UiHelpers.Stack();
-
-        // Action bar (top): upload, analyze, re-sort, re-organise.
-        var actions = UiHelpers.Flow();
-        actions.Controls.Add(UiHelpers.Button("Analyze Text", RunSmartAnalysis));
-        actions.Controls.Add(UiHelpers.Button("Re-sort by Severity", () => ReSortSmartFindings("severity")));
-        actions.Controls.Add(UiHelpers.Button("Group by Category", () => ReSortSmartFindings("category")));
-        actions.Controls.Add(UiHelpers.Button("Load Sample Log", LoadSmartAnalysisSample));
-        actions.Controls.Add(UiHelpers.Button("Clear", ClearSmartAnalysis));
-
-        _smartVendorBox = new TextBox
-        {
-            Width = 110,
-            PlaceholderText = "Vendor (NCR/GRG/Wincor)",
-            Margin = new Padding(4, 8, 4, 4)
-        };
-        actions.Controls.Add(_smartVendorBox);
-
-        // Metric card row: critical / warning / info totals + last summary.
-        var summaryRow = UiHelpers.CardRow(4);
-        _smartCritical = UiHelpers.AddMetricCard(summaryRow, "Critical Findings", "0", Color.FromArgb(238, 82, 83));
-        _smartWarning = UiHelpers.AddMetricCard(summaryRow, "Warnings", "0", Color.FromArgb(255, 159, 67));
-        _smartInfo = UiHelpers.AddMetricCard(summaryRow, "Info", "0", Color.FromArgb(46, 134, 222));
-        _smartSummary = UiHelpers.AddMetricCard(summaryRow, "Last Trace", "—", Color.FromArgb(95, 39, 205));
-
-        // Vertical split: input (top) + results (bottom).
-        var split = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Horizontal,
-            SplitterDistance = 160
-        };
-
-        _smartUploadBox = UiHelpers.LogBox();
-        _smartUploadBox.Text = string.Join(Environment.NewLine, new[]
-        {
-            "[2025-09-14 12:01:33] NCR SDC LINK ERROR: M-146 timeout on dispenser handler.",
-            "[2025-09-14 12:01:35] GRG CASSETTE STATUS: CAS1=1800 CAS2=0 CAS3=900 CAS4=600",
-            "[2025-09-14 12:01:40] NCR PRINTER JAM at receipt path, customer reports stuck paper.",
-            "[2025-09-14 12:02:05] WINCOR WOSA/XFS SP ERROR: CDM CASH UNIT EMPTY",
-            "[2025-09-14 12:02:30] WITHDRAWAL AMOUNT=200 EUR processed.",
-            "[2025-09-14 12:02:42] CARD CAPTURED — dispute opened on rejected dispense."
-        });
-        split.Panel1.Controls.Add(_smartUploadBox);
-
-        // Bottom panel: findings grid + cassette/hourly mini-grids.
-        var results = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        results.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
-        results.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-        results.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-
-        _smartFindingsGrid = UiHelpers.Grid();
-        _smartFindingsGrid.Columns.Add("Severity", "Severity");
-        _smartFindingsGrid.Columns.Add("Category", "Category");
-        _smartFindingsGrid.Columns.Add("Code", "Code");
-        _smartFindingsGrid.Columns.Add("Vendor", "Vendor");
-        _smartFindingsGrid.Columns.Add("Action", "Recommended Action");
-        _smartFindingsGrid.Columns.Add("Source", "Source");
-        results.Controls.Add(_smartFindingsGrid, 0, 0);
-
-        var bottomSplit = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Vertical,
-            SplitterDistance = 480
-        };
-
-        _smartCassetteGrid = UiHelpers.Grid();
-        _smartCassetteGrid.Columns.Add("Slot", "Slot");
-        _smartCassetteGrid.Columns.Add("Notes", "Notes");
-        bottomSplit.Panel1.Controls.Add(_smartCassetteGrid);
-
-        _smartHourlyGrid = UiHelpers.Grid();
-        _smartHourlyGrid.Columns.Add("Hour", "Hour");
-        _smartHourlyGrid.Columns.Add("Lines", "Lines");
-        bottomSplit.Panel2.Controls.Add(_smartHourlyGrid);
-
-        results.Controls.Add(bottomSplit, 0, 1);
-        results.Controls.Add(summaryRow, 0, 2);
-        split.Panel2.Controls.Add(results);
-
-        root.Controls.Add(actions);
-        root.Controls.Add(split);
-        tab.Controls.Add(root);
-        return tab;
-    }
-
     private void RunSmartAnalysis()
     {
         if (_smartUploadBox is null) return;
@@ -957,5 +681,4 @@ public sealed class MainDashboardForm : Form
         _smartInfo.Text = report.InfoCount.ToString();
         _smartSummary.Text = $"{report.TraceId} · {report.LineCount} lines · {report.Value.Withdrawals}W/{report.Value.Deposits}D";
     }
-
 }

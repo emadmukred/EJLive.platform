@@ -33,7 +33,16 @@ Re-introducing a cross-assembly partial (or adding any new one) fails
 `TYPE-2`; Business-side needs for Core types must be re-declared as extension
 methods or adapters in namespace `EJLive.Business`, never as `partial`.
 
-## D-02 unparsable auto-merge dumps (archived, not compiled) -- 10 files — OPEN (Wave-5 rewrite backlog)
+## D-02 unparsable auto-merge dumps (archived, not compiled) -- 10 files — OPEN (rewrite backlog, deferred)
+
+Wave-5 assessment (this branch): the activation audit shows **zero compiled
+consumers** for all ten dumped types — the only hit in
+`docs/12-service-activation-status.csv` is `ImageSyncEngine`, whose consumer
+(`EJServer.cs`) is itself reference-only. The C-27 rule applies: a rewrite with
+no compiled consumer is a dead façade, so the backlog is deferred until a
+consumer-driven design names the type and its owning project. The rewrite exit
+condition per file is unchanged: rewrite from SS7/SS15, add tests, promote to
+the owning project's compile map, delete the row.
 
 Each file below was produced by an "auto merge / code-intelligence" pass: brace
 blocks do not balance, modifiers repeat (`public partial public class`), and
@@ -186,3 +195,13 @@ Exit condition (Wave 5): decompose the archived bootstrapper against the compile
 test assertion to `ActiveCompiled`, and land the duplicate-type scan with `AgentBootstrapper` absent
 from `DuplicateTypeFindings` (already true — the name is declared nowhere in the compiled set).
 Until then the expectation stays honest: no dead façade is compiled to satisfy an assertion.
+
+Wave-5 assessment (this branch): the compiled agent surface —
+`AgentHeadlessController` (journal watching, outbox, heartbeat, telemetry, the
+5656 protocol) under `ClientAgentWindowsService` supervision, plus
+`ClientStartupPlanner` for the `--background`/`--autostart` ladder — already
+carries the bootstrapper's runtime responsibilities; the archived orchestrator's
+remaining imports are retired components (`Supabase`, the D-02 `RemoteCommandHandler`
+dump). Promoting a second orchestrator without a named consumer would violate
+C-27's no-dead-façade rule, so the promotion is deferred to a consumer-driven
+design decision and the activation expectation stays `CoveredByBridge`.

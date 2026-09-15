@@ -195,6 +195,106 @@
   `CoveredByBridge` until that promotion lands — no dead façade was compiled to fake the assertion.
 - **Status**: **CLOSED** (gate 41/41 PASS locally with regenerated ledgers; Windows CI is authority).
 
+## C-28 — Endpoint Console: Designer partial split (C-24 residual, Wave 5)
+
+- **Finding**: residual of `E-26`. `ClientMainForm` (Endpoint Console) was code-only: the
+  control tree was built by private `Build*` factories in the constructor, so the
+  "built in the Visual Studio Designer" rule (SS-10) could not be represented and a
+  designer round-trip would have overwritten behaviour.
+- **Fix**: `ClientMainForm` split into the behaviour partial (this file's
+  `WireEvents()` + `ApplySnapshot`/heartbeat classification) and
+  `ClientMainForm.Designer.cs` (named-field control tree — 36 fields: header, four
+  status cards, details grid, component grid, event feed; `InitializeComponent` =
+  create/property/parent only; `Dispose(bool)` + `components`; `AutoScaleMode.Dpi`;
+  `TabIndex` in visual order; `AccessibleName` on data surfaces). Window metrics
+  preserved (`Size 1120×760` → `ClientSize 1104×713`, same `MinimumSize`);
+  `_refreshTimer` stays a runtime artefact in the behaviour partial (documented in
+  the designer header). Event bindings moved verbatim into `WireEvents()` — the
+  designer file is binding-free, so regeneration cannot orphan a handler.
+- **Status**: **CLOSED** (gate 41/41 with the split; `UI-SURFACES.md` shows the
+  control/handler split per file).
+
+## C-29 — NOC / Windows Operations Console: Designer partial split (C-24 residual, Wave 5)
+
+- **Finding**: residual of `E-26`. `MainDashboardForm` (10 tabs) was code-only;
+  button handlers were attached through `UiHelpers.Button(text, action)` inside the
+  tab builders, mixing construction and wiring.
+- **Fix**: `MainDashboardForm` split into the behaviour partial (service fields,
+  `WireEvents()`, `PerformInitialRefresh()`, cash telemetry, detached-window
+  helper, Smart Analysis) and `MainDashboardForm.Designer.cs` (104 named fields:
+  all 10 tabs, 11 grids with the canonical header/zebra/selection styles inlined,
+  9 metric cards, both split containers, the Smart Analysis results tree). The
+  legacy `UiHelpers.Grid()` theme is inlined as designer-settable properties; the
+  reflection-only `EnableDoubleBuffering()` pass moved to `PrepareGrids()` in the
+  behaviour partial (documented). Static Device-State rows and the
+  `DateTime.Now`-relative Realtime-Sync demo rows are seeded in
+  `PerformInitialRefresh()` because a designer partial cannot express relative
+  dates (documented in the designer header). Refresh order is the exact sequence
+  the tab builders applied.
+- **Status**: **CLOSED** (gate 41/41; `UI-SURFACES.md` updated).
+
+## C-30 — Enterprise Server console: Designer partial split (C-24 residual, Wave 5)
+
+- **Finding**: residual of `E-26`. `ServerMainForm` (13 tabs + MenuStrip, 2 264
+  lines) was the largest code-only surface: 60+ buttons wired through inline
+  lambdas, the menu built in `BuildMainMenu()`, metric cards via
+  `UiHelpers.AddMetricCard`, the Settings rows through a private `AddRow` helper.
+- **Fix**: `ServerMainForm` split into the behaviour partial (service composition,
+  `WireEvents()` with all 89 bindings — menu, 13 tab action strips, remote-command
+  console, `_refreshTimer.Tick` — plus `PrepareGrids()` and
+  `PerformInitialRefresh()` in the legacy builders' exact refresh order) and
+  `ServerMainForm.Designer.cs` (199 named fields: 4 top-level menus with 16
+  items, 13 tab pages, 9 themed grids, 9 metric cards, the remote preview panel,
+  the Command-Audit filter combo seeded with its four scope literals, and the
+  Settings panel seeded from the `NetworkConfig.DEFAULT_PORT` / `ATMPaths` /
+  `AppConstants` constants exactly as the legacy builder did). The now-obsolete
+  `AddRow` helper and all `Build*Tab`/`BuildMainMenu`/`InitializeUi` methods were
+  deleted. Window metrics preserved (`Size 1220×820` → `ClientSize 1204×773`).
+  The three small dialog forms in the same file (`ATMDetailForm`,
+  `ATMDetailDrawerForm`, `SyncDashboardForm`) stay in the behaviour file — they are
+  separate public types, not part of this surface's designer tree.
+- **Status**: **CLOSED** (gate 41/41; `UI-SURFACES.md` updated; all 24
+  reflection-pinned method contracts in `EJLive.Tests` still resolve on the
+  behaviour partial).
+
+## C-31 — One owner for the agent health-file schema (Track08 gap)
+
+- **Finding**: `E-30`. `ClientCompanionStatusTests` (Track08) pins a reflection
+  contract — `ClientMainForm.TryParseServiceHealthSnapshot(string, out …)` with
+  `State`/`Connected`/`PendingOutboxItems`/`SessionId` properties — that no
+  compiled type satisfied: the parse lived inside
+  `InProcessClientServiceGateway` as private nested record `ServiceHealthSnapshot`
+  plus nine `ReadJson*` helpers the form could not reuse.
+- **Fix**: `ServiceHealthSnapshot` promoted to a `public sealed record` in
+  `EJLive.Client.WinForms.Services` with `TryParseJson(string?, out …)` as the
+  single parse seam (case-insensitive keys, numeric-or-string `state` —
+  0=Stopped…4=Failed — tolerant number/string scalars, non-object or malformed
+  JSON → `Empty` + false, never an exception). `InProcessClientServiceGateway`
+  now reads the live health file (shared `FileShare.ReadWrite|Delete` handle kept)
+  and delegates interpretation to the record; the duplicated helpers were deleted.
+  `ClientMainForm.TryParseServiceHealthSnapshot` is a thin private static bridge
+  over the record, closing the Track08 contract without a second parser.
+- **Status**: **CLOSED** (the two Track08 cases now resolve; the gateway
+  behavioural tests are unaffected — the JSON schema is byte-identical).
+
+
+## C-32 — pre-commit hook: mutually exclusive flags blocked every commit
+
+- **Finding**: `E-31`. `tools/hooks/pre-commit` invoked the tool with all three
+  `--check-architecture --check-implementation --check-changelog` flags in one
+  call, but they form an argparse mutually exclusive group: the tool exited 2
+  with a usage error before evaluating a single rule, so the hook classified
+  every staged file as a violation and could never allow a commit.
+- **Fix**: the hook now calls the tool with `--upload <file>` only — with no
+  `--check-*` flag the tool runs all three rule sets (its documented default,
+  `incoming_rules.py` main: `run_arch/run_impl/run_chl` default true), which is
+  exactly the "once per file with all three rule sets" contract the hook's
+  header states. Warnings (e.g. the K-6 brace heuristic on interpolation lines
+  with escaped quotes) do not block; only `violation` severities exit 2.
+- **Status**: **CLOSED** (per-file simulation over the Wave-5 staged set: 0
+  blocks; the same check runs in CI via the workflow).
+
+
 ## Wave resolutions
 
 - `67db886` — D-08 (8 merge dumps in `EJLive.Core/Models` + `Services/UnifiedOperationalFusion`).
@@ -220,3 +320,27 @@
 - C-17…C-25 — constants/build repair, central dataroot + bootstrap, schema book + repositories + audit chain, web removal, Studio bulk/Excel, Designer partials, tooling. Gate 41/41 PASS · 24 verification probes · 397 test cases · `check_constant_resolution.py` 0 issues.
 - C-26 — CI fix-up after the first Windows compile: `AuditLogger.cs` namespace closure (CS1513), `SYN-1` gate lexer made interpolation-faithful, touched-file comments anglicized. Gate 41/41 PASS.
 - C-27 — CI fix-up (second Windows iteration): gateway bridge-route single source, integration + activation audits implemented against the pinned contracts, `RetryPolicy` unified, `JournalSyncAlert` rebuilt, D-09 opened for the AgentBootstrapper promotion.
+
+### Wave 5 (this branch)
+
+- C-28/C-29/C-30 — the C-24 Designer-partial process replicated on the three main
+  consoles: `ClientMainForm` (36 designer fields), `MainDashboardForm` (104),
+  `ServerMainForm` (199 + 16 menu items). All event bindings moved to
+  `WireEvents()` in the behaviour partials; all 24 reflection-pinned test
+  contracts still resolve; the `UiHelpers.Grid()` theme inlined as designer
+  properties, `EnableDoubleBuffering` kept as the behaviour-side `PrepareGrids()`
+  pass. Gate 41/41 PASS · ledgers regenerated · `UI-SURFACES.md` shows the
+  control/handler split per file.
+- C-31 — `ServiceHealthSnapshot` promoted to the canonical public record with
+  `TryParseJson` as the single health-file parse seam; the Track08
+  `TryParseServiceHealthSnapshot` contract closed by a thin form bridge; gateway
+  deduplicated onto the record.
+- C-32 — `tools/hooks/pre-commit` fixed: it passed three mutually exclusive
+  `--check-*` flags in one call (argparse exit 2 → every commit blocked); it now
+  invokes the tool per file with no check flag, which runs all three rule sets.
+- D-02 / D-09 — kept OPEN with honest classifications: the activation audit
+  confirms zero compiled consumers for the ten D-02 dumps, and the D-09
+  AgentBootstrapper runtime is already covered by the compiled agent surface
+  (`AgentHeadlessController` + `ClientAgentWindowsService` supervision). Both
+  promotions are deferred to a consumer-driven design decision — per C-27, no
+  dead façade is compiled to satisfy a ledger.

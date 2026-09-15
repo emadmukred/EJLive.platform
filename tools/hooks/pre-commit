@@ -40,14 +40,15 @@ def check_one(rel: str) -> int:
     if not target.exists():
         # Deleted files are not checked.
         return 0
+    # C-32: the tool's --check-* flags are a mutually exclusive group; passing
+    # none of them runs all three rule sets (architecture + implementation +
+    # changelog), which is what this hook needs. Passing several at once made
+    # argparse exit 2 for every file and block every commit.
     cmd = [
         sys.executable,
         str(TOOL),
         "--upload",
         str(target),
-        "--check-architecture",
-        "--check-implementation",
-        "--check-changelog",
     ]
     proc = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
     if proc.returncode == 0:
