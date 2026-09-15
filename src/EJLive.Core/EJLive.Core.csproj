@@ -196,6 +196,8 @@
     <Compile Include="Services\UnifiedOperationalFusion.cs" />
     <Compile Include="Services\UnifiedOperationalReportingService.cs" />
     <Compile Include="Services\UnifiedServerAnalyticsService.cs" />
+    <Compile Include="Services\UnifiedProjectIntegrationAuditService.cs" />
+    <Compile Include="Services\UnifiedServiceActivationAuditService.cs" />
     <Compile Include="Services\UnifiedServiceGateway.cs" />
     <Compile Include="Services\UnifiedServiceOperations.cs" />
     <Compile Include="Services\VendorPathRegistry.cs" />

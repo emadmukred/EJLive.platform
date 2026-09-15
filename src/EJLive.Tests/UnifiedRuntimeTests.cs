@@ -1940,7 +1940,9 @@ public sealed class UnifiedRuntimeTests
         Assert.IsTrue(audit.ActiveCompiledCandidates >= 20);
         Assert.IsTrue(audit.Candidates.Any(item =>
             item.Path.EndsWith("src/EJLive.Client.WinForms/Agent/AgentBootstrapper.cs", StringComparison.OrdinalIgnoreCase) &&
-            item.Status == ServiceActivationStatusKind.ActiveCompiled));
+            // D-09: the implementation stays archived until the agent-decomposition promotion
+            // lands; until then the activation audit must classify it as bridge-covered.
+            item.Status == ServiceActivationStatusKind.CoveredByBridge));
     }
 
     [TestMethod]

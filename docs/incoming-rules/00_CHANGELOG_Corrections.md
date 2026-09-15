@@ -177,6 +177,24 @@
   file's Arabic comments were converted to English in the same pass (documentation rule).
 - **Status**: **CLOSED** (41/41 gate PASS locally with regenerated ledgers; CI re-run is the authority).
 
+## C-27 — CI fix-up: gateway bridge types, integration/activation audits, RetryPolicy unification
+
+- **Finding**: `E-29`. After C-26 landed, the Windows build still failed: the gateway in
+  `EJLive.Core` referenced `EJLive.Business` types it can never see, three consumed types had no
+  compiled definition (`ActiveServiceReplacement`, `ReferenceOnlyServiceFile`, `JournalSyncAlert`),
+  and dual `RetryPolicy` definitions produced CS0104 in `NetworkEngine`.
+- **Fix**: `ServiceBridgeRoutes` now owns the ten-entry bridge table once (gateway and audits read
+  the same source); `UnifiedProjectIntegrationAuditService` moved to `EJLive.Core.Services` and grew
+  the full contract the tests pinned (`SourceFileCount`, `ReferenceOnlyFiles`, coverage flags,
+  `ActiveReplacements`, duplicate-type scan); `UnifiedServiceActivationAuditService` implements the
+  C#-side of the activation ledger; `UnifiedBusinessRuntime` exposes `ServiceGateway` +
+  `BuildIntegrationAudit`; `JournalSyncAlert` + `JournalSyncAlertSeverity` rebuilt in
+  `JournalSyncModels.cs`; `EJLive.Shared.RetryPolicy` is the single canonical policy (named ctor,
+  bounded backoff, `ForNetwork`, `Default`, `GetDelay` alias), both legacy copies deleted with
+  tombstones. `AgentBootstrapper` reality is recorded in **D-09**; the activation test asserts
+  `CoveredByBridge` until that promotion lands — no dead façade was compiled to fake the assertion.
+- **Status**: **CLOSED** (gate 41/41 PASS locally with regenerated ledgers; Windows CI is authority).
+
 ## Wave resolutions
 
 - `67db886` — D-08 (8 merge dumps in `EJLive.Core/Models` + `Services/UnifiedOperationalFusion`).
@@ -201,3 +219,4 @@
 
 - C-17…C-25 — constants/build repair, central dataroot + bootstrap, schema book + repositories + audit chain, web removal, Studio bulk/Excel, Designer partials, tooling. Gate 41/41 PASS · 24 verification probes · 397 test cases · `check_constant_resolution.py` 0 issues.
 - C-26 — CI fix-up after the first Windows compile: `AuditLogger.cs` namespace closure (CS1513), `SYN-1` gate lexer made interpolation-faithful, touched-file comments anglicized. Gate 41/41 PASS.
+- C-27 — CI fix-up (second Windows iteration): gateway bridge-route single source, integration + activation audits implemented against the pinned contracts, `RetryPolicy` unified, `JournalSyncAlert` rebuilt, D-09 opened for the AgentBootstrapper promotion.

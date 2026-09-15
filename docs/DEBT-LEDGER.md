@@ -169,3 +169,20 @@ shortcut this were rejected during this pass, and the reason is recorded here so
 every bare `Name = value,` line deletes the members of any enum that spells its values one per line, and
 "keep the richest copy" is wrong when the copies disagree, because the merge tool had no semantics and
 neither copy is authoritative.
+
+
+## D-09 AgentBootstrapper promotion (agent decomposition) — OPEN (Wave 5)
+
+`src/EJLive.Client.WinForms/Agent/AgentBootstrapper.cs` has no compiled owner: the 1 395-line
+single-copy source sits in the reference archive (`src/_reference/uncompiled/EJLive.Client.WinForms/Agent/`)
+and still imports `EJLive.Client.WinForms.Supabase` — a namespace the platform has retired. The
+activation audit therefore classifies its nominal path as `CoveredByBridge`
+(`UnifiedClientServiceSupervisor`), and `UnifiedRuntimeTests.ServiceActivationAudit_ClassifiesCandidatesAsCompiledOrCovered`
+asserts exactly that status with a pointer back to this row.
+
+Exit condition (Wave 5): decompose the archived bootstrapper against the compiled agent surface
+(`ClientStartupPlanner`, `ClientAgentWindowsService`, `JournalSyncStateService`), promote it to
+`src/EJLive.Client.WinForms/Agent/AgentBootstrapper.cs` in the project's compile map, re-point the
+test assertion to `ActiveCompiled`, and land the duplicate-type scan with `AgentBootstrapper` absent
+from `DuplicateTypeFindings` (already true — the name is declared nowhere in the compiled set).
+Until then the expectation stays honest: no dead façade is compiled to satisfy an assertion.

@@ -13,19 +13,9 @@ public sealed class UnifiedServiceGateway
     private readonly ConcurrentQueue<UnifiedGatewayActivation> _activations = new();
     private readonly ConcurrentDictionary<string, UnifiedGatewayAtmRuntimeState> _atmStates = new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly ActiveServiceReplacement[] ReferenceRouteMap =
-    [
-        new("src/EJLive.Client.WinForms/Agent/", "UnifiedClientServiceSupervisor", "Agent lifecycle and scheduler behavior is supervised by active client service operations."),
-        new("src/EJLive.Client.WinForms/Services/", "UnifiedClientServiceSupervisor + UnifiedRemoteCommandOrchestrator + UnifiedJournalStorageService", "Client service variants are bridged through active command, journal, and supervision services."),
-        new("src/EJLive.Server/Services/", "UnifiedJournalStorageService + UnifiedRemoteCommandOrchestrator", "Legacy server services are bridged through active storage/report and command orchestration."),
-        new("src/EJLive.Server.WinForms/Services/", "UnifiedJournalStorageService + UnifiedClientServiceSupervisor", "Server WinForms service variants are bridged through active storage/supervision services."),
-        new("src/EJLive.Core/Services/", "CoreServices + UnifiedOperationalFusion + UnifiedServiceOperations + UnifiedServiceGateway", "Core service variants are consolidated into compiled service modules with the unified gateway bridge."),
-        new("src/EJLive.Core/Engine/", "OperationalEngines + NetworkEngine + CommunicationProtocol + JournalOutbox", "Legacy engine variants are consolidated into compiled operational engine services."),
-        new("src/EJLive.Core/Xfs/", "XfsModels + UnifiedJournalEvidenceAnalyzer", "XFS variants are represented by compiled normalized models and analyzer-based evidence."),
-        new("src/EJLive.Core/Models/", "UnifiedModels", "Model variants are consolidated into compiled unified models."),
-        new("src/EJLive.Shared/", "AppLogger + SecurityHelper + DateTimeHelper + RetryPolicy", "Shared helper variants are represented by compiled shared utility services."),
-        new("legacy/original/", "UnifiedServiceGateway", "Legacy archive roots are retained as source evidence and bridged through unified runtime services.")
-    ];
+    // C-27: the route table moved to ServiceBridgeRoutes so the integration audit and
+    // this gateway can never disagree about which active service covers which prefix.
+    private static readonly ActiveServiceReplacement[] ReferenceRouteMap = ServiceBridgeRoutes.Map;
 
     public UnifiedServiceGateway(
         UnifiedJournalStorageService journalStorage,

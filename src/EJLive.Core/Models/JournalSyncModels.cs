@@ -5,16 +5,16 @@ using System.Collections.Generic;
 namespace EJLive.Core.Models
 {
     /// <summary>
-    /// نماذج الجورنال الكاملة: JournalEntry, SyncStatusInfo, RemoteCommand, SyncProgress
+    /// Complete journal model set: JournalEntry, SyncStatusInfo, RemoteCommand, SyncProgress.
     /// </summary>
 
     // ==========================================
-    // الجورنال الأرشيفي
+    // Archival journal
     // ==========================================
 
 
     // ==========================================
-    // حالة المزامنة
+    // Sync status
     // ==========================================
 
     public class SyncStatusInfo
@@ -29,7 +29,7 @@ namespace EJLive.Core.Models
         public long     SyncedSize              { get; set; }
         public int      ProgressPercentage      { get; set; }
         public double   SyncSpeed               { get; set; }    // KB/s
-        public int      EstimatedTimeRemaining  { get; set; }    // ثانية
+        public int      EstimatedTimeRemaining  { get; set; }    // seconds
         public int      RetryCount              { get; set; }
         public string   FailureReason           { get; set; }
         public DateTime StartedAt               { get; set; } = DateTime.UtcNow;
@@ -49,7 +49,7 @@ namespace EJLive.Core.Models
     }
 
     // ==========================================
-    // الأوامر البعيدة
+    // Remote commands
     // ==========================================
 
 
@@ -78,7 +78,7 @@ namespace EJLive.Core.Models
     }
 
     // ==========================================
-    // إحصائيات الجورنال اليومية
+    // Daily journal statistics
     // ==========================================
 
     public class JournalDailyStats
@@ -99,7 +99,7 @@ namespace EJLive.Core.Models
     }
 
     // ==========================================
-    // نموذج تقدم الإرسال الحي
+    // Live transfer progress model
     // ==========================================
 
 
@@ -171,6 +171,30 @@ namespace EJLive.Core.Models
               ATMId = "Unknown";
               CurrentStatus = JournalSyncStatus.Unknown;
           }
+      }
+
+      /// <summary>
+      /// Alert severity carried on <see cref="JournalSyncAlert"/> rows (C-27: the type was
+      /// consumed by the envelope and dashboard snapshot but its definition was lost in the
+      /// Sync merge-dump era; shape rebuilt from the archived single copy).
+      /// </summary>
+      public enum JournalSyncAlertSeverity
+      {
+          Info,
+          Warning,
+          Critical
+      }
+
+      [Serializable]
+      public sealed class JournalSyncAlert
+      {
+          public string AlertId { get; set; } = string.Empty;
+          public string ATM_ID { get; set; } = "Unknown";
+          public JournalSyncAlertSeverity Severity { get; set; }
+          public string Title { get; set; } = string.Empty;
+          public string Message { get; set; } = string.Empty;
+          public string RecommendedAction { get; set; } = string.Empty;
+          public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
       }
 
       [Serializable]

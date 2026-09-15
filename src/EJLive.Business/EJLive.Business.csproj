@@ -34,7 +34,6 @@
     <Compile Include="UnifiedJournalEvidenceAnalyzer.cs" />
     <Compile Include="UnifiedJournalStorageService.cs" />
     <Compile Include="UnifiedOperationalFusionService.cs" />
-    <Compile Include="UnifiedProjectIntegrationAuditService.cs" />
     <Compile Include="UnifiedRemoteCommandOrchestrator.cs" />
     <Compile Include="UnifiedRemoteCommandPolicy.cs" />
   </ItemGroup>
