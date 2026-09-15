@@ -1,4 +1,4 @@
-namespace EJLive.Core.Models
+﻿namespace EJLive.Core.Models
 {
     /// <summary>
     /// Represents a single performance metric tracked by the system.
@@ -10,7 +10,7 @@ namespace EJLive.Core.Models
     /// (<c>Number</c>, <c>Count</c>). The richer five-member enum (<c>Percentage</c>,
     /// <c>Bytes</c>, <c>Duration</c>, <c>Rate</c>, <c>Count</c>) was carried by one copy
     /// and is preserved because the dashboard snapshot panel and the analytics tabs (SS-10.5)
-    /// bind to it. <c>partial enum</c> is not a C# construct; it has been removed.
+    /// bind to it. the <c>partial</c> modifier before <c>enum</c> is not a C# construct; it has been removed.
     /// </remarks>
     public sealed class PerformanceMetric
     {

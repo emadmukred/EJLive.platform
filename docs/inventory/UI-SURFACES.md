@@ -11,7 +11,8 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Server.WinForms | ATMCardPanel | src/EJLive.Server.WinForms/ATMCardPanel.cs | 13 | 1 | 1 |
 | EJLive.Server.WinForms | ATMDetailDrawerForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 1 | 0 | 0 |
 | EJLive.Server.WinForms | ATMDetailForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 1 | 0 | 0 |
-| EJLive.Server.WinForms | JournalStudioForm | src/EJLive.Server.WinForms/JournalStudioForm.cs | 32 | 9 | 0 |
+| EJLive.Server.WinForms | JournalStudioForm | src/EJLive.Server.WinForms/JournalStudioForm.Designer.cs | 42 | 0 | 0 |
+| EJLive.Server.WinForms | JournalStudioForm | src/EJLive.Server.WinForms/JournalStudioForm.cs | 0 | 14 | 0 |
 | EJLive.Server.WinForms | ServerMainForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 23 | 0 | 0 |
 | EJLive.Server.WinForms | SyncDashboardForm | src/EJLive.Server.WinForms/ServerMainForm.cs | 0 | 0 | 0 |
 | reference | ATMCardControl | src/_reference/uncompiled/EJLive.Client.WinForms/Controls/ATMCardControl.cs | 8 | 0 | 1 |

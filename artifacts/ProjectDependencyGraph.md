@@ -26,21 +26,21 @@ Cycles detected: none (acyclic OK)
 
 | project | tfm | output | forms | files | lines | identity issues |
 |---|---|---|---|---|---|---|
-| EJLive.Application | net8.0-windows | - | - | 5 | 1836 | ok |
-| EJLive.Business | net8.0-windows | - | - | 13 | 1266 | ok |
-| EJLive.Client.Service | net8.0-windows | Exe | - | 21 | 4161 | ok |
-| EJLive.Client.WinForms | net8.0-windows | WinExe | true | 7 | 1029 | AssemblyName=EJLive.Client |
-| EJLive.Core | net8.0-windows | - | true | 177 | 29113 | ok |
+| EJLive.Application | net8.0-windows | - | - | 5 | 1823 | ok |
+| EJLive.Business | net8.0-windows | - | - | 12 | 1194 | ok |
+| EJLive.Client.Service | net8.0-windows | Exe | - | 20 | 4091 | ok |
+| EJLive.Client.WinForms | net8.0-windows | WinExe | true | 7 | 1051 | AssemblyName=EJLive.Client |
+| EJLive.Core | net8.0-windows | - | true | 188 | 30743 | ok |
 | EJLive.Core.UI | net8.0-windows | - | true | 5 | 373 | ok |
 | EJLive.Installer.WinForms | net8.0-windows | WinExe | true | 6 | 1200 | AssemblyName=EJLive.Installer |
 | EJLive.LegacyReference | net8.0 | - | - | 2 | 22 | ok |
-| EJLive.Monitoring.WinForms | net8.0-windows | WinExe | true | 4 | 1064 | AssemblyName=EJLive.Monitoring |
-| EJLive.Server | net8.0-windows | - | - | 5 | 1359 | ok |
-| EJLive.Server.WinForms | net8.0-windows | WinExe | true | 6 | 3296 | ok |
-| EJLive.Shared | net8.0-windows | - | - | 11 | 1499 | ok |
-| EJLive.Tests | net8.0-windows | - | true | 43 | 8581 | ok |
+| EJLive.Monitoring.WinForms | net8.0-windows | WinExe | true | 4 | 1086 | AssemblyName=EJLive.Monitoring |
+| EJLive.Server | net8.0-windows | - | - | 5 | 1456 | ok |
+| EJLive.Server.WinForms | net8.0-windows | WinExe | true | 8 | 3930 | ok |
+| EJLive.Shared | net8.0-windows | - | - | 12 | 1833 | ok |
+| EJLive.Tests | net8.0-windows | - | true | 44 | 9026 | ok |
 | EJLive.UnifiedLauncher | net8.0-windows | WinExe | true | 1 | 102 | ok |
-| EJLive.Verification | net8.0-windows | Exe | true | 2 | 1344 | ok |
+| EJLive.Verification | net8.0-windows | Exe | true | 2 | 1382 | ok |
 
 ## Demoted csproj shells -- not built, kept for audit (0)
 

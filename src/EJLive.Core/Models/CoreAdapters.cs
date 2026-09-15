@@ -24,30 +24,11 @@ namespace EJLive.Core.Models
         public string Reason { get; set; } = "";
     }
 
-    /// <summary>
-    /// Legacy <c>RetryPolicy</c> with <c>Default</c> singleton, base-2 exponential backoff
-    /// and a <c>MaxRetries=3, DelayMs=1000</c> default. Consumers: <c>ClientServiceController</c>,
-    /// <c>JournalSyncTracker</c>. Distinct from <see cref="NetworkRetryPolicy"/>.
-    /// </summary>
-    public class RetryPolicy
-    {
-        public int MaxRetries { get; set; } = 3;
-        public int DelayMs { get; set; } = 1000;
-        public static RetryPolicy Default { get; } = new();
-        public TimeSpan ComputeDelay(int attempt) => TimeSpan.FromMilliseconds(DelayMs * Math.Pow(2, attempt));
-    }
-
-    /// <summary>
-    /// Network-targeted retry policy: <c>MaxAttempts=5</c>, base-2 exponential backoff in
-    /// milliseconds, plus a <c>ForNetwork(string terminalId)</c> factory. Consumers: the
-    /// outbox pump and the chunked transfer engine.
-    /// </summary>
-    public class NetworkRetryPolicy
-    {
-        public int MaxAttempts { get; set; } = 5;
-        public TimeSpan ComputeDelay(int attempt) => TimeSpan.FromMilliseconds(1000 * Math.Pow(2, attempt));
-        public static NetworkRetryPolicy ForNetwork(string terminalId) => new();
-    }
+    // RetryPolicy and NetworkRetryPolicy: removed (C-27). The name clash with
+    // EJLive.Shared.RetryPolicy produced CS0104 in NetworkEngine, and neither copy
+    // carried the constructor JournalOutbox callers used. Both are superseded by the
+    // canonical EJLive.Shared.RetryPolicy (MaxAttempts/ComputeDelay/ForNetwork/Default);
+    // no compiled consumer used MaxRetries/DelayMs or NetworkRetryPolicy itself.
 
     public class UploadLogRecord
     {

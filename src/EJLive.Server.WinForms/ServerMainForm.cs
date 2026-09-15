@@ -1,5 +1,6 @@
-using EJLive.Core;
+﻿using EJLive.Core;
 using EJLive.Core.Engine;
+using EJLive.Core.Data.Repositories;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
 using EJLive.Core.UI;
@@ -24,7 +25,7 @@ public sealed class ServerMainForm : Form
     private readonly UnifiedOperationalReportingService _operationalReporting = new();
     private readonly ClientTelemetryAnalyticsService _telemetryAnalytics = new();
     private readonly ClientTelemetryStateService _telemetryState;
-    private readonly ServerAuditService _serverAudit = new();
+    private readonly ServerAuditService _serverAudit;
     private readonly JournalSyncAlertService _syncAlertService;
     private readonly JournalAnalyticsService _journalAnalytics;
     private readonly RemoteControlService _remoteControl;
@@ -68,7 +69,15 @@ public sealed class ServerMainForm : Form
     public ServerMainForm()
     {
         DatabaseManager.Instance.Initialize(AppConstants.DefaultDatabasePath);
-        _telemetryState = new ClientTelemetryStateService(_stateStore, _alerts);
+
+        // SS-20: the server host owns the SQLite repositories so the telemetry lane and the
+        // SS9 command ledger are written by the services that consume them, not by the UI.
+        var healthSnapshots = new ClientHealthSnapshotRepository(DatabaseManager.Instance);
+        var atmRegistry = new ATMRegistryRepository(DatabaseManager.Instance);
+        var commandAudit = new CommandAuditRepository(DatabaseManager.Instance);
+
+        _serverAudit = new ServerAuditService(commandAudit: commandAudit);
+        _telemetryState = new ClientTelemetryStateService(_stateStore, _alerts, healthSnapshots, atmRegistry);
         _journalAnalytics = new JournalAnalyticsService(_smartStorageRoot, AppConstants.DefaultArchivePath);
         _remoteControl = new RemoteControlService(_serverEngine);
         _syncAlertService = new JournalSyncAlertService(_alerts);

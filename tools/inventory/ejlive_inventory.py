@@ -340,8 +340,13 @@ def duplicate_keys(idx: dict) -> tuple[dict, dict]:
         if len(owners) < 2:
             continue
         projects = {pr for pr, _, _, _ in occ}
-        if all(p for _, _, _, p in occ) and len(projects) > 1:
-            cross[key] = sorted({pr for pr, _, _, _ in occ}) + sorted(owners)[:4]
+        if all(p for _, _, _, p in occ):
+            # Every declaration carries `partial`: the type legally composes per assembly.
+            # Same-assembly splits (the WinForms `X.cs` + `X.Designer.cs` pattern) are the
+            # designer contract — merged, not a duplicate. A split ACROSS assemblies remains
+            # the CS0433 hazard and stays cross-assembly debt.
+            if len(projects) > 1:
+                cross[key] = sorted(projects) + sorted(owners)[:4]
             continue
         if len(projects) == 1:
             local[key] = [(f, ln) for _, f, ln, _ in sorted(occ)]

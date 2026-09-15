@@ -1,4 +1,4 @@
-using EJLive.Core.Enums;
+﻿using EJLive.Core.Enums;
 
 namespace EJLive.Core.Models
 {
@@ -8,7 +8,7 @@ namespace EJLive.Core.Models
     /// <remarks>
     /// Wave 1 (SS-04 D-08): rewrote the file. The previous version had three to four copies
     /// of <c>Transaction</c> and <c>TransactionSummary</c> interleaved with provenance
-    /// comments, plus two copies of <c>FraudType</c> (one real, one <c>partial enum</c>
+    /// comments, plus two copies of <c>FraudType</c> (one real, one marked <c>partial</c> before <c>enum</c>
     /// which is not a C# construct). The bodies are identical, so the union collapses to
     /// the canonical declaration. The richer <c>FraudType</c> set carried by every copy
     /// is preserved as-is.

@@ -1,9 +1,13 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using EJLive.Core.Data;
+using EJLive.Core.Data.Repositories;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
 
@@ -18,6 +22,8 @@ namespace EJLive.Core.Engine
         private readonly string _stagingRoot;
         private readonly string _archiveRoot;
         private readonly DatabaseManager _db;
+        private readonly JournalArchiveRepository _archive;
+        private readonly ParserTransactionRepository _parserTransactions;
         private readonly CancellationTokenSource _cts = new();
 
         public event Action<IngestionResult>? OnIngested;
@@ -28,6 +34,8 @@ namespace EJLive.Core.Engine
             _stagingRoot = stagingRoot ?? throw new ArgumentNullException(nameof(stagingRoot));
             _archiveRoot = archiveRoot ?? throw new ArgumentNullException(nameof(archiveRoot));
             _db = db ?? throw new ArgumentNullException(nameof(db));
+            _archive = new JournalArchiveRepository(_db);
+            _parserTransactions = new ParserTransactionRepository(_db);
             Directory.CreateDirectory(_stagingRoot);
             Directory.CreateDirectory(_archiveRoot);
         }
@@ -95,17 +103,87 @@ namespace EJLive.Core.Engine
 
         private void RecordArchive(string atmId, string fileName, string archivePath, string sha256, IngestionResult result)
         {
-            // Integration: write to journal_archive and sync_records tables.
-            result.ArchiveId = Guid.NewGuid();
-            Log($"DB record created: ArchiveId={result.ArchiveId}");
+            // SS8 ingest rule: the archive write is the commit point for JournalAck. The row is
+            // idempotent on (atm_id, file_name, sha256); a resend re-points to the existing entry
+            // instead of creating a second one (SS-15 pattern #2).
+            var entryId = Guid.NewGuid().ToString("N");
+            var size = File.Exists(archivePath) ? new FileInfo(archivePath).Length : 0L;
+            var receivedAt = DateTime.UtcNow;
+
+            var inserted = _archive.TryInsert(new JournalArchiveRecord(
+                EntryId: entryId,
+                AtmId: atmId,
+                FileName: fileName,
+                OriginalSize: size,
+                CompressedSize: size,
+                EncryptedSize: size,
+                IsEncrypted: false,
+                IsCompressed: false,
+                Checksum: sha256,
+                Sha256Hash: sha256,
+                TransactionCount: 0,
+                ArchivePath: archivePath,
+                ReceivedAtUtc: receivedAt));
+
+            result.ArchiveEntryId = entryId;
+            Log(inserted
+                ? $"DB archive record created: {entryId}"
+                : $"DB archive record already present (duplicate resend): {entryId}");
         }
 
         private async Task AnalyzeAsync(string archivePath, string atmId, IngestionResult result, CancellationToken ct)
         {
-            // Integration: call UnifiedJournalEvidenceAnalyzer / TransactionAnalysisEngine.
-            await Task.Delay(100, ct);
-            result.AnalysisSummary = "Pending server-side parser integration.";
-            Log($"Analysis queued: {archivePath}");
+            // SS8 ingest lane: journal archive -> parser -> parser_transactions. Vendor sniffing
+            // uses the shared evidence rules; the registry resolves one parser per vendor (POL-1).
+            var lines = await Task.Run(() => File.ReadAllLines(archivePath), ct).ConfigureAwait(false);
+            var head = string.Join("\n", lines.Take(24));
+            var vendor = Services.UnifiedJournalEvidenceAnalyzer.DetectVendor(null, head);
+            var parser = EjParserRegistry.Default.Resolve(vendor);
+            var scopeId = string.IsNullOrWhiteSpace(atmId) ? "UNKNOWN" : atmId;
+
+            var transactions = parser.Parse(lines.ToList(), scopeId);
+
+            if (!string.IsNullOrWhiteSpace(result.ArchiveEntryId))
+            {
+                var rows = transactions
+                    .Take(5_000)
+                    .Select(t => new ParserTransactionRecord(
+                        TransactionNumber: TryLineNumber(t.TransactionId),
+                        DateUtc: t.Timestamp == DateTime.MinValue ? null : t.Timestamp,
+                        AtmId: t.ATM_ID,
+                        Vendor: vendor,
+                        CardMasked: string.IsNullOrEmpty(t.CardNumber) ? null : EJLive.Core.SecretRedactor.MaskCard(t.CardNumber),
+                        Amount: t.Amount,
+                        Currency: t.Currency,
+                        Stan: t.STAN,
+                        Rrn: t.RRN,
+                        MCode: t.MCode,
+                        RCode: t.RCode,
+                        HostResponse: null,
+                        Status: t.Classification.ToString(),
+                        Confidence: t.Confidence.ToString("0.00", CultureInfo.InvariantCulture),
+                        RawStartLine: t.StartLine,
+                        RawEndLine: t.EndLine,
+                        Evidence: $"lines {t.StartLine}-{t.EndLine} ({t.RawLines.Count} raw)"))
+                    .ToList();
+                _parserTransactions.InsertBatch(result.ArchiveEntryId, rows);
+                _archive.UpdateTransactionCount(result.ArchiveEntryId, transactions.Count);
+            }
+
+            var classified = transactions.Count(t => t.Classification == TransactionClassification.Success);
+            var suspicious = transactions.Count(t => t.Classification == TransactionClassification.Suspicious);
+            result.AnalysisSummary =
+                $"Parsed {transactions.Count} transactions via {parser.GetType().Name} (vendor {vendor}): " +
+                $"{classified} success, {suspicious} suspicious.";
+            Log($"Analysis complete: {result.AnalysisSummary}");
+        }
+
+        private static int? TryLineNumber(string transactionId)
+        {
+            if (string.IsNullOrWhiteSpace(transactionId))
+                return null;
+            var tail = transactionId[(transactionId.LastIndexOf('-') + 1)..];
+            return int.TryParse(tail, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : null;
         }
 
         private void Cleanup(string? stagedPath)
@@ -137,6 +215,9 @@ namespace EJLive.Core.Engine
         public string? StagedPath { get; set; }
         public string? ArchivePath { get; set; }
         public Guid? ArchiveId { get; set; }
+
+        /// <summary><c>journal_archive.entry_id</c> for this ingest (parser_transactions FK).</summary>
+        public string? ArchiveEntryId { get; set; }
         public string? ComputedSha256 { get; set; }
         public string? AnalysisSummary { get; set; }
     }

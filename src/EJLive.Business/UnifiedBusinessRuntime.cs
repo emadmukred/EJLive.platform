@@ -29,12 +29,29 @@ public sealed class UnifiedBusinessRuntime : IDisposable
     public UnifiedClientServiceSupervisor ClientServiceSupervisor { get; } = new();
     public SmartAnalysisService SmartAnalysis { get; } = new();
 
+    /// <summary>
+    /// SS-15 unified service gateway (Core.Services bridge over the compiled unified services).
+    /// Fully qualified because this assembly carries same-named business wrappers; the gateway
+    /// is deliberately bound to the Core implementations so activation routing and the
+    /// integration audit share one owner (C-27).
+    /// </summary>
+    public EJLive.Core.Services.UnifiedServiceGateway ServiceGateway { get; }
+
     public UnifiedBusinessRuntime()
     {
         FleetReadiness = new UnifiedFleetReadinessService(OperationalState);
         JournalStorage = new UnifiedJournalStorageService(JournalEvidence);
         RemoteCommands = new UnifiedRemoteCommandOrchestrator(RemoteCommandPolicy);
+        ServiceGateway = new EJLive.Core.Services.UnifiedServiceGateway(
+            new EJLive.Core.Services.UnifiedJournalStorageService(),
+            new EJLive.Core.Services.UnifiedRemoteCommandOrchestrator(),
+            new EJLive.Core.Services.UnifiedClientServiceSupervisor(),
+            new EJLive.Core.Services.UnifiedProjectIntegrationAuditService());
     }
+
+    /// <summary>Repository integration audit (reference-only coverage + duplicate scan).</summary>
+    public EJLive.Core.Services.ProjectIntegrationAuditReport BuildIntegrationAudit(string rootPath)
+        => ServiceGateway.BuildIntegrationAudit(rootPath);
 
     public static UnifiedBusinessRuntime CreateInitialized(string? databasePath = null)
     {

@@ -1,7 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using EJLive.Core.Models;
 using EJLive.Shared;
 using Microsoft.Data.Sqlite;
@@ -147,7 +149,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
     details       TEXT,
     ip_address    TEXT,
     is_successful INTEGER NOT NULL DEFAULT 1,
-    performed_at  TEXT NOT NULL
+    performed_at  TEXT NOT NULL,
+    prev_hash     TEXT NOT NULL DEFAULT '',
+    payload_hash  TEXT NOT NULL DEFAULT ''
 )");
 
             ExecuteSchema(@"
@@ -214,6 +218,10 @@ CREATE TABLE IF NOT EXISTS daily_stats (
             ExecuteSchema("ALTER TABLE audit_log ADD COLUMN created_at_utc TEXT NOT NULL DEFAULT ''");
             ExecuteSchema("ALTER TABLE audit_log ADD COLUMN details TEXT NOT NULL DEFAULT ''");
             ExecuteSchema("ALTER TABLE sync_records ADD COLUMN updated_at_utc TEXT NOT NULL DEFAULT ''");
+
+            // SS-9 tamper-evidence chain (Wave 4): added to databases created before the chain existed.
+            ExecuteSchema("ALTER TABLE audit_log ADD COLUMN prev_hash TEXT NOT NULL DEFAULT ''");
+            ExecuteSchema("ALTER TABLE audit_log ADD COLUMN payload_hash TEXT NOT NULL DEFAULT ''");
             ExecuteSchema("CREATE INDEX IF NOT EXISTS ix_audit_log_created_at ON audit_log(created_at_utc)");
             ExecuteSchema("CREATE INDEX IF NOT EXISTS ix_sync_records_updated ON sync_records(updated_at_utc)");
         }
@@ -372,15 +380,94 @@ ORDER BY created_at ASC", r =>
 
         public void InsertAuditLog(string action, string? performedBy, string? atmId, string? details)
         {
-            ExecuteSingle(@"
-INSERT INTO audit_log (log_id, action, performed_by, atm_id, details, performed_at)
-VALUES ($id,$act,$by,$atm,$det,$ts)",
-                P("$id",  Guid.NewGuid().ToString("N")),
-                P("$act", action),
-                P("$by",  performedBy),
-                P("$atm", atmId),
-                P("$det", details),
-                P("$ts",  DateTime.UtcNow.ToString("o")));
+            // SS-9 audit chain: payload_hash = SHA-256 over the row's canonical fields,
+            // prev_hash links to the previous row's payload_hash (rowid order). A broken link
+            // is detected by VerifyAuditChain, never silently appended past.
+            var logId = Guid.NewGuid().ToString("N");
+            var performedAt = DateTime.UtcNow.ToString("o");
+            var payloadHash = HashCanonical(logId, action, performedBy, atmId, details, performedAt);
+            var previousHash = QueryScalar<string>(
+                "SELECT payload_hash FROM audit_log ORDER BY rowid DESC LIMIT 1") ?? string.Empty;
+
+            ExecuteSingleTransactional(@"
+INSERT INTO audit_log (log_id, action, performed_by, atm_id, details, performed_at, prev_hash, payload_hash)
+VALUES ($id,$act,$by,$atm,$det,$ts,$prev,$hash)",
+                P("$id",   logId),
+                P("$act",  action),
+                P("$by",   performedBy),
+                P("$atm",  atmId),
+                P("$det",  details),
+                P("$ts",   performedAt),
+                P("$prev", previousHash),
+                P("$hash", payloadHash));
+        }
+
+        /// <summary>
+        /// Walks <c>audit_log</c> in insertion order and re-verifies every chained row's
+        /// canonical hash and its predecessor link. Rows written before the chain existed
+        /// (empty <c>payload_hash</c>) are counted as legacy, not treated as broken.
+        /// Returns the first broken row's rowid — the "first broken link" the contract names.
+        /// </summary>
+        public AuditChainVerificationResult VerifyAuditChain(int maxRows = 100_000)
+        {
+            EnsureInitialized();
+
+            long total = 0;
+            long verified = 0;
+            long legacy = 0;
+            long? firstBrokenRowId = null;
+            string? previousVerifiedHash = null;
+
+            var table = QueryTable($@"
+SELECT rowid AS rid, log_id, action, performed_by, atm_id, details, performed_at, prev_hash, payload_hash
+FROM audit_log ORDER BY rowid ASC LIMIT {Math.Max(1, maxRows)}");
+
+            foreach (DataRow row in table.Rows)
+            {
+                total++;
+                var storedHash = row["payload_hash"]?.ToString() ?? string.Empty;
+                var rowId = Convert.ToInt64(row["rid"]);
+
+                if (storedHash.Length == 0)
+                {
+                    legacy++;
+                    continue; // pre-chain row: nothing to verify against
+                }
+
+                var recomputed = HashCanonical(
+                    row["log_id"]?.ToString() ?? string.Empty,
+                    row["action"]?.ToString() ?? string.Empty,
+                    row["performed_by"]?.ToString(),
+                    row["atm_id"]?.ToString(),
+                    row["details"]?.ToString(),
+                    row["performed_at"]?.ToString() ?? string.Empty);
+
+                var prevHash = row["prev_hash"]?.ToString() ?? string.Empty;
+                var linkOk = previousVerifiedHash is null
+                    ? prevHash.Length == 0
+                    : string.Equals(prevHash, previousVerifiedHash, StringComparison.OrdinalIgnoreCase);
+
+                if (!string.Equals(recomputed, storedHash, StringComparison.OrdinalIgnoreCase) || !linkOk)
+                    firstBrokenRowId ??= rowId;
+                else
+                    verified++;
+
+                previousVerifiedHash = storedHash;
+            }
+
+            var valid = firstBrokenRowId is null;
+            var detail = valid
+                ? $"{verified} chained rows verified, {legacy} legacy rows ignored"
+                : $"first broken link at rowid {firstBrokenRowId} ({verified} ok before it, {legacy} legacy)";
+            return new AuditChainVerificationResult(total, verified, legacy, valid, firstBrokenRowId, detail);
+        }
+
+        private static string HashCanonical(
+            string logId, string? action, string? performedBy, string? atmId, string? details, string performedAtUtc)
+        {
+            var canonical = string.Join('|', logId, action ?? string.Empty, performedBy ?? string.Empty,
+                atmId ?? string.Empty, details ?? string.Empty, performedAtUtc);
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
         }
 
         public void InsertTelemetryEvent(
@@ -746,6 +833,15 @@ ORDER BY stat_date DESC",
             Initialize(_databasePath);
         }
     }
+
+    /// <summary>Outcome of <see cref="DatabaseManager.VerifyAuditChain"/> (SS-9 tamper evidence).</summary>
+    public sealed record AuditChainVerificationResult(
+        long TotalRows,
+        long VerifiedRows,
+        long LegacyRows,
+        bool Valid,
+        long? FirstBrokenRowId,
+        string Detail);
 
     public sealed record ClientOutboxRow(
         string ItemId,

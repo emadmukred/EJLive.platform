@@ -64,6 +64,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | `EJLIVE_CREDENTIALS_PATH` | active |
 | `EJLIVE_DATABASE_PATH` | active |
 | `EJLIVE_DATABASE_PATH` | reference |
+| `EJLIVE_DATAROOT` | active |
 | `EJLIVE_HANDSHAKE` | active |
 | `EJLIVE_HANDSHAKE` | reference |
 | `EJLIVE_HEARTBEAT` | reference |
@@ -97,12 +98,16 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | `STATUS_RES` | active |
 | `STATUS_RES` | reference |
 
-92 message literals. Envelope grammar, chunking, signing and resume semantics are normative in `docs/EJLIVE-ENGINEERING-PROMPT.md` SS5. Ports observed: 3389, 5656, 8080.
+93 message literals. Envelope grammar, chunking, signing and resume semantics are normative in `docs/EJLIVE-ENGINEERING-PROMPT.md` SS5. Ports observed: 3389, 5656, 8080.
 
 ## frame and header probes
 
 - `:00] WITHDRAWAL AMOUNT=200 SAR\n[09:01] NC` <- `src/EJLive.Tests/Track46/SmartAnalysisServiceTests.cs`
+- `:\n` <- `src/EJLive.Client.WinForms/Program.cs`
+- `:\n` <- `src/EJLive.Monitoring.WinForms/Program.cs`
 - `:\n` <- `src/EJLive.Server.WinForms/JournalStudioForm.cs`
+- `:\n` <- `src/EJLive.Server.WinForms/Program.cs`
+- `:\n` <- `src/EJLive.Tests/Wave4DataPlatformTests.cs`
 - `:\n` <- `src/EJLive.UnifiedLauncher/Program.cs`
 - `:\n` <- `src/_reference/orphan-projects/EJLive.Launcher/Program.cs`
 - `:\n` <- `src/_reference/orphan-projects/EJLive.Monitoring/MainDashboardForm.cs`
@@ -157,7 +162,3 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 - `MsgType.ChunkAck)` <- `src/_reference/exact-duplicates/EJLive.Core/Transport/NetworkEngine.cs`
 - `MsgType.ChunkAck)` <- `src/_reference/uncompiled/EJLive.Core/Engine/JournalNetworkEngine.cs`
 - `MsgType.ChunkAck)` <- `src/_reference/uncompiled/EJLive.Core/Network/NetworkEngine.cs`
-- `MsgType.ChunkAck, sequence.ToString(), BitConverter.GetBytes(sequen` <- `src/EJLive.Core/Engine/CommunicationProtocol.cs`
-- `MsgType.ChunkAck, sequence.ToString(), BitConverter.GetBytes(sequen` <- `src/_reference/corrupted/EJLive.Core/Services/GhostRemoteEngine.cs`
-- `MsgType.ChunkAck, sequence.ToString(), BitConverter.GetBytes(sequen` <- `src/_reference/corrupted/EJLive.Core/Services/ImageSyncEngine.cs`
-- `MsgType.Command &&` <- `src/EJLive.Client.Service/AgentHeadlessController.cs`

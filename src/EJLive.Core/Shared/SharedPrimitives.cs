@@ -24,17 +24,11 @@ namespace EJLive.Shared
     }
 
 
-    public sealed class RetryPolicy
-    {
-        public int MaxAttempts { get; set; } = 3;
-        public TimeSpan BaseDelay { get; set; } = TimeSpan.FromMilliseconds(250);
-
-        public TimeSpan GetDelay(int attempt)
-        {
-            var boundedAttempt = Math.Max(1, attempt);
-            return TimeSpan.FromMilliseconds(BaseDelay.TotalMilliseconds * boundedAttempt);
-        }
-    }
+    // RetryPolicy: removed (C-27). This Core-local copy claimed the EJLive.Shared
+    // namespace while the real Shared assembly shipped none, so bare `RetryPolicy`
+    // references resolved differently per project. The single canonical owner is
+    // EJLive.Shared.RetryPolicy (src/EJLive.Shared/RetryPolicy.cs), whose GetDelay
+    // preserves this exact linear-delay semantics.
 
     public sealed class MonitoringState
     {
