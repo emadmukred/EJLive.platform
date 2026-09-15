@@ -47,6 +47,22 @@
     <Compile Include="JournalStudioForm.cs" />
     <Compile Include="JournalStudioForm.Designer.cs" />
     <Compile Include="JournalStudioBulkAnalyzer.cs" />
+    <!-- Wave 6 / C-34 — monitoring unified with the central server: the whole
+         EJLive.Monitoring.WinForms surface (MainDashboardForm + designer + resx)
+         moved here as Monitoring/MonitoringConsoleForm and is hosted as the
+         "NOC Monitoring" tab of ServerMainForm. One console, one codebase, one
+         host process. The retired EJLive.Monitoring.WinForms host (Program.cs,
+         AssemblyInfo.cs, app.config, packages.config) is archived under
+         src/_reference/uncompiled/EJLive.Monitoring.WinForms/retired-host/ and
+         its csproj shell under src/_reference/csproj-shells/.
+         Models/DashboardModels.cs was archived with it, not ported: it declared
+         TerminalSnapshot/DashboardSnapshot/AlertEntry/CashStatusSummary with zero
+         compiled consumers — the console renders the canonical
+         EJLive.Core.Models.TerminalLiveSummary / TerminalCashStatus instead
+         (C-27: no dead façade is promoted). -->
+    <Compile Include="Monitoring\MonitoringConsoleForm.cs" />
+    <Compile Include="Monitoring\MonitoringConsoleForm.Designer.cs" />
     <EmbeddedResource Include="ServerMainForm.resx" />
+    <EmbeddedResource Include="Monitoring\MonitoringConsoleForm.resx" />
   </ItemGroup>
 </Project>

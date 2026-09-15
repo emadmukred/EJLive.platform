@@ -10,6 +10,8 @@ repository-rule authority, the build job is the compiler authority.
 | ledgers | `python3 tools/inventory/ejlive_inventory.py --check` | any drift between committed ledgers and the compile maps (repo rule INV-1: regenerate per push) |
 | activation ledger | `python3 tools/inventory/service_activation.py --check` | `docs/12-service-activation-status.csv` stale |
 | static gate | `python3 tools/gates/ejlive_static_gate.py` | any of 41 rules fail (`GIT`, `NAME`, `FILE`, `TYPE`, `ARCH`, `SEC`, `SYN`, `POL`, `DEP`, `ART`, `LED`) |
+| artefact integrity | `python3 tools/gates/check_artefacts.py` | the compile map, the summary JSON and the probe/test ledgers disagree |
+| UI event bindings | `python3 tools/gates/check_ui_bindings.py` | an event bound to a bare method group with no `(object?, EventArgs)` overload (CS0123), or a `_field` used in one partial of a designer-split type and declared in none (CS0103) — the two classes that turned the Windows `build` step red for the whole of Wave 5 (C-33) |
 | cross-check | `python3 tools/gates/ejlive_static_gate.py --verbose` in the log | advisory output only |
 
 The gate runs on Linux because every rule it checks is structural, not
@@ -24,15 +26,22 @@ dotnet restore EJLive.Platform.sln --configfile NuGet.Config
 dotnet build EJLive.Platform.sln -c Release -m:1 /p:BuildInParallel=false
 dotnet test  src/EJLive.Tests/EJLive.Tests.csproj -c Release --no-build
 dotnet run   --project src/EJLive.Verification/EJLive.Verification.csproj -c Release --no-build
-powershell   tools/package/package.bat Release      # artefacts: 3 payload zips
+powershell   tools/package/package.bat Release      # artefacts: 2 payload zips (C-34)
 ```
+
+Since Wave 6 / C-34 the packager produces **two** payloads, not three: the NOC
+console is no longer a separate executable but the `NOC Monitoring` tab of
+`EJLive.Server.WinForms.exe`, so the server payload carries a second entry script
+(`noc.cmd` → `EJLive.Server.WinForms.exe --noc`) for operators who only ever
+watched the fleet. `tools/package/legacy/Package.bat` is the retired
+.NET-Framework-era script, kept for audit and never invoked by CI (C-35).
 
 Why `-m:1 /p:BuildInParallel=false`: `EJLive.Core` and `EJLive.Shared` share
 generated sources, and MSBuild node reuse races on them — a parallel build
 produces spurious `CS2001`/`MSB3021` failures that a serial build never shows.
 The flag is not a performance knob; it is a correctness requirement.
 
-`EJLive.Verification` is a build step, not a test: its 23 probes assert the
+`EJLive.Verification` is a build step, not a test: its 24 probes assert the
 composition contract (protocol reachability, journal-ack metadata, UI-free
 service path, unsafe-term scan, duplicate-type scan, source-truth/file-linkage
 checks) against the *published* assemblies, which `dotnet test` cannot cover.

@@ -17,7 +17,6 @@
     <ProjectReference Include="..\EJLive.Client.WinForms\EJLive.Client.WinForms.csproj" />
     <ProjectReference Include="..\EJLive.Core\EJLive.Core.csproj" />
     <ProjectReference Include="..\EJLive.Installer.WinForms\EJLive.Installer.WinForms.csproj" />
-    <ProjectReference Include="..\EJLive.Monitoring.WinForms\EJLive.Monitoring.WinForms.csproj" />
     <ProjectReference Include="..\EJLive.Server\EJLive.Server.csproj" />
     <ProjectReference Include="..\EJLive.Server.WinForms\EJLive.Server.WinForms.csproj" />
     <ProjectReference Include="..\EJLive.Shared\EJLive.Shared.csproj" />

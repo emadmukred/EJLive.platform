@@ -110,6 +110,11 @@ jobs:
         run: python3 tools/gates/ejlive_static_gate.py --verbose
       - name: artefact integrity (compile map, summary, probe and test ledgers agree)
         run: python3 tools/gates/check_artefacts.py
+      # C-33: the CS0123/CS0103 class that the Wave-5 designer split produced and that no
+      # other rule sees (braces balance, files are owned) - it must never reach the
+      # Windows build step again, so it is checked here where no compiler is needed.
+      - name: UI event-binding resolution (CS0123 / CS0103 class)
+        run: python3 tools/gates/check_ui_bindings.py
 
   build:
     name: build + tests + probes + packaging (Windows)

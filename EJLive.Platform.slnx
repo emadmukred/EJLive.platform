@@ -9,7 +9,6 @@
     <Project Path="src/EJLive.Core.UI/EJLive.Core.UI.csproj" />
     <Project Path="src/EJLive.Installer.WinForms/EJLive.Installer.WinForms.csproj" />
     <Project Path="src/EJLive.LegacyReference/EJLive.LegacyReference.csproj" />
-    <Project Path="src/EJLive.Monitoring.WinForms/EJLive.Monitoring.WinForms.csproj" />
     <Project Path="src/EJLive.Server/EJLive.Server.csproj" />
     <Project Path="src/EJLive.Server.WinForms/EJLive.Server.WinForms.csproj" />
     <Project Path="src/EJLive.Shared/EJLive.Shared.csproj" />

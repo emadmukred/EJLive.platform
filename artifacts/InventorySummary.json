@@ -10,14 +10,13 @@
   "EJLive.Client.WinForms",
   "EJLive.Installer.WinForms",
   "EJLive.Server",
-  "EJLive.Monitoring.WinForms",
   "EJLive.Server.WinForms",
   "EJLive.Tests",
   "EJLive.UnifiedLauncher",
   "EJLive.Verification"
  ],
- "compiled_files": 324,
- "compiled_lines": 60879,
+ "compiled_files": 321,
+ "compiled_lines": 60989,
  "cross_assembly_keys": [],
  "cross_assembly_partial_splits": 0,
  "cycles": [],
@@ -29,13 +28,10 @@
   ],
   "EJLive.Installer.WinForms": [
    "AssemblyName=EJLive.Installer"
-  ],
-  "EJLive.Monitoring.WinForms": [
-   "AssemblyName=EJLive.Monitoring"
   ]
  },
  "ledger_rows": {
-  "CONFIGURATION": 20,
+  "CONFIGURATION": 19,
   "DATABASE": 91,
   "PERMISSIONS": 4,
   "PROTOCOL": 159,
@@ -44,9 +40,9 @@
   "VENDORS": 78
  },
  "legal_partial_splits": 4,
- "projects": 15,
- "reference_files": 245,
- "reference_lines": 725468,
+ "projects": 14,
+ "reference_files": 248,
+ "reference_lines": 725593,
  "stale_include_paths": {},
  "stale_includes": 0,
  "unmapped_source_files": 0

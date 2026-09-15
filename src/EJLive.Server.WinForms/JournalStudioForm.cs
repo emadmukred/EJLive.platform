@@ -56,6 +56,12 @@ public sealed partial class JournalStudioForm : Form
     }
 
     // ── wiring (kept out of the designer file: regeneration-safe) ───────────
+    // Wave 6 / C-33: bindings to parameterless command methods are discard lambdas,
+    // never bare method groups (CS0123), and every `_field` named here must exist in
+    // JournalStudioForm.Designer.cs — the two export buttons were wired as
+    // `_bulkExportCsvButton`/`_bulkExportExcelButton` while the designer declares
+    // `_exportBulkCsvButton`/`_exportBulkExcelButton` (CS0103). Both shapes are now
+    // checked in CI by `tools/gates/check_ui_bindings.py`.
     private void WireEvents()
     {
         _openButton.Click += (_, _) => OpenJournalFile();
@@ -66,8 +72,8 @@ public sealed partial class JournalStudioForm : Form
         _copyDataButton.Click += (_, _) => CopyVisibleDataToClipboard();
         _bulkFolderButton.Click += async (_, _) => await RunBulkAnalysisAsync();
         _bulkCancelButton.Click += (_, _) => _bulkCts?.Cancel();
-        _bulkExportCsvButton.Click += (_, _) => ExportBulk("csv");
-        _bulkExportExcelButton.Click += (_, _) => ExportBulk("xlsx");
+        _exportBulkCsvButton.Click += (_, _) => ExportBulk("csv");
+        _exportBulkExcelButton.Click += (_, _) => ExportBulk("xlsx");
         _bulkGrid.CellDoubleClick += (_, _) => OpenBulkRowInMainView();
 
         // Debounced refresh on filter change.

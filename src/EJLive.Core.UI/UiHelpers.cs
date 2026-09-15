@@ -5,7 +5,7 @@ namespace EJLive.Core.UI;
 
 /// <summary>
 /// Shared WinForms control factory. Wave 4 unification: every surface
-/// (ClientMainForm, ServerMainForm, MainDashboardForm, InstallerForm,
+/// (ClientMainForm, ServerMainForm, MonitoringConsoleForm, InstallerForm,
 /// JournalStudioForm) had its own private <c>Ui</c> static class with
 /// overlapping responsibilities. This module is the single source of
 /// truth; the four forms migrate to <c>using EJLive.Core.UI;</c> in

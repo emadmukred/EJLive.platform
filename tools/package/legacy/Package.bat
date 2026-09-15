@@ -1,11 +1,16 @@
 @echo off
 REM ============================================================
 REM  EJLive Enterprise Ultimate v4.0.0 — Package & Zip Script
-REM  يحزم مخرجات البناء في ثلاث حزم منفصلة:
+REM  يحزم مخرجات البناء في حزمة منفصلة:
 REM    EJLive_Client_v4.0.0.zip  — تطبيق الصراف
-REM    EJLive_Server_v4.0.0.zip  — خادم الأرشفة
-REM    EJLive_NOC_v4.0.0.zip     — لوحة المراقبة
+REM    EJLive_Server_v4.0.0.zip  — خادم الأرشفة + واجهة المراقبة الموحّدة
 REM  الاستخدام: Package.bat [Release|Debug]
+REM
+REM  ملاحظة (Wave 6 / C-34): هذه النسخة القديمة من سكربت التحزيم، وهي محفوظة هنا
+REM  لأنها كانت تتعارض مع package.bat في نفس المجلد باسم يختلف بحالة الأحرف فقط —
+REM  وهو تعارض لا يستطيع ويندوز تمثيله عند السحب (checkout). النسخة المعتمدة هي
+REM  tools/package/package.bat. كما لم تعد هناك حزمة NOC منفصلة: لوحة المراقبة
+REM  وُحِّدت داخل السيرفر المركزي (تبويب NOC Monitoring).
 REM ============================================================
 setlocal EnableDelayedExpansion
 
@@ -42,7 +47,7 @@ REM ── دالة الضغط ────────────────�
 REM  ستُستخدم: ZipFolder <src_folder> <dest_zip>
 
 echo.
-echo  [1/3] Packaging Client (ATM Agent)...
+echo  [1/2] Packaging Client (ATM Agent)...
 set CLIENT_SRC=%~dp0EJLive.Client.WinForms\bin\%CONFIG%
 set CLIENT_ZIP=%OUT_DIR%\EJLive_Client_v%VERSION%.zip
 if not exist "%CLIENT_SRC%" ( echo  [WARN] لم يُبنَ Client بعد. شغّل Build.bat أولًا. ) else (
@@ -51,7 +56,7 @@ if not exist "%CLIENT_SRC%" ( echo  [WARN] لم يُبنَ Client بعد. شغّ
 )
 
 echo.
-echo  [2/3] Packaging Server (Archive Server)...
+echo  [2/2] Packaging Server (Archive Server + unified NOC console)...
 set SERVER_SRC=%~dp0EJLive.Server.WinForms\bin\%CONFIG%
 set SERVER_ZIP=%OUT_DIR%\EJLive_Server_v%VERSION%.zip
 if not exist "%SERVER_SRC%" ( echo  [WARN] لم يُبنَ Server بعد. شغّل Build.bat أولًا. ) else (
@@ -60,13 +65,10 @@ if not exist "%SERVER_SRC%" ( echo  [WARN] لم يُبنَ Server بعد. شغّ
 )
 
 echo.
-echo  [3/3] Packaging NOC Monitoring Dashboard...
-set NOC_SRC=%~dp0EJLive.Monitoring.WinForms\bin\%CONFIG%
-set NOC_ZIP=%OUT_DIR%\EJLive_NOC_v%VERSION%.zip
-if not exist "%NOC_SRC%" ( echo  [WARN] لم يُبنَ NOC Dashboard بعد. شغّل Build.bat أولًا. ) else (
-    call :ZipFolder "%NOC_SRC%" "%NOC_ZIP%"
-    if exist "%NOC_ZIP%" echo  [OK] %NOC_ZIP%
-)
+REM ── Wave 6 / C-34: لا توجد حزمة NOC منفصلة ─────────────────────
+REM واجهة المراقبة (EJLive.Monitoring.WinForms) أُحيلت إلى src/_reference/ بعد
+REM توحيدها داخل EJLive.Server.WinForms.exe — يفتحها الأمر:
+REM     EJLive.Server.WinForms.exe --noc
 
 REM ── إنشاء README في dist ─────────────────────────────────────
 echo EJLive Enterprise Ultimate v%VERSION% > "%OUT_DIR%\README.txt"
@@ -76,7 +78,7 @@ echo.                                   >> "%OUT_DIR%\README.txt"
 echo Packages:                          >> "%OUT_DIR%\README.txt"
 echo   EJLive_Client_v%VERSION%.zip — Install on ATM machines (NCR/GRG/WN) >> "%OUT_DIR%\README.txt"
 echo   EJLive_Server_v%VERSION%.zip — Install on the central archive server >> "%OUT_DIR%\README.txt"
-echo   EJLive_NOC_v%VERSION%.zip    — NOC Monitoring Dashboard (standalone)  >> "%OUT_DIR%\README.txt"
+echo   NOC console: unified into the Server payload (EJLive.Server.WinForms.exe --noc) >> "%OUT_DIR%\README.txt"
 echo.                                   >> "%OUT_DIR%\README.txt"
 echo Prerequisites: .NET Framework 4.8, Windows 7 SP1 or later >> "%OUT_DIR%\README.txt"
 echo TCP Port: 5656 (ensure firewall allows inbound on server)  >> "%OUT_DIR%\README.txt"
