@@ -5,6 +5,7 @@ using EJLive.Core.Models;
 using EJLive.Core.Services;
 using EJLive.Core.UI;
 using EJLive.Server.Services;
+using EJLive.Server.WinForms.Monitoring;
 using EJLive.Shared;
 using System.Collections.Concurrent;
 using System.Text.Json;
@@ -15,15 +16,27 @@ namespace EJLive.Server.WinForms;
 
     // Wave 5 / C-30 — Designer partial split (SS-10 process, proven on
     // JournalStudioForm in C-24): this file carries behaviour only; the control
-    // tree (menu, 13 tabs, grids, cards, remote preview) lives in
+    // tree (menu, 14 tabs, grids, cards, remote preview) lives in
     // ServerMainForm.Designer.cs, and every event binding lives in
     // WireEvents(), so a designer regeneration of the sibling partial can
     // never orphan a handler.
+    //
+    // Wave 6 / C-34 — monitoring unified with the central server: the NOC /
+    // Windows Operations Console (formerly the separate EJLive.Monitoring.exe
+    // host, `MainDashboardForm`) is now `Monitoring/MonitoringConsoleForm` in
+    // this assembly and is hosted as the "NOC Monitoring" tab. The tab is a host
+    // panel, not a copy of the surface: one console instance is created lazily by
+    // EnsureNocConsole() and parented into `_nocHost`, so the fleet/cash/XFS/
+    // Smart-Analysis views operators used in the standalone console are the very
+    // same controls, sharing this process's server engine, state store and log.
     //
     // Control → function map (designer fields, driven by this partial):
     //   _fleetGrid + _totalAtmsValue/_connectedAtmsValue/_syncingAtmsValue/
     //       _offlineAtmsValue/_fleetHealthValue — fleet overview + summary cards
     //   _networkMap — card wall (one ATMCardPanel per connection, runtime content)
+    //   _nocHost — unified NOC / Windows Operations Console host (C-34): the single
+    //       MonitoringConsoleForm instance lives here; _nocRefreshButton and
+    //       _nocDetachButton are the only host-level commands over it
     //   _log — runtime log (AppendLog); _journal* actions open the Studio
     //   _syncGrid + sync cards — journal sync state (Retry/Verify actions)
     //   _deliveryGrid — file delivery tracker
@@ -52,6 +65,7 @@ public sealed partial class ServerMainForm : Form
     private readonly System.Windows.Forms.Timer _refreshTimer = new() { Interval = 5000 };
     private readonly string _smartStorageRoot = Path.Combine(AppConstants.DefaultServerSharePath, "SmartStorage");
     private readonly ConcurrentDictionary<string, int> _remoteCommandRows = new(StringComparer.OrdinalIgnoreCase);
+    private MonitoringConsoleForm? _nocConsole;
     private UnifiedServerAnalyticsSnapshot? _lastOpsAnalyticsSnapshot;
     private ClientTelemetryAnalyticsSnapshot? _lastTelemetrySnapshot;
     private DateTime _lastTelemetryUiRefreshUtc = DateTime.MinValue;
@@ -99,32 +113,38 @@ public sealed partial class ServerMainForm : Form
     /// </summary>
     private void WireEvents()
     {
-        _startServerMenuItem.Click += StartServer;
-        _stopServerMenuItem.Click += StopServer;
-        _exitMenuItem.Click += Close;
+        // Wave 6 / C-33 — every binding to a parameterless command method is a discard
+        // lambda, never a bare method group: `Click += StartServer` does not convert to
+        // EventHandler (CS0123), because C# never drops parameters in a method-group
+        // conversion. 35 such bindings in this file (and 11 in the NOC console) were the
+        // build blocker that kept the Windows CI job red for the whole of Wave 5.
+        // `tools/gates/check_ui_bindings.py` now fails on that shape in CI.
+        _startServerMenuItem.Click += (_, _) => StartServer();
+        _stopServerMenuItem.Click += (_, _) => StopServer();
+        _exitMenuItem.Click += (_, _) => Close();
 
-        _refreshFleetMenuItem.Click += RefreshFleet;
+        _refreshFleetMenuItem.Click += (_, _) => RefreshFleet();
         _refreshOpsAnalyticsMenuItem.Click += () => RefreshOpsAnalytics(24);
         _refreshTelemetryMenuItem.Click += () => RefreshTelemetry(24);
         _dailyReportMenuItem.Click += () => ExportOperationalWindowReport("day", 24);
 
         _pingMenuItem.Click += () => SendRemoteCommand(AppConstants.CMD_PING);
         _forceSyncMenuItem.Click += () => SendRemoteCommand(AppConstants.CMD_FORCE_SYNC);
-        _probeMenuItem.Click += SendConnectivityProbe;
+        _probeMenuItem.Click += (_, _) => SendConnectivityProbe();
 
-        _exportLogMenuItem.Click += ExportRuntimeLogSnapshot;
+        _exportLogMenuItem.Click += (_, _) => ExportRuntimeLogSnapshot();
         _clearLogMenuItem.Click += () => { if (_log is not null) _log.Clear(); };
         _openReportsMenuItem.Click += () => OpenFolder(AppConstants.DefaultReportsPath);
         _openArchiveMenuItem.Click += () => OpenFolder(AppConstants.DefaultArchivePath);
 
-        _fleetRefreshButton.Click += RefreshFleet;
+        _fleetRefreshButton.Click += (_, _) => RefreshFleet();
         _fleetDetailsButton.Click += () => new ATMDetailForm(CurrentAtm()).Show(this);
         _fleetDrawerButton.Click += () => new ATMDetailDrawerForm(CurrentAtm()).Show(this);
         _fleetBroadcastButton.Click += () => { _serverEngine.Broadcast("Server broadcast from EJLive."); AppendLog("Broadcast message sent."); };
-        _fleetStartButton.Click += StartServer;
-        _fleetStopButton.Click += StopServer;
+        _fleetStartButton.Click += (_, _) => StartServer();
+        _fleetStopButton.Click += (_, _) => StopServer();
 
-        _mapRefreshButton.Click += RefreshNetworkMap;
+        _mapRefreshButton.Click += (_, _) => RefreshNetworkMap();
         _mapOpenButton.Click += () => new ATMDetailDrawerForm(CurrentAtm()).Show(this);
         _mapBroadcastButton.Click += () =>
         {
@@ -132,78 +152,86 @@ public sealed partial class ServerMainForm : Form
             AppendLog("Status check broadcast sent.");
         };
 
+        // NOC Monitoring tab (Wave 6 / C-34): the unified console is created on first
+        // selection so the server host keeps its existing startup cost, and the only
+        // bindings over it are the two host commands plus the Operations menu item.
+        _tabs.SelectedIndexChanged += (_, _) => EnsureNocConsoleWhenSelected();
+        _nocRefreshButton.Click += (_, _) => RefreshNocConsole();
+        _nocDetachButton.Click += (_, _) => new MonitoringConsoleForm().Show(this);
+        _nocConsoleMenuItem.Click += (_, _) => FocusNocConsole();
+
         _journalStudioButton.Click += () => new JournalStudioForm().Show(this);
         _journalTodayButton.Click += () => AppendLog("Today's journals loaded.");
-        _journalArchiveButton.Click += RunJournalArchive;
+        _journalArchiveButton.Click += (_, _) => RunJournalArchive();
         _journalOpenArchiveButton.Click += () => OpenFolder(AppConstants.DefaultArchivePath);
         _journalOpenSmartButton.Click += () => OpenFolder(_smartStorageRoot);
 
         _syncOpenButton.Click += () => new SyncDashboardForm(_syncTracking.Records).Show(this);
-        _syncRetryButton.Click += RetryFailedSync;
-        _syncVerifyButton.Click += VerifySyncChecksums;
+        _syncRetryButton.Click += (_, _) => RetryFailedSync();
+        _syncVerifyButton.Click += (_, _) => VerifySyncChecksums();
 
         _deliveryRefreshButton.Click += () => RefreshDeliveryTracker("all");
         _deliveryPendingButton.Click += () => RefreshDeliveryTracker("pending");
         _deliveryFailedButton.Click += () => RefreshDeliveryTracker("failed");
         _deliveryOpenSmartButton.Click += () => OpenFolder(_smartStorageRoot);
 
-        _remoteRefreshTargetsButton.Click += RefreshCommandTargets;
+        _remoteRefreshTargetsButton.Click += (_, _) => RefreshCommandTargets();
         _remotePingButton.Click += () => SendRemoteCommand(AppConstants.CMD_PING);
-        _remotePingTrackedButton.Click += SendPingTracked;
-        _remoteProbeButton.Click += SendConnectivityProbe;
+        _remotePingTrackedButton.Click += (_, _) => SendPingTracked();
+        _remoteProbeButton.Click += (_, _) => SendConnectivityProbe();
         _remoteSyncTimeButton.Click += () => SendRemoteCommand(AppConstants.CMD_SYNC_TIME);
         _remoteScreenshotButton.Click += () => SendRemoteCommand(AppConstants.CMD_SCREENSHOT);
         _remoteSessionStartButton.Click += () => SendRemoteCommand(AppConstants.CMD_REMOTE_SESSION_START);
         _remoteSessionStopButton.Click += () => SendRemoteCommand(AppConstants.CMD_REMOTE_SESSION_STOP);
-        _rdpStartButton.Click += SendWindowsRemoteStart;
-        _rdpCheckButton.Click += SendWindowsRemoteCheck;
-        _rdpStopButton.Click += SendWindowsRemoteStop;
-        _changePasswordButton.Click += SendChangePassword;
-        _changeWinPasswordButton.Click += SendChangeWindowsPassword;
-        _requestJournalButton.Click += SendJournalRequest;
+        _rdpStartButton.Click += (_, _) => SendWindowsRemoteStart();
+        _rdpCheckButton.Click += (_, _) => SendWindowsRemoteCheck();
+        _rdpStopButton.Click += (_, _) => SendWindowsRemoteStop();
+        _changePasswordButton.Click += (_, _) => SendChangePassword();
+        _changeWinPasswordButton.Click += (_, _) => SendChangeWindowsPassword();
+        _requestJournalButton.Click += (_, _) => SendJournalRequest();
         _imageInboxButton.Click += () => SendImageToTarget(ImageDistributionMode.InboxStaging);
         _imageDirectButton.Click += () => SendImageToTarget(ImageDistributionMode.DirectApply);
-        _distInboxButton.Click += DistributeImagesFromServerFoldersInbox;
-        _distDirectButton.Click += DistributeImagesFromServerFoldersDirect;
-        _syncImagesButton.Click += SendSyncImages;
+        _distInboxButton.Click += (_, _) => DistributeImagesFromServerFoldersInbox();
+        _distDirectButton.Click += (_, _) => DistributeImagesFromServerFoldersDirect();
+        _syncImagesButton.Click += (_, _) => SendSyncImages();
         _forceSyncButton.Click += () => SendRemoteCommand(AppConstants.CMD_FORCE_SYNC);
         _restartButton.Click += () => SendRemoteCommand(AppConstants.CMD_RESTART);
-        _trackedRestartButton.Click += SendTrackedRestart;
+        _trackedRestartButton.Click += (_, _) => SendTrackedRestart();
 
         _alertsTestButton.Click += () => { _alerts.Raise(AlertSeverity.Warning, "Test Alert", "Manual test alert", "Server"); RefreshAlerts(); };
         _alertsMarkReadButton.Click += () => AppendLog("Alert marked read.");
-        _alertsExportButton.Click += ExportAlertsCsv;
+        _alertsExportButton.Click += (_, _) => ExportAlertsCsv();
         _alertsOpenReportsButton.Click += () => OpenFolder(AppConstants.DefaultReportsPath);
 
         _archiveRunButton.Click += () => AppendLog("Archive cycle completed.");
-        _archiveEligibleButton.Click += RunJournalArchive;
+        _archiveEligibleButton.Click += (_, _) => RunJournalArchive();
         _archiveOpenButton.Click += () => OpenFolder(AppConstants.DefaultArchivePath);
-        _archiveCleanupButton.Click += CreateArchiveCleanupReport;
+        _archiveCleanupButton.Click += (_, _) => CreateArchiveCleanupReport();
 
         _reportsShiftButton.Click += () => ExportOperationalWindowReport("shift", 8);
         _reportsDailyButton.Click += () => ExportOperationalWindowReport("day", 24);
         _reportsWeeklyButton.Click += () => ExportOperationalWindowReport("week", 168);
-        _reportsFleetHealthButton.Click += ExportFleetHealthReport;
-        _reportsCombinedButton.Click += ExportOperationalWindowsBundleReport;
+        _reportsFleetHealthButton.Click += (_, _) => ExportFleetHealthReport();
+        _reportsCombinedButton.Click += (_, _) => ExportOperationalWindowsBundleReport();
         _reportsOpenFolderButton.Click += () => OpenFolder(AppConstants.DefaultReportsPath);
 
         _opsAnalyticsRefreshButton.Click += () => RefreshOpsAnalytics(24);
         _opsAnalytics1hButton.Click += () => RefreshOpsAnalytics(1);
         _opsAnalytics24hButton.Click += () => RefreshOpsAnalytics(24);
-        _opsAnalyticsExportButton.Click += ExportOpsAnalyticsSnapshot;
+        _opsAnalyticsExportButton.Click += (_, _) => ExportOpsAnalyticsSnapshot();
         _opsAnalyticsOpenButton.Click += () => OpenFolder(AppConstants.DefaultReportsPath);
 
         _commandAuditRefreshButton.Click += () => RefreshCommandAudit(24);
         _commandAudit1hButton.Click += () => RefreshCommandAudit(1);
         _commandAudit24hButton.Click += () => RefreshCommandAudit(24);
-        _commandAuditExportButton.Click += ExportCommandAuditCsv;
+        _commandAuditExportButton.Click += (_, _) => ExportCommandAuditCsv();
         _commandAuditOpenButton.Click += () => OpenFolder(AppConstants.DefaultReportsPath);
 
         _telemetryRefreshButton.Click += () => RefreshTelemetry(24);
         _telemetry1hButton.Click += () => RefreshTelemetry(1);
         _telemetry24hButton.Click += () => RefreshTelemetry(24);
-        _telemetryTimelineCsvButton.Click += ExportTelemetryTimelineCsv;
-        _telemetryAtmCsvButton.Click += ExportTelemetryAtmSummaryCsv;
+        _telemetryTimelineCsvButton.Click += (_, _) => ExportTelemetryTimelineCsv();
+        _telemetryAtmCsvButton.Click += (_, _) => ExportTelemetryAtmSummaryCsv();
         _telemetryOpenButton.Click += () => OpenFolder(AppConstants.DefaultReportsPath);
 
         _settingsSaveButton.Click += () => AppendLog("Server settings saved.");
@@ -1804,6 +1832,60 @@ public sealed partial class ServerMainForm : Form
         return _stateStore.Snapshot.FirstOrDefault() ?? new ATMInfo { ATM_ID = "ATM000", ATM_Name = "Unknown ATM" };
     }
 
+    // -----------------------------------------------------------------
+    // Wave 6 / C-34 — unified NOC monitoring host
+    // -----------------------------------------------------------------
+
+    /// <summary>
+    /// Selects the NOC Monitoring tab and makes sure the unified console exists.
+    /// Public because it is the entry point the launcher and the packaged
+    /// <c>noc.cmd</c> use to start the central server directly on the operations
+    /// console (<c>EJLive.Server.WinForms.exe --noc</c>,
+    /// <c>EJLive.UnifiedLauncher.exe noc</c>).
+    /// </summary>
+    public void FocusNocConsole()
+    {
+        if (_tabs is not null)
+            _tabs.SelectedTab = _nocTab;
+        EnsureNocConsole();
+    }
+
+    private void EnsureNocConsoleWhenSelected()
+    {
+        if (_tabs is not null && ReferenceEquals(_tabs.SelectedTab, _nocTab))
+            EnsureNocConsole();
+    }
+
+    /// <summary>
+    /// Creates the single <see cref="MonitoringConsoleForm"/> instance and parents it
+    /// into the designer-built <c>_nocHost</c> panel. Lazy on purpose: the console
+    /// seeds its grids from the state store and the report catalog on construction,
+    /// and a server host that is started only to run the engine should not pay for it.
+    /// Idempotent — every caller (tab selection, menu item, refresh, <c>--noc</c>)
+    /// goes through here.
+    /// </summary>
+    private void EnsureNocConsole()
+    {
+        if (_nocConsole is not null || _nocHost is null)
+            return;
+
+        _nocConsole = new MonitoringConsoleForm();
+        _nocConsole.ApplyEmbeddedChrome();
+        _nocHost.Controls.Add(_nocConsole);
+        _nocConsole.Show();
+        AppendLog("[NOC] Monitoring console unified into the server host (C-34).");
+    }
+
+    /// <summary>
+    /// Host-level refresh: realises the console if the operator pressed Refresh before
+    /// ever selecting the tab, then re-runs the console's own refresh chain.
+    /// </summary>
+    private void RefreshNocConsole()
+    {
+        EnsureNocConsole();
+        _nocConsole?.RefreshConsole();
+    }
+
     private void AppendLog(string message)
     {
         if (_log is null)
@@ -1836,6 +1918,14 @@ public sealed partial class ServerMainForm : Form
     {
         _refreshTimer.Stop();
         _refreshTimer.Dispose();
+        if (_nocConsole is not null)
+        {
+            // Un-parent before disposing so the child-control walk in Form.Dispose
+            // never meets an already-disposed surface (C-34).
+            _nocHost?.Controls.Remove(_nocConsole);
+            _nocConsole.Dispose();
+            _nocConsole = null;
+        }
         if (_remotePreview is not null)
         {
             var preview = _remotePreview.Image;

@@ -104,7 +104,6 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 
 - `:00] WITHDRAWAL AMOUNT=200 SAR\n[09:01] NC` <- `src/EJLive.Tests/Track46/SmartAnalysisServiceTests.cs`
 - `:\n` <- `src/EJLive.Client.WinForms/Program.cs`
-- `:\n` <- `src/EJLive.Monitoring.WinForms/Program.cs`
 - `:\n` <- `src/EJLive.Server.WinForms/JournalStudioForm.cs`
 - `:\n` <- `src/EJLive.Server.WinForms/Program.cs`
 - `:\n` <- `src/EJLive.Tests/Wave4DataPlatformTests.cs`
@@ -112,6 +111,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 - `:\n` <- `src/_reference/orphan-projects/EJLive.Launcher/Program.cs`
 - `:\n` <- `src/_reference/orphan-projects/EJLive.Monitoring/MainDashboardForm.cs`
 - `:\n` <- `src/_reference/uncompiled/EJLive.Monitoring.WinForms/Dashboard/MainDashboardForm.cs`
+- `:\n` <- `src/_reference/uncompiled/EJLive.Monitoring.WinForms/retired-host/Program.cs`
 - `:\n` <- `src/_reference/uncompiled/EJLive.Server.WinForms/Dashboards/Primary/MonitoringDashboardPrimaryForm.cs`
 - `:\n` <- `src/_reference/uncompiled/EJLive.Server.WinForms/JournalViewerForm.cs`
 - `:\n` <- `src/_reference/uncompiled/EJLive.Server/JournalViewerForm.cs`

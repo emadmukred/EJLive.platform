@@ -20,6 +20,17 @@ internal static class Program
             case LauncherMode.Server:
                 RunMode("server", static () => new EJLive.Server.WinForms.ServerMainForm());
                 break;
+            case LauncherMode.Noc:
+                // Wave 6 / C-34 — the NOC console is a tab of the central server host,
+                // so `noc` mode is the same process opened on that tab. Replaces the
+                // retired EJLive.Monitoring.exe.
+                RunMode("noc", static () =>
+                {
+                    var console = new EJLive.Server.WinForms.ServerMainForm();
+                    console.FocusNocConsole();
+                    return console;
+                });
+                break;
             case LauncherMode.Selection:
                 ShowModeSelectionDialog();
                 break;
@@ -39,6 +50,7 @@ internal static class Program
         {
             "client" => LauncherMode.Client,
             "server" => LauncherMode.Server,
+            "noc" or "monitoring" => LauncherMode.Noc,
             _ => LauncherMode.Invalid
         };
     }
@@ -84,7 +96,8 @@ internal static class Program
     private static void ShowUsage()
     {
         MessageBox.Show(
-            "Usage: EJLive.UnifiedLauncher.exe [client|server]\n\n" +
+            "Usage: EJLive.UnifiedLauncher.exe [client|server|noc]\n\n" +
+            "  noc        central server host opened on the unified NOC Monitoring tab\n" +
             "Prefixing the option with '-', '--', or '/' is also supported.\n" +
             "If no option is supplied, the mode selection dialog is shown.",
             "EJLive Launcher",
@@ -97,6 +110,7 @@ internal static class Program
         Invalid,
         Selection,
         Client,
-        Server
+        Server,
+        Noc
     }
 }

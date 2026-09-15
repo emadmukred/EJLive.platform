@@ -1,10 +1,12 @@
 @echo off
 REM ============================================================
 REM  EJLIVE.PLATFORM packaging - v4.0.0
-REM  Produces three endpoint payloads from a completed build:
+REM  Produces two endpoint payloads from a completed build:
 REM    EJLive_Client_v4.0.0.zip   agent service + session companion + installer
-REM    EJLive_Server_v4.0.0.zip   archiving server + WinForms host
-REM    EJLive_NOC_v4.0.0.zip      operations console
+REM    EJLive_Server_v4.0.0.zip   archiving server + WinForms host + the unified
+REM                               NOC monitoring console (start.cmd ^| noc.cmd)
+REM  Wave 6 / C-34: there is no third payload any more. The NOC console was unified
+REM  into the central server host, so noc.cmd opens that tab of the same exe.
 REM  Usage:  package.bat [Release^|Debug]
 REM  Precondition: tools\build\build.ps1 -Configuration %CONFIG% has run.
 REM ============================================================
@@ -43,10 +45,10 @@ call :copybin "%SRC%\EJLive.Server.WinForms\bin\%CONFIG%\%TFM%" "%STAGE%\server"
 call :copybin "%SRC%\EJLive.Business\bin\%CONFIG%\%TFM%" "%STAGE%\server" server
 call :copybin "%SRC%\EJLive.Application\bin\%CONFIG%\%TFM%" "%STAGE%\server" server
 
-REM --- NOC payload: operations console ---------------------------------------
-call :copybin "%SRC%\EJLive.Monitoring.WinForms\bin\%CONFIG%\%TFM%" "%STAGE%\noc" noc
-call :copybin "%SRC%\EJLive.Core\bin\%CONFIG%\%TFM%" "%STAGE%\noc" noc
-call :copybin "%SRC%\EJLive.Shared\bin\%CONFIG%\%TFM%" "%STAGE%\noc" noc
+REM --- NOC operations console (Wave 6 / C-34) ----------------------------------
+REM Nothing to stage: EJLive.Monitoring.WinForms is retired and archived under
+REM src/_reference/, and the console now lives inside EJLive.Server.WinForms.exe
+REM (already staged above). The operator entry point is server\noc.cmd.
 
 REM --- journal fixtures travel with the client so field installs self-test ----
 if exist "%SRC%\EJLive.Tests\Samples" (
@@ -58,11 +60,11 @@ if exist "%SRC%\EJLive.Tests\Samples" (
 >>"%STAGE%\client\install.cmd" echo EJLive.Installer.exe --install --service EJLive.Client.Service --silent
 > "%STAGE%\server\start.cmd" echo @echo off
 >>"%STAGE%\server\start.cmd" echo start "" EJLive.Server.WinForms.exe
-> "%STAGE%\noc\start.cmd" echo @echo off
->>"%STAGE%\noc\start.cmd" echo start "" EJLive.Monitoring.exe
+> "%STAGE%\server\noc.cmd" echo @echo off
+>>"%STAGE%\server\noc.cmd" echo start "" EJLive.Server.WinForms.exe --noc
 
 set FAIL=0
-for %%P in (client server noc) do (
+for %%P in (client server) do (
   if not exist "%STAGE%\%%P\" set FAIL=1
 )
 if "%FAIL%"=="1" (
@@ -70,7 +72,7 @@ if "%FAIL%"=="1" (
   exit /b 2
 )
 
-for %%P in (client:EJLive_Client server:EJLive_Server noc:EJLive_NOC) do (
+for %%P in (client:EJLive_Client server:EJLive_Server) do (
   for /f "tokens=1,2 delims=:" %%A in ("%%P") do (
     powershell -NoProfile -Command "Compress-Archive -Path '%STAGE%\%%A\*' -DestinationPath '%OUT_DIR%\%%B_v%VERSION%.zip' -Force"
     echo  packaged  %OUT_DIR%\%%B_v%VERSION%.zip

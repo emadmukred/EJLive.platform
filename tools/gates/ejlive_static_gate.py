@@ -34,7 +34,9 @@ RESULTS: list[tuple[str, str, str]] = []
 ASSEMBLY_ALLOWLIST = {
     "EJLive.Client": ("EJLive.Client.exe", "InstallerAutomationRunner probes the service payload for EJLive.Client.exe"),
     "EJLive.Installer": ("EJLive.Installer.exe", "endpoint push path invokes the installer by this name"),
-    "EJLive.Monitoring": ("EJLive.Monitoring.exe", "NOC payload folder in tools/package/package.bat"),
+    # "EJLive.Monitoring" removed in Wave 6 / C-34: the NOC console is part of
+    # EJLive.Server.WinForms now, so no project produces that assembly any more.
+    # An allowlist entry whose justification no longer exists is a hole, not a record.
 }
 LOADED_TERMS = {
     "blacklist": "denylist", "whitelist": "allowlist", "master": "primary",

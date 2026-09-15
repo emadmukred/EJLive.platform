@@ -9,7 +9,6 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Client.WinForms | [ | reference | artifacts/InventorySummary.json |
 | EJLive.Client.WinForms | { | reference | src/EJLive.Client.WinForms/Properties/launchSettings.json |
 | EJLive.Installer.WinForms | [ | reference | artifacts/InventorySummary.json |
-| EJLive.Monitoring.WinForms | [ | reference | artifacts/InventorySummary.json |
 | EJLive.NetworkType | LAN | reference | src/EJLive.Client.WinForms/app.config |
 | MaxConnectedATMs | - | active | src/EJLive.Core/Shared/UnifiedSystemConfiguration.cs |
 | MaxConnectedATMs | - | reference | src/_reference/exact-duplicates/_reference/orphan-projects/EJLive.Setup/UnifiedSystemConfiguration.cs |

@@ -14,7 +14,7 @@ internal static class Program
     /// sync-over-async (SS-12).
     /// </summary>
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
 
@@ -29,6 +29,22 @@ internal static class Program
                 MessageBoxIcon.Warning);
         }
 
-        Application.Run(new ServerMainForm());
+        // Wave 6 / C-34 — one host, one monitoring surface: `--noc` lands the operator
+        // directly on the unified NOC Monitoring tab. This replaces the retired
+        // EJLive.Monitoring.exe entry point (the packaged noc.cmd calls it).
+        var console = new ServerMainForm();
+        if (args.Any(StartOnNocConsole))
+            console.FocusNocConsole();
+
+        Application.Run(console);
+    }
+
+    /// <summary>
+    /// Accepts <c>--noc</c>, <c>-noc</c>, <c>/noc</c>, <c>--monitoring</c>: the two names
+    /// operators used for the standalone console both open the same unified tab.
+    /// </summary>
+    private static bool StartOnNocConsole(string argument)
+    {
+        return argument.Trim().TrimStart('-', '/').ToLowerInvariant() is "noc" or "monitoring";
     }
 }

@@ -295,6 +295,95 @@
   blocks; the same check runs in CI via the workflow).
 
 
+## C-33 — CS0123 / CS0103: the event-binding shapes the Designer split produced
+
+- **Finding**: `E-32` + `E-33`. The Windows CI `build` step failed before tests
+  or probes ran. Two classes, both invisible to every structural rule:
+  46 events bound to *bare method groups* whose only declaration takes zero
+  parameters (`_startServerMenuItem.Click += StartServer;` beside
+  `private void StartServer()`) — 35 in `ServerMainForm.WireEvents()`, 11 in the
+  NOC console's — which is CS0123, because a method-group conversion never drops
+  parameters and `EventHandler` is `void (object?, EventArgs)`; and two bindings
+  in `JournalStudioForm.WireEvents()` to `_bulkExportCsvButton` /
+  `_bulkExportExcelButton`, names no partial of that type declares (the designer
+  fields are `_exportBulkCsvButton` / `_exportBulkExcelButton`) — CS0103.
+  `SYN-1` (braces balance), `TYPE-1`/`TYPE-4` (ownership) and `POL-2` all stayed
+  green, so the repository had no way to see either class.
+- **Fix**: the 46 bindings rewritten as discard lambdas
+  (`+= (_, _) => StartServer();`), which keeps every command method callable
+  programmatically exactly as before; the two Studio bindings renamed to the
+  designer's names, because the designer partial is the authority on the control
+  tree (SS-10). New checker `tools/gates/check_ui_bindings.py` — same shape as
+  `check_constant_resolution.py`, advisory, exit code is the verdict — resolves
+  each bare method group against the declarations merged from *all* partials of
+  the type (plus the parameterless `Form`/`Control` members such as `Close`), and
+  reports every `_field` used in one partial and declared in none. Wired into the
+  no-compiler CI job as `UI event-binding resolution (CS0123 / CS0103 class)`.
+- **Status**: **CLOSED** (checker self-tested against the pre-fix tree from git
+  history — it reports exactly 35 + 11 CS0123 and 2 CS0103 — and 0 findings on
+  the fixed tree across 287 single-type compiled files).
+
+
+## C-34 — Monitoring unified with the central server (one console, one host)
+
+- **Finding**: `E-34` + `E-36`. One operational picture existed as two host
+  processes: `EJLive.Monitoring.WinForms` (`MainDashboardForm`, 104 designer
+  fields, its own `Program.cs`, `PlatformBootstrap` call and assembly
+  attributes) rendered fleet/cash/XFS/Smart-Analysis over the same
+  `OperationalStateStore`, `XfsLogAnalysisService`,
+  `OperationalReportCatalogService` and `ClientTelemetryHistoryService` that
+  `ServerMainForm` also drives — two exes, two packaging payloads, two entry
+  points. Its `Models/DashboardModels.cs` (`TerminalSnapshot`,
+  `DashboardSnapshot`, `AlertEntry`, `CashStatusSummary`, `TerminalHealth`) had
+  zero consumers beside the canonical `TerminalLiveSummary`/`TerminalCashStatus`.
+  Separately, the `WinForms UI composition` probe still asserted a tab name that
+  disappeared in Wave 4 (`"Journal Viewer"` vs the shipped
+  `"Journal Studio (SS-10.5)"`), so it was red by construction and nobody knew.
+- **Fix**: the surface moved — `git mv`, history preserved — to
+  `src/EJLive.Server.WinForms/Monitoring/MonitoringConsoleForm{.cs,.Designer.cs,.resx}`
+  in namespace `EJLive.Server.WinForms.Monitoring`, and is hosted two ways from
+  one codebase: embedded as the new `NOC Monitoring` tab of `ServerMainForm`
+  (lazy `EnsureNocConsole()` on first tab selection so the server host keeps its
+  startup cost; host contract is exactly two members — `ApplyEmbeddedChrome()`
+  and `RefreshConsole()`; un-parented then disposed in `OnFormClosed`), and
+  detached via the tab's `Open Detached Window` button. `EJLive.Monitoring.exe`
+  is retired: project archived to
+  `src/_reference/uncompiled/EJLive.Monitoring.WinForms/retired-host/` with its
+  csproj shell under `src/_reference/csproj-shells/`, removed from
+  `EJLive.Platform.sln`/`.slnx` (15 → 14 projects) and from
+  `EJLive.Verification`'s references, and the operator entry points are now
+  `EJLive.Server.WinForms.exe --noc` and `EJLive.UnifiedLauncher.exe noc`
+  (`monitoring` accepted as an alias). Packaging drops the third payload and
+  writes `server\noc.cmd` instead. The consumerless models were archived, not
+  ported (C-27: no dead façade is promoted). The probe expectations were
+  refreshed to the shipped tab texts and extended to *assert* the unification:
+  after `server.FocusNocConsole()`, every monitoring tab and the console's
+  buttons must be reachable through the server host's own control tree, and the
+  duplicate-type probe no longer lists the retired assembly twice (which would
+  have reported every server type as a duplicate).
+- **Status**: **CLOSED** (gate 41/41 PASS; ledgers regenerated — 14 projects,
+  321 compiled files, 248 archived; `ARCH-1` clean on both solution files; the
+  unification is now machine-asserted by probe 8 rather than documented).
+
+
+## C-35 — `tools/package` case-only filename collision
+
+- **Finding**: `E-35`. `tools/package/Package.bat` (legacy, .NET-Framework-4.8
+  era, `%~dp0EJLive.*\bin\%CONFIG%` paths that no longer exist) and
+  `tools/package/package.bat` (canonical, the one CI invokes) were tracked in the
+  same directory differing only by case. Windows — the only platform this
+  repository builds on — cannot check out both, so on the CI runner one of the
+  two wins arbitrarily and `cmd /c tools\package\package.bat Release` may run
+  the legacy script.
+- **Fix**: the legacy script moved to `tools/package/legacy/Package.bat`, kept
+  for audit with its own header explaining why it is not the canonical packager
+  and its NOC section updated for C-34; `tools/package/package.bat` remains the
+  single packager and now produces two payloads.
+- **Status**: **CLOSED** (`git ls-files tools/package` shows one `.bat` at the
+  top level; `FILE-4`-style competing-script collisions can no longer occur
+  between the two names).
+
+
 ## Wave resolutions
 
 - `67db886` — D-08 (8 merge dumps in `EJLive.Core/Models` + `Services/UnifiedOperationalFusion`).
@@ -344,3 +433,23 @@
   (`AgentHeadlessController` + `ClientAgentWindowsService` supervision). Both
   promotions are deferred to a consumer-driven design decision — per C-27, no
   dead façade is compiled to satisfy a ledger.
+
+### Wave 6 (this branch)
+
+- C-33 — the Windows `build` step unblocked: 46 bare method-group bindings
+  (CS0123) rewritten as discard lambdas, 2 designer-field name mismatches
+  (CS0103) renamed to the designer's names, and `tools/gates/check_ui_bindings.py`
+  added as a CI step so the class cannot recur unseen. Gate 41/41 PASS.
+- C-34 — monitoring unified with the central server: `MainDashboardForm` →
+  `EJLive.Server.WinForms/Monitoring/MonitoringConsoleForm`, hosted as the
+  `NOC Monitoring` tab; `EJLive.Monitoring.exe` retired (14 projects, 2 payload
+  zips, `--noc` / `UnifiedLauncher noc` entry points); dead `DashboardModels.cs`
+  archived; the UI-composition probe refreshed and extended to assert the
+  unification.
+- C-35 — `tools/package/Package.bat` moved to `tools/package/legacy/` to end a
+  case-only filename collision Windows cannot check out.
+- G-4 — opened, not closed: the journal-analytics platform (Python) the requester
+  attached for conversion to C# never materialised in the sandbox
+  (`/home/user/uploads/` does not exist; nothing on disk matches the seven
+  attached names). No conversion was attempted from guesses. See
+  `docs/TRACEABILITY-MATRIX.md`.

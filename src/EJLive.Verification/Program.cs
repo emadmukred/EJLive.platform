@@ -8,9 +8,9 @@ using EJLive.Core.Engine;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
 using EJLive.Installer.WinForms;
-using EJLive.Monitoring.WinForms;
 using EJLive.Server.Services;
 using EJLive.Server.WinForms;
+using EJLive.Server.WinForms.Monitoring;
 using EJLive.Shared;
 using AppConstants = EJLive.Core.AppConstants;
 using CoreUnifiedClientServiceSupervisor = EJLive.Core.Services.UnifiedClientServiceSupervisor;
@@ -313,7 +313,7 @@ static (string Name, bool Passed, string Detail) RunUiProbe()
             ApplicationConfiguration.Initialize();
             using var client = new ClientMainForm();
             using var server = new ServerMainForm();
-            using var monitoring = new MainDashboardForm();
+            using var monitoring = new MonitoringConsoleForm();
             using var installer = new InstallerForm();
 
             var clientTabs = GetTabs(client);
@@ -333,6 +333,14 @@ static (string Name, bool Passed, string Detail) RunUiProbe()
             var serverButtons = CountControls<Button>(server);
             var monitoringButtons = CountControls<Button>(monitoring);
             var installerButtons = CountControls<Button>(installer);
+
+            // Wave 6 / C-34 — unification probe. The NOC console is no longer a
+            // separate executable: focusing the host's "NOC Monitoring" tab must
+            // realise MonitoringConsoleForm inside ServerMainForm and expose every
+            // one of its own tabs and buttons through the server's control tree.
+            server.FocusNocConsole();
+            var unifiedServerTabs = GetTabs(server);
+            var unifiedServerButtons = CountControls<Button>(server);
             var forbiddenClientActions = new[] { "Connect", "Restart", "Force", "Shutdown", "Execute", "Send Command" };
             var clientIsPassiveCompanion =
                 clientTabs.Length == 0 &&
@@ -346,14 +354,16 @@ static (string Name, bool Passed, string Detail) RunUiProbe()
 
             var passed =
                 clientIsPassiveCompanion &&
-                ContainsAll(serverTabs, "Fleet", "Network Map", "Journal Viewer", "Sync Dashboard", "Remote Commands", "Alerts", "Archive", "Reports", "Settings") &&
+                ContainsAll(serverTabs, "Fleet", "Network Map", "NOC Monitoring", "Journal Studio (SS-10.5)", "Sync Dashboard", "Remote Commands", "Alerts", "Archive", "Reports", "Settings") &&
                 ContainsAll(monitoringTabs, "Overview", "Operational Map", "Device State", "Realtime Sync", "XFS Events", "Vendor Logs", "Reports") &&
+                ContainsAll(unifiedServerTabs, monitoringTabs) &&
                 serverButtons >= 25 &&
                 monitoringButtons >= 8 &&
+                unifiedServerButtons >= serverButtons + monitoringButtons &&
                 installerButtons >= 4;
 
             result = ("WinForms UI composition", passed,
-                $"clientPassive={clientIsPassiveCompanion}; clientButtons={string.Join(',', clientButtonTexts)}; clientGrids={clientGrids.Length}; serverTabs={string.Join(',', serverTabs)}; monitoringTabs={string.Join(',', monitoringTabs)}; buttons={serverButtons}/{monitoringButtons}/{installerButtons}");
+                $"clientPassive={clientIsPassiveCompanion}; clientButtons={string.Join(',', clientButtonTexts)}; clientGrids={clientGrids.Length}; serverTabs={string.Join(',', serverTabs)}; monitoringTabs={string.Join(',', monitoringTabs)}; unifiedNocTabs={unifiedServerTabs.Length}; buttons={serverButtons}/{monitoringButtons}/{installerButtons}; unifiedButtons={unifiedServerButtons}");
         }
         catch (Exception ex)
         {
@@ -1032,7 +1042,10 @@ static (string Name, bool Passed, string Detail) RunDuplicateTypeProbe()
             typeof(EJLive.Client.WinForms.ClientMainForm).Assembly,
             typeof(EJLive.Server.WinForms.ServerMainForm).Assembly,
             typeof(EJLive.Installer.WinForms.InstallerForm).Assembly,
-            typeof(EJLive.Monitoring.WinForms.MainDashboardForm).Assembly,
+            // Wave 6 / C-34: EJLive.Monitoring.exe is retired — the NOC console is
+            // MonitoringConsoleForm inside EJLive.Server.WinForms, so the assembly it
+            // would have contributed is already covered by the ServerMainForm entry
+            // above. Listing it twice would report every server type as a duplicate.
         };
 
         var typeNames = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);

@@ -1,8 +1,9 @@
 #Requires -Version 5.1
 <#
   EJLIVE.PLATFORM gate runner for Windows developer shells and the build agent.
-  Runs the python static gate, the ledger drift checks and (when a .NET SDK is
-  present) the build + test + probe sequence. Exit code is the CI verdict.
+  Runs the python static gate, the compile-gap checkers that need no SDK
+  (ledger drift, UI event-binding resolution), and (when a .NET SDK is present)
+  the build + test + probe sequence. Exit code is the CI verdict.
 #>
 [CmdletBinding()]
 param(
@@ -28,6 +29,7 @@ if (-not $py) { Write-Host "python 3 is required to run the ledgers and the gate
 Invoke-Gate 'inventory ledgers' { & $py tools/inventory/ejlive_inventory.py --check }
 Invoke-Gate 'service activation ledger' { & $py tools/inventory/service_activation.py --check }
 Invoke-Gate 'static gate' { & $py tools/gates/ejlive_static_gate.py }
+Invoke-Gate 'ui event bindings (CS0123/CS0103)' { & $py tools/gates/check_ui_bindings.py }
 
 if (-not $SkipDotNet) {
     $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source

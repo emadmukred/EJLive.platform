@@ -1,10 +1,10 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace EJLive.Monitoring.WinForms;
+namespace EJLive.Server.WinForms.Monitoring;
 
 /// <summary>
-/// Designer surface for <see cref="MainDashboardForm"/> (SS-10 / C-29, NOC / Windows
+/// Designer surface for <see cref="MonitoringConsoleForm"/> (SS-10 / C-29, NOC / Windows
 /// Operations Console). Authored to the shape Visual Studio's WinForms designer emits
 /// and consumes: every control is a named field, created and property-set only inside
 /// <c>InitializeComponent</c>, parented through <c>Controls.Add</c> with
@@ -32,7 +32,7 @@ namespace EJLive.Monitoring.WinForms;
 /// Control → function mapping is documented on the companion type and in
 /// <c>docs/inventory/UI-SURFACES.md</c> (generated).
 /// </summary>
-public sealed partial class MainDashboardForm
+public sealed partial class MonitoringConsoleForm
 {
     // ── tab container ────────────────────────────────────────────────────────
     private TabControl _tabs = null!;
@@ -184,7 +184,7 @@ public sealed partial class MainDashboardForm
         ClientSize = new Size(1164, 733);
         MinimumSize = new Size(1060, 700);
         StartPosition = FormStartPosition.CenterScreen;
-        Text = "EJLive Monitoring Dashboard";
+        Text = "EJLive Monitoring Console";
         Font = new Font("Segoe UI", 9F);
         DoubleBuffered = true;
 

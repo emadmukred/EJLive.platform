@@ -76,7 +76,7 @@ SequenceValidationService,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/
 ServerAuditService,EJLive.Server.Services,EJLive.Server,src/EJLive.Server/Services/ServerAuditService.cs,1,1,host,ServerMainForm.cs
 ServerEngine,EJLive.Core.Engine,EJLive.Core,src/EJLive.Core/Engine/OperationalEngines.cs,6,4,host,Program.cs
 ServiceRegistry,EJLive.Client.WinForms.Services,EJLive.Client.WinForms,src/EJLive.Client.WinForms/Services/ServiceRegistry.cs,1,0,orphan,
-SmartAnalysisService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/SmartAnalysisService.cs,3,1,host,MainDashboardForm.cs
+SmartAnalysisService,EJLive.Core.Services,EJLive.Core,src/EJLive.Core/Services/SmartAnalysisService.cs,3,1,host,MonitoringConsoleForm.cs
 SystemBackupService,EJLive.Client.Service,EJLive.Client.Service,src/EJLive.Client.Service/SystemBackupService.cs,1,1,registry,AgentHeadlessController.cs
 TerminalAgentManagementService,EJLive.Core.Server,EJLive.Core,src/EJLive.Core/Server/ServerCoreServices.cs,0,0,orphan,
 TestAuditStore,EJLive.Tests.Track13,EJLive.Tests,src/EJLive.Tests/Track13/RemoteAssistanceTests.cs,0,1,registry,RemoteAssistanceTests.cs

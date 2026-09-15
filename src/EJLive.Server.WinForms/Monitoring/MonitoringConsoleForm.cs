@@ -5,14 +5,31 @@ using EJLive.Core.UI;
 using EJLive.Core.Xfs;
 using EJLive.Server.Services;
 
-namespace EJLive.Monitoring.WinForms;
+namespace EJLive.Server.WinForms.Monitoring;
 
 /// <summary>
 /// NOC / Windows Operations Console. Wave 5 / C-29 — Designer partial split
 /// (SS-10 process, proven on <c>JournalStudioForm</c>): this file carries
-/// behaviour only; the control tree lives in <c>MainDashboardForm.Designer.cs</c>
+/// behaviour only; the control tree lives in <c>MonitoringConsoleForm.Designer.cs</c>
 /// and every event binding lives in <see cref="WireEvents"/>, so a designer
 /// regeneration of the sibling partial can never orphan a handler.
+///
+/// Wave 6 / C-34 — unified with the central server. This surface was the whole of
+/// the separate <c>EJLive.Monitoring.WinForms</c> host (<c>MainDashboardForm</c>,
+/// shipped as <c>EJLive.Monitoring.exe</c>). It now lives inside
+/// <c>EJLive.Server.WinForms</c> and is hosted two ways from one codebase:
+///   * embedded — <see cref="ApplyEmbeddedChrome"/> + parented into the
+///     "NOC Monitoring" tab of <c>ServerMainForm</c> (<c>EnsureNocConsole</c>), so
+///     operators watch the fleet in the same process that serves it;
+///   * detached — <c>new MonitoringConsoleForm().Show(owner)</c> from the tab's
+///     "Open Detached Window" button, for a second screen.
+/// The host contract is exactly two members (<see cref="ApplyEmbeddedChrome"/>,
+/// <see cref="RefreshConsole"/>); everything else stays self-contained, so the
+/// console can be re-hosted without touching its own control tree.
+/// The retired standalone host (<c>Program.cs</c>, <c>AssemblyInfo.cs</c>,
+/// <c>app.config</c>, <c>packages.config</c>) and the consumerless
+/// <c>Models/DashboardModels.cs</c> are archived under
+/// <c>src/_reference/uncompiled/EJLive.Monitoring.WinForms/retired-host/</c>.
 ///
 /// Control → function map (designer fields, driven by this partial):
 ///   _overviewGrid + _totalValue/_onlineValue/_syncingValue/_offlineValue/_healthValue —
@@ -24,7 +41,7 @@ namespace EJLive.Monitoring.WinForms;
 ///   _smartUploadBox / _smartFindingsGrid / _smartCassetteGrid / _smartHourlyGrid /
 ///       _smartCritical / _smartWarning / _smartInfo / _smartSummary — Smart Analysis (SS-27)
 /// </summary>
-public sealed partial class MainDashboardForm : Form
+public sealed partial class MonitoringConsoleForm : Form
 {
     private readonly OperationalStateStore _stateStore = new();
     private readonly XfsLogAnalysisService _xfsLogAnalysis = new();
@@ -32,7 +49,7 @@ public sealed partial class MainDashboardForm : Form
     private readonly ClientTelemetryHistoryService _telemetryHistory = new();
     private DateTime _lastTelemetryRefreshUtc = DateTime.MinValue;
 
-    public MainDashboardForm()
+    public MonitoringConsoleForm()
     {
         InitializeComponent();
         WireEvents();
@@ -43,21 +60,26 @@ public sealed partial class MainDashboardForm : Form
     /// <summary>
     /// Every event binding for this surface, in one place (SS-10). The designer
     /// partial deliberately contains no bindings; a regenerated
-    /// <c>MainDashboardForm.Designer.cs</c> therefore cannot drop a handler.
+    /// <c>MonitoringConsoleForm.Designer.cs</c> therefore cannot drop a handler.
+    /// Wave 6 / C-33: the eleven bindings to parameterless refresh commands are
+    /// discard lambdas (<c>(_, _) =&gt; RefreshOverview()</c>), never bare method
+    /// groups — a method group with no <c>(object?, EventArgs)</c> overload does not
+    /// convert to <see cref="EventHandler"/> (CS0123), which is what kept the Windows
+    /// CI build red through Wave 5.
     /// </summary>
     private void WireEvents()
     {
-        _overviewRefreshButton.Click += RefreshOverview;
+        _overviewRefreshButton.Click += (_, _) => RefreshOverview();
         _overviewWindowButton.Click += () => OpenDetachedGridWindow("Overview", _overviewGrid);
         _overviewReviewButton.Click += () => MessageBox.Show(this, "Health review queued.", "Monitoring");
 
-        _cashMatrixRefreshButton.Click += RefreshTerminalDashboards;
+        _cashMatrixRefreshButton.Click += (_, _) => RefreshTerminalDashboards();
         _cashMatrixWindowButton.Click += () => OpenDetachedGridWindow("Cash Matrix", _cashMatrixGrid);
 
-        _terminalListRefreshButton.Click += RefreshTerminalDashboards;
+        _terminalListRefreshButton.Click += (_, _) => RefreshTerminalDashboards();
         _terminalListWindowButton.Click += () => OpenDetachedGridWindow("Terminal List", _terminalListGrid);
 
-        _mapRefreshButton.Click += RefreshOperationalMap;
+        _mapRefreshButton.Click += (_, _) => RefreshOperationalMap();
         _mapReviewButton.Click += () => MessageBox.Show(this, "Map health review queued.", "Monitoring");
 
         _xfsNcrButton.Click += () => LoadXfs("NCR ERROR DISPENSER TIMEOUT");
@@ -67,20 +89,20 @@ public sealed partial class MainDashboardForm : Form
         _xfsWindowButton.Click += () => OpenDetachedGridWindow("XFS Events", _xfsGrid);
         _xfsClearButton.Click += () => _xfsGrid.Rows.Clear();
 
-        _vendorAnalyzeButton.Click += AnalyzeVendorLog;
-        _vendorExtractButton.Click += AnalyzeVendorLog;
+        _vendorAnalyzeButton.Click += (_, _) => AnalyzeVendorLog();
+        _vendorExtractButton.Click += (_, _) => AnalyzeVendorLog();
         _vendorClearButton.Click += () => _vendorLog.Clear();
 
-        _reportsRefreshButton.Click += RefreshReportsIndex;
-        _reportsBundleButton.Click += LoadLatestOpsBundleSummary;
+        _reportsRefreshButton.Click += (_, _) => RefreshReportsIndex();
+        _reportsBundleButton.Click += (_, _) => LoadLatestOpsBundleSummary();
         _reportsWindowSummaryButton.Click += () => OpenDetachedGridWindow("Ops Windows", _reportsWindowGrid);
         _reportsFilesIndexButton.Click += () => OpenDetachedGridWindow("Report Files", _reportsFilesGrid);
 
-        _smartAnalyzeButton.Click += RunSmartAnalysis;
+        _smartAnalyzeButton.Click += (_, _) => RunSmartAnalysis();
         _smartReSortButton.Click += () => ReSortSmartFindings("severity");
         _smartGroupButton.Click += () => ReSortSmartFindings("category");
-        _smartSampleButton.Click += LoadSmartAnalysisSample;
-        _smartClearButton.Click += ClearSmartAnalysis;
+        _smartSampleButton.Click += (_, _) => LoadSmartAnalysisSample();
+        _smartClearButton.Click += (_, _) => ClearSmartAnalysis();
     }
 
     /// <summary>
@@ -124,6 +146,39 @@ public sealed partial class MainDashboardForm : Form
         RefreshTerminalDashboards();
         RefreshTerminalDashboards();
         RefreshOperationalMap();
+        RefreshReportsIndex();
+        LoadLatestOpsBundleSummary();
+    }
+
+    // -----------------------------------------------------------------
+    // Wave 6 / C-34 — hosting contract with the central server console
+    // -----------------------------------------------------------------
+
+    /// <summary>
+    /// Re-shapes the console to live as a child of a <c>TabPage</c> host (the
+    /// "NOC Monitoring" tab of <c>ServerMainForm</c>): a child form must not be
+    /// top-level, must not paint its own caption, and must not enforce a
+    /// <see cref="Form.MinimumSize"/> the host panel cannot honour. Called by the
+    /// host immediately before <c>Controls.Add</c>; the standalone window path
+    /// (<c>Open Detached Window</c>) never calls it and keeps the full chrome.
+    /// </summary>
+    public void ApplyEmbeddedChrome()
+    {
+        TopLevel = false;
+        FormBorderStyle = FormBorderStyle.None;
+        Dock = DockStyle.Fill;
+        MinimumSize = Size.Empty;
+    }
+
+    /// <summary>
+    /// Host-facing refresh. Re-runs the same chain <see cref="PerformInitialRefresh"/>
+    /// seeds at construction — overview (which cascades into the terminal dashboards
+    /// and the operational map), then the report index and the latest ops bundle —
+    /// without re-adding the two static demo tables, which are seeded exactly once.
+    /// </summary>
+    public void RefreshConsole()
+    {
+        RefreshOverview();
         RefreshReportsIndex();
         LoadLatestOpsBundleSummary();
     }

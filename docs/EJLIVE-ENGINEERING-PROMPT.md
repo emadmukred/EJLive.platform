@@ -18,17 +18,19 @@
 > **SS = section. Reference SS-nn in commit messages when a change implements it.**
 >
 > Measured state of the tree this contract was written against (regenerated, not typed):
-> 15 projects · 324 compiled files / 60 879 lines · 245 linked-reference files / 725 468
+> 14 projects · 321 compiled files / 60 972 lines · 248 linked-reference files / 725 593
 > lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
 > type keys (all-`partial` same-assembly pairs — the WinForms `.Designer.cs` pattern — are
 > merged by the inventory, C-24/C-25; D-01 RESOLVED; 10 unparsable dumps archived (D-02,
 > rewrite backlog deferred pending a consumer-driven design); 0 merge-dump signatures in
 > the compiled set (D-08 RESOLVED Wave 4); the C-24 Designer-partial process delivered on
 > all four main consoles — `JournalStudioForm`, `ClientMainForm`, `MainDashboardForm`,
-> `ServerMainForm` (C-28/C-29/C-30)
+> `ServerMainForm` (C-28/C-29/C-30), and `MainDashboardForm` became
+> `MonitoringConsoleForm` inside the central server host when monitoring was unified (C-34)
 > · 19 database tables, each with a CREATE owner and a DML consumer or repository ·
-> 22 wire message types · 24 verification probes · 397 test cases · 99 service-activation
-> rows · 41 gate rules, all PASS · `tools/gates/check_constant_resolution.py` 0 issues.
+> 22 wire message types · 24 verification probes · 397 test cases · 100 service-activation
+> rows · 41 gate rules, all PASS · `tools/gates/check_constant_resolution.py` 0 issues ·
+> `tools/gates/check_ui_bindings.py` 0 issues (C-33).
 >
 > Wave 1 commits on this branch:
 > - `67db886` (SS-04 / D-08): rebuilt the 8 merge dumps in `EJLive.Core/Models` and `Services/UnifiedOperationalFusion.cs` against real call sites.
@@ -44,6 +46,17 @@
 >   D-05 and D-08 closed.
 > Wave 3 commits on this branch:
 > - `0f00399` (SS-10.5): built `JournalStudioForm` (vendor-aware load, virtual-mode grid, anomaly + analytics + reconciliation tabs, CSV/JSON export, owner-drawn charts).
+> Wave 6 on this branch:
+> - C-33: the Windows `build` step unblocked — 46 bare method-group event bindings (CS0123)
+>   rewritten as discard lambdas, 2 designer-field name mismatches (CS0103) renamed to the
+>   designer's names, and `tools/gates/check_ui_bindings.py` added as a CI step for both classes.
+> - C-34 (SS-10.3): monitoring unified with the central server — `MainDashboardForm` moved to
+>   `EJLive.Server.WinForms/Monitoring/MonitoringConsoleForm` and hosted as the `NOC Monitoring`
+>   tab; `EJLive.Monitoring.WinForms` retired to the archive; entry points
+>   `EJLive.Server.WinForms.exe --noc` / `EJLive.UnifiedLauncher.exe noc`; packaging 3 → 2 payloads;
+>   the UI-composition probe now asserts the unification.
+> - C-35: `tools/package/Package.bat` moved to `tools/package/legacy/` (case-only collision with the
+>   canonical `package.bat`, which Windows cannot check out twice).
 
 ---
 
@@ -54,7 +67,7 @@
 | product | EJLIVE.PLATFORM — ATM electronic-journal (EJ) capture, archive, correlation, remote operations |
 | topology | distributed client–server, Windows-only, no web tier |
 | runtime | .NET 8 (`net8.0-windows`), SDK `8.0.404`, `rollForward: latestFeature` |
-| UI | **Windows Forms only** — client, server, NOC, installer. No WPF, no WinUI, no Blazor, no web host, no external UI framework |
+| UI | **Windows Forms only** — client, server (which since C-34 also hosts the NOC / Windows Operations Console as its `NOC Monitoring` tab), installer. No WPF, no WinUI, no Blazor, no web host, no external UI framework |
 | assemblies | 14 projects (SS2); `EJLive.Platform.sln` is the build entry point (`global.json` pins the .NET 8 SDK), `EJLive.Platform.slnx` mirrors it for VS 17.13+ / SDK 9.0.2xx+ |
 | data | SQLite file database, code-owned schema, forward-only migrations |
 | language of artefacts | identifiers, comments, ledgers, commit messages: English. Operator-visible strings: `LanguageManager` resources (en + ar) — prose in code never mixes scripts |
@@ -87,18 +100,22 @@ EJLive.Application         L3  installation automation, platform services, opera
 EJLive.Client.Service      L4  endpoint Windows service (worker host, headless agent)
 EJLive.Server             L4  headless server services (library; hosted by the WinForms surface)
 EJLive.Client.WinForms     L4  Endpoint Console  -> ships as EJLive.Client.exe
-EJLive.Server.WinForms     L4  Enterprise Server -> EJLive.Server.WinForms.exe
-EJLive.Monitoring.WinForms L4  NOC / Windows Operations Console -> EJLive.Monitoring.exe
+EJLive.Server.WinForms     L4  Enterprise Server + NOC / Windows Operations Console
+                               -> EJLive.Server.WinForms.exe  (`--noc` opens the console tab)
+                               (Wave 6 / C-34: EJLive.Monitoring.WinForms was unified into
+                               this host as Monitoring/MonitoringConsoleForm and retired —
+                               EJLive.Monitoring.exe no longer ships)
 EJLive.Installer.WinForms  L4  installer UI      -> EJLive.Installer.exe
-EJLive.UnifiedLauncher     L5  single entry point: `EJLive.UnifiedLauncher.exe [client|server]`
+EJLive.UnifiedLauncher     L5  single entry point: `EJLive.UnifiedLauncher.exe [client|server|noc]`
 EJLive.Tests               L5  42 fixtures, 371 cases (MSTest + xUnit)
 EJLive.Verification        L5  23 in-process probes; CI gate; `--no-build` after build
 EJLive.LegacyReference     --  read-only link project over src/_reference (never compiled content)
 ```
 
 Layer rule (ARCH-4): a project may reference a strictly lower layer only. Deployed exe names differ from project
-names for the four shipped surfaces; that mapping is the allowlist in the gate (`ASSEMBLY_ALLOWLIST`) and must
-stay in sync with `tools/package/package.bat`.
+names for the three remaining shipped surfaces (four before Wave 6 / C-34 retired `EJLive.Monitoring.exe`); that
+mapping is the allowlist in the gate (`ASSEMBLY_ALLOWLIST`) and must stay in sync with
+`tools/package/package.bat` (two payloads since C-34: the NOC console ships inside the server payload).
 
 ## SS3 · Runtime processes
 
@@ -107,7 +124,7 @@ stay in sync with `tools/package/package.bat`.
 | `EJLive.Client.Service.exe` | agent: file watchers, EJ capture, outbox, XFS poll, telemetry | worker `ExecuteAsync`, cancellation token, 1 Hz health pulse | `SIGTERM`-equivalent service stop, ≤ 5 s drain |
 | `EJLive.Client.exe` (Endpoint Console) | operator view, session companion, elevation prompt, local health read | message pump; **no** business logic | user close (tray-resident, `NotifyIcon`) |
 | `EJLive.Server.WinForms.exe` (Enterprise Server) | ingest, archive, correlation, command dispatch, journal query | accept loop + `System.Threading.Channels` fan-out | admin stop, WAL checkpoint |
-| `EJLive.Monitoring.exe` (NOC) | fleet dashboard, alert triage, report export | snapshot poll 2 s + push updates | user close |
+| NOC console (Wave 6 / C-34: the `NOC Monitoring` tab of `EJLive.Server.WinForms.exe`, reached directly with `--noc`) | fleet dashboard, alert triage, report export | snapshot poll 2 s + push updates; realised lazily on first tab selection | user close of the server host |
 | `EJLive.Installer.exe` | payload staging, service registration, companion probe | step machine (SS16) | any step failure → rollback |
 
 Endpoint pairing is a contract: the installer starts `EJLive.Client.exe` as a **session companion** of the service
@@ -380,7 +397,13 @@ blocks the service.
 | `auditViewer` | `audit_log` + chain verification status | `AuditLogger.VerifyChain` |
 | `themeToggle`, `languageComboBox` | light/dark, en/ar | `ThemeColors`, `LanguageManager` |
 
-### SS10.3 Windows Operations Console — `EJLive.Monitoring.WinForms` (`MainDashboardForm`)
+### SS10.3 Windows Operations Console — `EJLive.Server.WinForms/Monitoring` (`MonitoringConsoleForm`)
+
+> Wave 6 / C-34: this surface is no longer its own process. It moved, with its whole
+> designer tree (104 fields, 10 tabs), into the central server host and is presented as
+> the `NOC Monitoring` tab — embedded via `ApplyEmbeddedChrome()` or detached as its own
+> window. Everything below still holds; only the host, the assembly and the entry point
+> changed (`EJLive.Server.WinForms.exe --noc`, `EJLive.UnifiedLauncher.exe noc`).
 
 KPI strip (online/offline/degraded, EJ lag p95, outbox depth, dead letters) → `DashboardSnapshotService`;
 fleet grid with column sort + `Ctrl+F` filter → `OperationalStateStore`; alert rail with acknowledge/resolve

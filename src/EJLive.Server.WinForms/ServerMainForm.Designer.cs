@@ -48,6 +48,7 @@ public sealed partial class ServerMainForm
     private ToolStripMenuItem _refreshOpsAnalyticsMenuItem = null!;
     private ToolStripMenuItem _refreshTelemetryMenuItem = null!;
     private ToolStripMenuItem _dailyReportMenuItem = null!;
+    private ToolStripMenuItem _nocConsoleMenuItem = null!;
     private ToolStripMenuItem _adminMenu = null!;
     private ToolStripMenuItem _pingMenuItem = null!;
     private ToolStripMenuItem _forceSyncMenuItem = null!;
@@ -98,6 +99,19 @@ public sealed partial class ServerMainForm
     private Button _mapRefreshButton = null!;
     private Button _mapOpenButton = null!;
     private Button _mapBroadcastButton = null!;
+
+    // ── NOC Monitoring tab (Wave 6 / C-34 — unified from EJLive.Monitoring.WinForms) ──
+    // The tab is a host, not a copy: _nocHost is the empty Panel the companion
+    // partial parents the single MonitoringConsoleForm instance into (runtime
+    // content, same rule as the network-map ATM cards — a designer partial never
+    // instantiates a sibling surface). _nocActions carries the two host-level
+    // commands; every monitoring control lives in MonitoringConsoleForm.Designer.cs.
+    private TabPage _nocTab = null!;
+    private Panel _nocRoot = null!;
+    private FlowLayoutPanel _nocActions = null!;
+    private Button _nocRefreshButton = null!;
+    private Button _nocDetachButton = null!;
+    private Panel _nocHost = null!;
 
     // ── Journal Viewer tab ───────────────────────────────────────────────────
     private TabPage _journalTab = null!;
@@ -311,10 +325,12 @@ public sealed partial class ServerMainForm
         _refreshOpsAnalyticsMenuItem = new ToolStripMenuItem { Name = "refreshOpsAnalyticsMenuItem", Text = "Refresh Ops Analytics (24h)" };
         _refreshTelemetryMenuItem = new ToolStripMenuItem { Name = "refreshTelemetryMenuItem", Text = "Refresh Telemetry (24h)" };
         _dailyReportMenuItem = new ToolStripMenuItem { Name = "dailyReportMenuItem", Text = "Daily Ops Report" };
+        _nocConsoleMenuItem = new ToolStripMenuItem { Name = "nocConsoleMenuItem", Text = "NOC Monitoring Console" };
         _operationsMenu.DropDownItems.Add(_refreshFleetMenuItem);
         _operationsMenu.DropDownItems.Add(_refreshOpsAnalyticsMenuItem);
         _operationsMenu.DropDownItems.Add(_refreshTelemetryMenuItem);
         _operationsMenu.DropDownItems.Add(_dailyReportMenuItem);
+        _operationsMenu.DropDownItems.Add(_nocConsoleMenuItem);
 
         _adminMenu = new ToolStripMenuItem { Name = "adminMenu", Text = "Admin" };
         _pingMenuItem = new ToolStripMenuItem { Name = "pingMenuItem", Text = "Ping Selected ATM" };
@@ -476,6 +492,30 @@ public sealed partial class ServerMainForm
         _mapRoot.Controls.Add(_mapLegend);
         _mapRoot.Controls.Add(_mapActions);
         _mapTab.Controls.Add(_mapRoot);
+
+        // ══ NOC Monitoring tab (Wave 6 / C-34) ════════════════════════════════
+        // Unified host for the surface that used to be EJLive.Monitoring.exe: the
+        // console itself is created and parented by the companion partial
+        // (EnsureNocConsole), so this block stays creation/property/parent only.
+        _nocTab = new TabPage { Name = "nocTab", Text = "NOC Monitoring" };
+        _nocRoot = new Panel { Name = "nocRoot", Dock = DockStyle.Fill, Padding = new Padding(8), TabStop = false };
+        _nocActions = new FlowLayoutPanel { Name = "nocActions", Dock = DockStyle.Top, Height = 58, Padding = new Padding(8), WrapContents = true, TabStop = false };
+        _nocRefreshButton = new Button { Name = "nocRefreshButton", Text = "Refresh Console", AutoSize = true, Height = 32, Margin = new Padding(4), TabIndex = 10 };
+        _nocDetachButton = new Button { Name = "nocDetachButton", Text = "Open Detached Window", AutoSize = true, Height = 32, Margin = new Padding(4), TabIndex = 11 };
+        _nocHost = new Panel
+        {
+            Name = "nocHost",
+            Dock = DockStyle.Fill,
+            TabStop = false,
+            AccessibleName = "NOC monitoring console host",
+            BackColor = Color.FromArgb(245, 249, 252)
+        };
+        _nocActions.Controls.Add(_nocRefreshButton);
+        _nocActions.Controls.Add(_nocDetachButton);
+
+        _nocRoot.Controls.Add(_nocHost);
+        _nocRoot.Controls.Add(_nocActions);
+        _nocTab.Controls.Add(_nocRoot);
 
         // ══ Journal Viewer tab ═══════════════════════════════════════════════
         _journalTab = new TabPage { Name = "journalTab", Text = "Journal Studio (SS-10.5)" };
@@ -1118,6 +1158,7 @@ public sealed partial class ServerMainForm
         // ══ tab assembly ══════════════════════════════════════════════════════
         _tabs.TabPages.Add(_fleetTab);
         _tabs.TabPages.Add(_mapTab);
+        _tabs.TabPages.Add(_nocTab);
         _tabs.TabPages.Add(_journalTab);
         _tabs.TabPages.Add(_syncTab);
         _tabs.TabPages.Add(_deliveryTab);
