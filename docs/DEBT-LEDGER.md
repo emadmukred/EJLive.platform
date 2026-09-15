@@ -33,7 +33,7 @@ Re-introducing a cross-assembly partial (or adding any new one) fails
 `TYPE-2`; Business-side needs for Core types must be re-declared as extension
 methods or adapters in namespace `EJLive.Business`, never as `partial`.
 
-## D-02 unparsable auto-merge dumps (archived, not compiled) -- 10 files
+## D-02 unparsable auto-merge dumps (archived, not compiled) -- 10 files — OPEN (Wave-5 rewrite backlog)
 
 Each file below was produced by an "auto merge / code-intelligence" pass: brace
 blocks do not balance, modifiers repeat (`public partial public class`), and
@@ -72,7 +72,7 @@ rows with `linked-reference`). `docs/12-service-activation-status.csv` counts
 and must shrink monotonically. No archive file may be added to a compile map
 without a compiler run and a ledger refresh in the same commit.
 
-## D-05 headless service host missing a published executable identity
+## D-05 headless service host missing a published executable identity — RESOLVED (Wave 4)
 
 `EJLive.Server` builds as a library (`EJLive.Server.dll`) and the WinForms host
 `EJLive.Server.WinForms` publishes `EJLive.Server.WinForms.exe`. Archived
@@ -118,7 +118,14 @@ require breaking that invariant for a single type. The header grammar
 `<MsgType>:<byteLength>\n` is asserted by `RunNetworkProbeAsync` in
 `EJLive.Verification`.
 
-## D-08 merge dumps still in the compiled set (`EJLive.Core`) &mdash; 9 files
+## D-08 merge dumps still in the compiled set (`EJLive.Core`) &mdash; RESOLVED (Wave 4)
+
+Exit condition met: `check_merge_dumps.py --report` returns
+`merge dumps: 0 files in the compiled set (0 in the debt ledger, 0 unlisted)`. The nine files
+were rebuilt in Wave 1 (`67db886`); the last three SYN-5 hits were the phrase
+*partial enum* inside Wave-1 repair notes, reworded in Wave 4 without touching code. The
+section stays as history; `SYN-5` keeps guarding the compiled set against new dumps.
+
 
 The tool that assembled this repository concatenated every variant of a type into one file, annotated each
 fragment with its provenance (`// Variant from: d:\EJLIVE\EJlive_Reference_Projects\...`,

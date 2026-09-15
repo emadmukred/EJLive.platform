@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text.Json;
 
@@ -65,7 +65,7 @@ namespace EJLive.Shared
         public int TimeSyncIntervalHours { get; set; } = 1;
         public int LogBackupRetentionDays { get; set; } = 30;
         public string ServerHost { get; set; } = "localhost";
-        public string ArchivePath { get; set; } = @"C:\EJLive\Archive";
+        public string ArchivePath { get; set; } = string.Empty;
         public string EncryptionKey { get; set; } = "default_key";
         public int KeySize { get; set; } = 256;
         public string ClientId { get; set; } = "default_client";
@@ -73,15 +73,14 @@ namespace EJLive.Shared
         public int ClientPort { get; set; } = 8080;
         public bool EnableDebugLogging { get; set; } = false;
         public int MaxLogSizeMB { get; set; } = 10;
-        public string WatchPath { get; set; } = @"C:\EJLive\Watch";
+        public string WatchPath { get; set; } = string.Empty;
         public int ScanIntervalSeconds { get; set; } = 30;
         public string[] FileExtensions { get; set; } = { ".ej", ".log" };
         public string Theme { get; set; } = "Light";
         public bool EnableNotifications { get; set; } = true;
         public int RefreshIntervalSeconds { get; set; } = 5;
-        private static readonly string DefaultConfigPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "EJLive", "Config", "ejlive.config.json");
+        // Single fixed configuration file under the central data root (SS-20 dataroot).
+        private static readonly string DefaultConfigPath = DataRootPaths.ConfigurationFile;
         public static AppConfig Load()
         {
             return Load(DefaultConfigPath);
@@ -123,15 +122,31 @@ namespace EJLive.Shared
         }
         public void EnsureRuntimeFolders()
         {
+            // Central layout first so a fresh machine gets the full fixed tree before the
+            // capture/backup folders (which are terminal-local) are added on top.
+            DataRootPaths.EnsureDirectories();
             try { Directory.CreateDirectory(SourcePath); } catch { }
             try { Directory.CreateDirectory(BackupPath); } catch { }
         }
         private void Normalize()
         {
+            // Capture paths stay machine-local to the terminal's journal layout; runtime paths
+            // (logs, database, archive, watch, image inbox) hang off the single central data
+            // root so every process on the fleet resolves the same fixed location.
             if (string.IsNullOrWhiteSpace(SourcePath))
                 SourcePath = @"C:\Journal\";
             if (string.IsNullOrWhiteSpace(BackupPath))
                 BackupPath = @"C:\EJLive_BackupLog\";
+            if (string.IsNullOrWhiteSpace(LogPath))
+                LogPath = DataRootPaths.LogsDirectory;
+            if (string.IsNullOrWhiteSpace(DatabasePath))
+                DatabasePath = DataRootPaths.DatabaseFile;
+            if (string.IsNullOrWhiteSpace(ArchivePath))
+                ArchivePath = DataRootPaths.ArchiveDirectory;
+            if (string.IsNullOrWhiteSpace(WatchPath))
+                WatchPath = DataRootPaths.WatchDirectory;
+            if (string.IsNullOrWhiteSpace(ImageInboxPath))
+                ImageInboxPath = Path.Combine(DataRootPaths.ImagesDirectory, "Inbox");
         }
     }
 }

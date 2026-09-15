@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -24,6 +24,7 @@
          or linked reference under src/_reference/. -->
     <Compile Include="AppConfig.cs" />
     <Compile Include="AppConstants.cs" />
+    <Compile Include="DataRootPaths.cs" />
     <Compile Include="AppLogger.cs" />
     <Compile Include="Configuration\AppConfig.cs" />
     <Compile Include="DateTimeHelper.cs" />

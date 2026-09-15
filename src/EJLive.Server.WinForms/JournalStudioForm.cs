@@ -1,8 +1,8 @@
-using System.Collections.Concurrent;
-using System.Data;
+﻿using System.Data;
 using System.Drawing;
-using System.Drawing.Drawing2D;
+using System.Threading;
 using System.Windows.Forms;
+using EJLive.Core.Data.Repositories;
 using EJLive.Core.Engine;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
@@ -12,51 +12,36 @@ using EJLive.Shared;
 namespace EJLive.Server.WinForms;
 
 /// <summary>
-/// Electronic Journal Analysis Log Studio (SS-10.5). The single tool window for
-/// vendor journal deep-dive:
-///   * Load any vendor journal file (.LOG / .ej / .txt) and detect the vendor
-///     through the evidence analyser's sniffing rules.
-///   * Parse via the registered IEjTransactionParser for that vendor.
-///   * Filter by TransactionClassification, amount range, terminal id,
-///     free-text, and date range.
-///   * Display transactions in a virtual grid + raw source line + parsed ladder.
-///   * Detect anomalies: missing sequence, duplicate receipt, balance-jump,
-///     unclosed session, non-monotone offsets; each row carries offset evidence.
-///   * Analytics: throughput/hr, classification histogram, reconciliation
-///     delta (terminal total vs archive total).
+/// Electronic Journal Analysis Log Studio (SS-10.5, extended in Wave 4 for bulk analysis
+/// and Excel export). The single tool window for vendor journal deep-dive:
+///   * Load any vendor journal file (.LOG / .ej / .txt); vendor is sniffed through the
+///     evidence analyser's rules and the matching IEjTransactionParser is resolved from
+///     EjParserRegistry (one parser per vendor, POL-1).
+///   * Filter by classification, amount range, terminal, free text and date range; all
+///     filters feed one virtual-mode grid (250 ms debounce, no re-query per keystroke).
+///   * Raw source line + parsed receipt ladder side by side, PAN redaction (Observer view)
+///     applied through the redaction engine.
+///   * Anomalies (non-monotone offsets, duplicate ids, missing ids) with offset evidence.
+///   * Analytics: throughput/hr, classification histogram, anomaly Pareto, reconciliation
+///     delta — the journal total compared against the server archive total
+///     (<see cref="IJournalArchiveRepository"/>, SS-10.5 acceptance).
+///   * Bulk folder analysis (SS-10.5 "bulk analysis"): parse up to 500 journal files off
+///     the UI thread with progress + cancel, aggregate per file, export CSV/Excel.
+///   * Export: CSV, JSON and Excel (.xlsx via the platform's dependency-free
+///     <see cref="ExcelWorkbookWriter"/>, no Office interop).
 ///
-/// Wave 3 (SS-10.5) implementation. All charts are owner-drawn (no external
-/// chart framework — SS-10 says WinForms-only). PAN redaction (Observer-safe
-/// view) is applied through <see cref="LogRedactionEngine"/>.
+/// Form layout lives in <c>JournalStudioForm.Designer.cs</c> (Visual Studio Designer partial;
+/// see the regeneration notes there). All event bindings live in <see cref="WireEvents"/> —
+/// InitializeComponent may be regenerated without orphaning a single handler (SS-10).
 /// </summary>
-public sealed class JournalStudioForm : Form
+public sealed partial class JournalStudioForm : Form
 {
     private readonly List<EjTransaction> _allTransactions = new();
     private readonly List<JournalEvidenceFinding> _findings = new();
     private readonly BindingListView<EjTransaction> _binding = new();
+    private readonly List<JournalStudioBulkAnalyzer.BulkRow> _bulkRows = new();
 
-    private TextBox _searchTextBox = null!;
-    private ComboBox _terminalComboBox = null!;
-    private ComboBox _classificationComboBox = null!;
-    private NumericUpDown _amountMinBox = null!;
-    private NumericUpDown _amountMaxBox = null!;
-    private DateTimePicker _fromPicker = null!;
-    private DateTimePicker _toPicker = null!;
-    private CheckBox _redactPreviewCheck = null!;
-    private Button _openButton = null!;
-    private Button _parseButton = null!;
-    private Button _exportCsvButton = null!;
-    private Button _exportJsonButton = null!;
-    private Button _copyDataButton = null!;
-    private DataGridView _transactionsGrid = null!;
-    private TextBox _rawLineView = null!;
-    private TextBox _ladderView = null!;
-    private DataGridView _findingsGrid = null!;
-    private Label _summaryLabel = null!;
-    private OwnerDrawnHistogram _classificationHistogram = null!;
-    private OwnerDrawnHistogram _anomalyPareto = null!;
-    private OwnerDrawnTimeSeries _throughputChart = null!;
-    private Label _reconciliationLabel = null!;
+    private CancellationTokenSource? _bulkCts;
 
     private string? _currentFilePath;
     private string? _detectedVendor;
@@ -65,281 +50,25 @@ public sealed class JournalStudioForm : Form
 
     public JournalStudioForm()
     {
-        Text = "Journal Analysis Log Studio";
-        Size = new Size(1280, 820);
-        StartPosition = FormStartPosition.CenterParent;
-        Font = new Font("Segoe UI", 9F);
-        DoubleBuffered = true;
-        MinimumSize = new Size(960, 640);
-
-        InitializeUi();
+        InitializeComponent();
         WireEvents();
         UpdateSummary();
     }
 
-    private void InitializeUi()
-    {
-        // ── Top toolbar ────────────────────────────────────────────────────────
-        var toolbar = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = 90,
-            ColumnCount = 8,
-            Padding = new Padding(8),
-            BackColor = Color.FromArgb(245, 247, 250)
-        };
-        for (var i = 0; i < 8; i++)
-            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 12.5f));
-
-        _openButton = new Button { Text = "Open .LOG…", Height = 32, Dock = DockStyle.Fill };
-        _parseButton = new Button { Text = "Re-parse at offset", Height = 32, Dock = DockStyle.Fill, Enabled = false };
-        _exportCsvButton = new Button { Text = "Export CSV", Height = 32, Dock = DockStyle.Fill, Enabled = false };
-        _exportJsonButton = new Button { Text = "Export JSON", Height = 32, Dock = DockStyle.Fill, Enabled = false };
-        _copyDataButton = new Button { Text = "Copy data", Height = 32, Dock = DockStyle.Fill, Enabled = false };
-        _redactPreviewCheck = new CheckBox
-        {
-            Text = "Redact PAN (Observer view)",
-            Dock = DockStyle.Fill,
-            Checked = true,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        _classificationComboBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
-        _classificationComboBox.Items.Add("All classifications");
-        foreach (var kind in Enum.GetValues<TransactionClassification>())
-            _classificationComboBox.Items.Add(kind.ToString());
-        _classificationComboBox.SelectedIndex = 0;
-        _terminalComboBox = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDown };
-        _terminalComboBox.Items.Add("All terminals");
-        _terminalComboBox.SelectedIndex = 0;
-        _searchTextBox = new TextBox { Dock = DockStyle.Fill, PlaceholderText = "Search text (Ctrl+F)…", Margin = new Padding(0, 4, 0, 4) };
-
-        toolbar.Controls.Add(_openButton, 0, 0);
-        toolbar.SetColumnSpan(_openButton, 2);
-        toolbar.Controls.Add(_parseButton, 2, 0);
-        toolbar.Controls.Add(_exportCsvButton, 3, 0);
-        toolbar.Controls.Add(_exportJsonButton, 4, 0);
-        toolbar.Controls.Add(_copyDataButton, 5, 0);
-        toolbar.Controls.Add(_redactPreviewCheck, 6, 0);
-        toolbar.Controls.Add(_classificationComboBox, 7, 0);
-
-        // Second toolbar row: search, terminal, amount, date range.
-        var toolbar2 = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = 60,
-            ColumnCount = 6,
-            Padding = new Padding(8),
-            BackColor = Color.FromArgb(250, 251, 253)
-        };
-        for (var i = 0; i < 6; i++)
-            toolbar2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 6));
-
-        _amountMinBox = new NumericUpDown { Dock = DockStyle.Fill, Minimum = -1_000_000, Maximum = 1_000_000, DecimalPlaces = 2, Value = -1_000_000 };
-        _amountMaxBox = new NumericUpDown { Dock = DockStyle.Fill, Minimum = -1_000_000, Maximum = 1_000_000, DecimalPlaces = 2, Value = 1_000_000 };
-        _fromPicker = new DateTimePicker { Dock = DockStyle.Fill, Format = DateTimePickerFormat.Short };
-        _toPicker = new DateTimePicker { Dock = DockStyle.Fill, Format = DateTimePickerFormat.Short };
-
-        toolbar2.Controls.Add(_searchTextBox, 0, 0);
-        toolbar2.SetColumnSpan(_searchTextBox, 2);
-        toolbar2.Controls.Add(_terminalComboBox, 2, 0);
-        toolbar2.Controls.Add(new Label { Text = "Amount min/max", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 3, 0);
-        var amountRange = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
-        amountRange.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-        amountRange.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-        amountRange.Controls.Add(_amountMinBox, 0, 0);
-        amountRange.Controls.Add(_amountMaxBox, 1, 0);
-        toolbar2.Controls.Add(amountRange, 4, 0);
-        var dateRangePanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
-        dateRangePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-        dateRangePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
-        dateRangePanel.Controls.Add(_fromPicker, 0, 0);
-        dateRangePanel.Controls.Add(_toPicker, 1, 0);
-        toolbar2.Controls.Add(dateRangePanel, 5, 0);
-
-        // ── Centre split: grid + raw + ladder + findings ───────────────────────
-        var centre = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Vertical,
-            SplitterDistance = 700
-        };
-        var gridPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        gridPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        gridPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 110));
-
-        _transactionsGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            RowHeadersVisible = false,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            VirtualMode = true,
-            BackgroundColor = Color.White
-        };
-        _transactionsGrid.Columns.Add("Timestamp", "Timestamp");
-        _transactionsGrid.Columns.Add("Terminal", "Terminal");
-        _transactionsGrid.Columns.Add("TransactionId", "Transaction Id");
-        _transactionsGrid.Columns.Add("Classification", "Classification");
-        _transactionsGrid.Columns.Add("Amount", "Amount");
-        _transactionsGrid.Columns.Add("Confidence", "Conf.");
-        _transactionsGrid.Columns.Add("Card", "Card");
-        _transactionsGrid.Columns.Add("MCode", "MCode");
-        _transactionsGrid.Columns.Add("RCode", "RCode");
-        _summaryLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(248, 250, 252),
-            Padding = new Padding(8),
-            ForeColor = Color.FromArgb(31, 41, 55),
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        gridPanel.Controls.Add(_transactionsGrid, 0, 0);
-        gridPanel.Controls.Add(_summaryLabel, 0, 1);
-
-        var rightPane = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Horizontal,
-            SplitterDistance = 240
-        };
-
-        var rawPanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
-        rawPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
-        rawPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        rawPanel.Controls.Add(new Label
-        {
-            Text = "Raw source line (offset highlighted in studio render)",
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(248, 250, 252),
-            Padding = new Padding(8, 4, 0, 0),
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 0);
-        _rawLineView = new TextBox
-        {
-            Dock = DockStyle.Fill,
-            Multiline = true,
-            ReadOnly = true,
-            Font = new Font("Consolas", 9F),
-            BackColor = Color.FromArgb(252, 252, 253),
-            ScrollBars = ScrollBars.Both
-        };
-        rawPanel.Controls.Add(_rawLineView, 0, 1);
-
-        var ladderPanel = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
-        ladderPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
-        ladderPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
-        ladderPanel.Controls.Add(new Label
-        {
-            Text = "Parsed receipt ladder (classification · amount · card · trace · outcome)",
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(248, 250, 252),
-            Padding = new Padding(8, 4, 0, 0),
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 0);
-        _ladderView = new TextBox
-        {
-            Dock = DockStyle.Fill,
-            Multiline = true,
-            ReadOnly = true,
-            Font = new Font("Consolas", 9F),
-            BackColor = Color.FromArgb(252, 252, 253),
-            ScrollBars = ScrollBars.Both
-        };
-        ladderPanel.Controls.Add(_ladderView, 0, 1);
-
-        rightPane.Panel1.Controls.Add(rawPanel);
-        rightPane.Panel2.Controls.Add(ladderPanel);
-
-        centre.Panel1.Controls.Add(gridPanel);
-        centre.Panel2.Controls.Add(rightPane);
-
-        // ── Bottom tabs: anomalies / correlation / analytics ──────────────────
-        var bottomTabs = new TabControl { Dock = DockStyle.Bottom, Height = 280 };
-        var anomalyTab = new TabPage("Anomalies");
-        _findingsGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            RowHeadersVisible = false,
-            BackgroundColor = Color.White
-        };
-        _findingsGrid.Columns.Add("Severity", "Severity");
-        _findingsGrid.Columns.Add("Rule", "Rule");
-        _findingsGrid.Columns.Add("Evidence", "Evidence");
-        _findingsGrid.Columns.Add("Offset", "Offset");
-        anomalyTab.Controls.Add(_findingsGrid);
-
-        var analyticsTab = new TabPage("Analytics");
-        var analytics = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 2
-        };
-        analytics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3f));
-        analytics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3f));
-        analytics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.4f));
-        analytics.RowStyles.Add(new RowStyle(SizeType.Percent, 65f));
-        analytics.RowStyles.Add(new RowStyle(SizeType.Percent, 35f));
-        _classificationHistogram = new OwnerDrawnHistogram { Dock = DockStyle.Fill, BackColor = Color.White, Title = "Classification histogram" };
-        _anomalyPareto = new OwnerDrawnHistogram { Dock = DockStyle.Fill, BackColor = Color.White, Title = "Anomaly Pareto" };
-        _throughputChart = new OwnerDrawnTimeSeries { Dock = DockStyle.Fill, BackColor = Color.White, Title = "Throughput per hour" };
-        _reconciliationLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(248, 250, 252),
-            Padding = new Padding(8),
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        analytics.Controls.Add(_classificationHistogram, 0, 0);
-        analytics.Controls.Add(_anomalyPareto, 1, 0);
-        analytics.Controls.Add(_throughputChart, 2, 0);
-        analytics.SetColumnSpan(_reconciliationLabel, 3);
-        analytics.Controls.Add(_reconciliationLabel, 0, 1);
-        analyticsTab.Controls.Add(analytics);
-
-        var correlationTab = new TabPage("Correlation strip");
-        var correlation = new Label
-        {
-            Dock = DockStyle.Fill,
-            Text = "XFS trace ⇄ journal ⇄ server archive",
-            Font = new Font("Segoe UI", 10F),
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(71, 85, 105)
-        };
-        correlationTab.Controls.Add(correlation);
-
-        bottomTabs.TabPages.Add(anomalyTab);
-        bottomTabs.TabPages.Add(analyticsTab);
-        bottomTabs.TabPages.Add(correlationTab);
-
-        Controls.Add(centre);
-        Controls.Add(toolbar);
-        Controls.Add(toolbar2);
-        Controls.Add(bottomTabs);
-    }
-
+    // ── wiring (kept out of the designer file: regeneration-safe) ───────────
     private void WireEvents()
     {
         _openButton.Click += (_, _) => OpenJournalFile();
         _parseButton.Click += (_, _) => ReparseFromCurrentOffset();
         _exportCsvButton.Click += (_, _) => ExportTransactions("csv");
         _exportJsonButton.Click += (_, _) => ExportTransactions("json");
+        _exportExcelButton.Click += (_, _) => ExportTransactions("xlsx");
         _copyDataButton.Click += (_, _) => CopyVisibleDataToClipboard();
+        _bulkFolderButton.Click += async (_, _) => await RunBulkAnalysisAsync();
+        _bulkCancelButton.Click += (_, _) => _bulkCts?.Cancel();
+        _bulkExportCsvButton.Click += (_, _) => ExportBulk("csv");
+        _bulkExportExcelButton.Click += (_, _) => ExportBulk("xlsx");
+        _bulkGrid.CellDoubleClick += (_, _) => OpenBulkRowInMainView();
 
         // Debounced refresh on filter change.
         var refreshDebounce = new System.Windows.Forms.Timer { Interval = 250 };
@@ -369,6 +98,7 @@ public sealed class JournalStudioForm : Form
         };
     }
 
+    // ── single-file load / parse ─────────────────────────────────────────────
     private void OpenJournalFile()
     {
         using var dialog = new OpenFileDialog
@@ -406,7 +136,6 @@ public sealed class JournalStudioForm : Form
         var headBytes = ReadHeadBytes(path, 4096);
         var headText = System.Text.Encoding.UTF8.GetString(headBytes);
         var vendor = UnifiedJournalEvidenceAnalyzer.DetectVendor(null, headText);
-        // EjParserRegistry maps a vendor string to a parser. Use that resolver.
         var parser = registry.Resolve(vendor);
 
         _detectedVendor = vendor;
@@ -415,7 +144,6 @@ public sealed class JournalStudioForm : Form
         _allTransactions.Clear();
         _findings.Clear();
 
-        // The parser contract (IEjTransactionParser.Parse) takes List<string> + atmId.
         var lines = ReadAllLines(path);
         var result = parser.Parse(lines, Path.GetFileNameWithoutExtension(path));
         _allTransactions.AddRange(result);
@@ -426,6 +154,7 @@ public sealed class JournalStudioForm : Form
         _parseButton.Enabled = true;
         _exportCsvButton.Enabled = _allTransactions.Count > 0;
         _exportJsonButton.Enabled = _allTransactions.Count > 0;
+        _exportExcelButton.Enabled = _allTransactions.Count > 0;
         _copyDataButton.Enabled = _allTransactions.Count > 0;
     }
 
@@ -670,22 +399,68 @@ public sealed class JournalStudioForm : Form
             .Where(t => t.Amount.HasValue && t.Classification == TransactionClassification.Success)
             .Sum(t => t.Amount ?? 0m);
         var delta = approvedTotal - totalAmount;
-        _reconciliationLabel.Text = $"Reconciliation: journal total {totalAmount:0.00} | success-classified total {approvedTotal:0.00} | delta {delta:0.00}";
+
+        // SS-10.5 acceptance: journal totals must agree with the server archive totals.
+        // The archive side is optional — a standalone studio session (no bootstrapped
+        // database) reconciles in-memory only and says so on the same label.
+        var archiveNote = string.Empty;
+        try
+        {
+            var repo = new JournalArchiveRepository();
+            long archiveTxns = 0;
+            if (_terminalComboBox.SelectedIndex > 0)
+            {
+                archiveTxns = repo.SumTransactions(_terminalComboBox.SelectedItem?.ToString() ?? string.Empty);
+            }
+            else
+            {
+                foreach (var terminal in _allTransactions.Select(t => t.ATM_ID)
+                             .Where(id => !string.IsNullOrEmpty(id)).Distinct(StringComparer.OrdinalIgnoreCase))
+                    archiveTxns += repo.SumTransactions(terminal);
+            }
+            archiveNote = $" | archive transactions: {archiveTxns:N0}";
+        }
+        catch (Exception)
+        {
+            // Database not initialised (studio opened without bootstrap) — the delta against
+            // the archive is simply unavailable; in-memory reconciliation still stands.
+            archiveNote = " | archive: (local database unavailable)";
+        }
+
+        _reconciliationLabel.Text = $"Reconciliation: journal total {totalAmount:0.00} | success-classified total {approvedTotal:0.00} | delta {delta:0.00}{archiveNote}";
     }
 
+    // ── exports (thin handlers; work in JournalStudioExporter, SS-15 #5) ────
     private void ExportTransactions(string format)
     {
         if (_allTransactions.Count == 0) return;
         var visible = _binding.Snapshot();
-        using var dialog = new SaveFileDialog { Filter = format == "csv" ? "CSV|*.csv" : "JSON|*.json", FileName = $"journal-studio-{DateTime.Now:yyyyMMddHHmmss}.{format}" };
+        var ext = format == "csv" ? "csv" : format == "json" ? "json" : "xlsx";
+        using var dialog = new SaveFileDialog
+        {
+            Filter = ext switch
+            {
+                "csv" => "CSV|*.csv",
+                "json" => "JSON|*.json",
+                _ => "Excel workbook|*.xlsx"
+            },
+            FileName = $"journal-studio-{DateTime.Now:yyyyMMddHHmmss}.{ext}"
+        };
         if (dialog.ShowDialog(this) != DialogResult.OK)
             return;
-        if (format == "csv")
+
+        if (ext == "csv")
             JournalStudioExporter.WriteCsv(dialog.FileName, visible);
-        else
+        else if (ext == "json")
             JournalStudioExporter.WriteJson(dialog.FileName, visible);
+        else
+            JournalStudioExporter.WriteExcel(dialog.FileName, visible, BuildWorkbookMetadata());
+
         MessageBox.Show(this, "Export completed.", "Journal Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
+
+    private (string Vendor, string Parser, string File, int Transactions) BuildWorkbookMetadata() =>
+        (_detectedVendor ?? "?", _detectedParser ?? "?", Path.GetFileName(_currentFilePath) ?? "(none)", _allTransactions.Count);
 
     private void CopyVisibleDataToClipboard()
     {
@@ -695,6 +470,112 @@ public sealed class JournalStudioForm : Form
         foreach (var t in visible)
             lines.Add($"{t.Timestamp:O},{t.ATM_ID},{t.TransactionId},{t.Classification},{t.Amount},{t.Currency},{t.Confidence},{t.StartLine},{t.EndLine}");
         Clipboard.SetText(string.Join(Environment.NewLine, lines));
+    }
+
+    // ── bulk folder analysis ─────────────────────────────────────────────────
+    private async Task RunBulkAnalysisAsync()
+    {
+        using var dialog = new FolderBrowserDialog
+        {
+            Description = "Select a folder of vendor journals to analyse in bulk",
+            UseDescriptionForTitle = true
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        _bulkCts = new CancellationTokenSource();
+        SetBulkRunning(running: true);
+        var progress = new Progress<int>(done =>
+        {
+            _bulkStatusLabel.Text = $"Analysed {done} file(s)…";
+            if (_bulkProgressBar.Maximum > 0)
+                _bulkProgressBar.Value = Math.Min(done, _bulkProgressBar.Maximum);
+        });
+
+        try
+        {
+            var rows = await JournalStudioBulkAnalyzer.RunAsync(dialog.SelectedPath, progress, _bulkCts.Token);
+            FillBulkGrid(rows);
+            _bulkStatusLabel.Text = $"Bulk analysis complete: {rows.Count} file(s) · {rows.Sum(r => r.Transactions):N0} transactions";
+        }
+        catch (OperationCanceledException)
+        {
+            _bulkStatusLabel.Text = "Bulk analysis cancelled.";
+        }
+        catch (Exception ex)
+        {
+            // Show the same actionable line the log records (SS-14); the bulk grid keeps
+            // whatever partial results were already collected.
+            _bulkStatusLabel.Text = "Bulk analysis failed: " + ex.Message;
+            MessageBox.Show(this, "Bulk analysis failed:\n\n" + ex.Message,
+                "Journal Studio", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            _bulkCts.Dispose();
+            _bulkCts = null;
+            SetBulkRunning(running: false);
+        }
+    }
+
+    private void SetBulkRunning(bool running)
+    {
+        _bulkFolderButton.Enabled = !running;
+        _bulkCancelButton.Enabled = running;
+        _bulkProgressBar.Style = running ? ProgressBarStyle.Continuous : ProgressBarStyle.Blocks;
+        _exportBulkCsvButton.Enabled = !running && _bulkRows.Count > 0;
+        _exportBulkExcelButton.Enabled = !running && _bulkRows.Count > 0;
+    }
+
+    private void FillBulkGrid(IReadOnlyList<JournalStudioBulkAnalyzer.BulkRow> rows)
+    {
+        _bulkRows.Clear();
+        _bulkRows.AddRange(rows);
+        _bulkGrid.Rows.Clear();
+        foreach (var row in rows)
+        {
+            var index = _bulkGrid.Rows.Add(
+                row.FileName, row.Vendor, row.Parser, row.Lines, row.Transactions,
+                row.SuccessCount, row.SuspiciousCount, row.TotalAmount.ToString("0.00"), row.Status);
+            _bulkGrid.Rows[index].Tag = row.FullPath;
+        }
+        _exportBulkCsvButton.Enabled = rows.Count > 0;
+        _exportBulkExcelButton.Enabled = rows.Count > 0;
+    }
+
+    private void OpenBulkRowInMainView()
+    {
+        if (_bulkGrid.CurrentRow?.Tag is not string path || !File.Exists(path))
+            return;
+        try
+        {
+            _currentFilePath = path;
+            LoadJournal(path);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "Could not open the selected file:\n\n" + ex.Message,
+                "Journal Studio", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void ExportBulk(string format)
+    {
+        if (_bulkRows.Count == 0) return;
+        using var dialog = new SaveFileDialog
+        {
+            Filter = format == "csv" ? "CSV|*.csv" : "Excel workbook|*.xlsx",
+            FileName = $"journal-bulk-{DateTime.Now:yyyyMMddHHmmss}.{(format == "csv" ? "csv" : "xlsx")}"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        if (format == "csv")
+            JournalStudioExporter.WriteBulkCsv(dialog.FileName, _bulkRows);
+        else
+            JournalStudioExporter.WriteBulkExcel(dialog.FileName, _bulkRows);
+
+        MessageBox.Show(this, "Export completed.", "Journal Studio", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 }
 
@@ -739,6 +620,79 @@ internal static class JournalStudioExporter
             WriteIndented = true,
             PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
         }));
+    }
+
+    /// <summary>
+    /// Excel export via the platform's dependency-free OOXML writer (SS-10.5). Sheet 1 is the
+    /// visible filtered set; sheet 2 carries the load metadata (vendor sniff, parser, file,
+    /// counts) so an exported workbook is self-describing for audit.
+    /// </summary>
+    public static void WriteExcel(
+        string path,
+        IReadOnlyList<EjTransaction> rows,
+        (string Vendor, string Parser, string File, int Transactions) metadata)
+    {
+        var transactions = new ExcelSheet(
+            "Transactions",
+            new[] { "timestamp_utc", "terminal_id", "transaction_id", "classification", "amount", "currency", "confidence", "start_line", "end_line" },
+            rows.Select(t => (IReadOnlyList<string?>)new string?[]
+            {
+                t.Timestamp.ToString("O"), t.ATM_ID, t.TransactionId, t.Classification.ToString(),
+                t.Amount.HasValue ? t.Amount.Value.ToString("0.00") : null, t.Currency,
+                t.Confidence.ToString("0.00"), t.StartLine.ToString(), t.EndLine.ToString()
+            }).ToList());
+
+        var summary = new ExcelSheet(
+            "Summary",
+            new[] { "field", "value" },
+            new List<IReadOnlyList<string?>>
+            {
+                new string?[] { "file", metadata.File },
+                new string?[] { "detected_vendor", metadata.Vendor },
+                new string?[] { "parser", metadata.Parser },
+                new string?[] { "transactions_in_file", metadata.Transactions.ToString() },
+                new string?[] { "rows_in_this_export", rows.Count.ToString() },
+                new string?[] { "exported_utc", DateTime.UtcNow.ToString("O") }
+            });
+
+        ExcelWorkbookWriter.Write(path, new[] { summary, transactions });
+    }
+
+    public static void WriteBulkCsv(string path, IReadOnlyList<JournalStudioBulkAnalyzer.BulkRow> rows)
+    {
+        using var writer = new StreamWriter(path, false, new System.Text.UTF8Encoding(true));
+        writer.WriteLine("file,vendor,parser,lines,transactions,success,suspicious,total_amount,status");
+        foreach (var r in rows)
+        {
+            writer.WriteLine($"{Escape(r.FileName)},{Escape(r.Vendor)},{Escape(r.Parser)},{r.Lines},{r.Transactions},{r.SuccessCount},{r.SuspiciousCount},{r.TotalAmount:0.00},{Escape(r.Status)}");
+        }
+    }
+
+    public static void WriteBulkExcel(string path, IReadOnlyList<JournalStudioBulkAnalyzer.BulkRow> rows)
+    {
+        var files = new ExcelSheet(
+            "Files",
+            new[] { "file", "vendor", "parser", "lines", "transactions", "success", "suspicious", "total_amount", "status" },
+            rows.Select(r => (IReadOnlyList<string?>)new string?[]
+            {
+                r.FileName, r.Vendor, r.Parser, r.Lines.ToString(), r.Transactions.ToString(),
+                r.SuccessCount.ToString(), r.SuspiciousCount.ToString(), r.TotalAmount.ToString("0.00"), r.Status
+            }).ToList());
+
+        var byVendor = new ExcelSheet(
+            "ByVendor",
+            new[] { "vendor", "files", "transactions", "success", "suspicious", "total_amount" },
+            rows.GroupBy(r => r.Vendor)
+                .OrderByDescending(g => g.Count())
+                .Select(g => (IReadOnlyList<string?>)new string?[]
+                {
+                    g.Key, g.Count().ToString(), g.Sum(r => r.Transactions).ToString(),
+                    g.Sum(r => r.SuccessCount).ToString(), g.Sum(r => r.SuspiciousCount).ToString(),
+                    g.Sum(r => r.TotalAmount).ToString("0.00")
+                })
+                .ToList());
+
+        ExcelWorkbookWriter.Write(path, new[] { byVendor, files });
     }
 
     private static string Escape(string? value)

@@ -1,5 +1,6 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using EJLive.Core;
+using EJLive.Core.Data.Repositories;
 using EJLive.Core.Engine;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
@@ -15,11 +16,25 @@ public sealed class ClientTelemetryStateService
 {
     private readonly OperationalStateStore _stateStore;
     private readonly AlertManager _alerts;
+    private readonly IClientHealthSnapshotRepository? _healthSink;
+    private readonly IATMRegistryRepository? _registrySink;
 
-    public ClientTelemetryStateService(OperationalStateStore stateStore, AlertManager alerts)
+    /// <summary>
+    /// <paramref name="healthSink"/> and <paramref name="registrySink"/> enable the SS8 telemetry
+    /// lane (<c>telemetry → client_health_snapshots</c>) and terminal discovery persistence
+    /// (<c>atm_registry</c>). They are optional so unit tests of the state projection remain
+    /// database-free; the server host supplies them once the bootstrap has opened the archive.
+    /// </summary>
+    public ClientTelemetryStateService(
+        OperationalStateStore stateStore,
+        AlertManager alerts,
+        IClientHealthSnapshotRepository? healthSink = null,
+        IATMRegistryRepository? registrySink = null)
     {
         _stateStore = stateStore ?? throw new ArgumentNullException(nameof(stateStore));
         _alerts = alerts ?? throw new ArgumentNullException(nameof(alerts));
+        _healthSink = healthSink;
+        _registrySink = registrySink;
     }
 
     public ClientTelemetryStateUpdate Apply(ClientTelemetryPacket packet)
@@ -97,7 +112,59 @@ public sealed class ClientTelemetryStateService
                 "ClientTelemetry");
         }
 
+        PersistTelemetrySideEffects(atm, atmId, reportedAtUtc, severity, packet);
+
         return new ClientTelemetryStateUpdate(atm, atmId, eventType, severity, reportedAtUtc, alertRaised);
+    }
+
+    /// <summary>
+    /// Projection writes are best-effort by contract: a database hiccup must never drop a
+    /// live telemetry frame from the in-memory fleet state, so failures are logged and
+    /// swallowed WITH a reason (SS-15), not silenced.
+    /// </summary>
+    private void PersistTelemetrySideEffects(ATMInfo atm, string atmId, DateTime reportedAtUtc, string severity, ClientTelemetryPacket packet)
+    {
+        if (_registrySink is not null)
+        {
+            try
+            {
+                _registrySink.Upsert(new AtmRegistrationRecord(
+                    AtmId: atmId,
+                    AtmName: atm.ATM_Name ?? string.Empty,
+                    AtmType: string.IsNullOrWhiteSpace(atm.ATM_Type) ? "NCR" : atm.ATM_Type,
+                    IpAddress: atm.ServerIP ?? string.Empty,
+                    RegisteredAtUtc: reportedAtUtc,
+                    LastHeartbeatUtc: atm.LastHeartbeatUtc == DateTime.MinValue ? reportedAtUtc : atm.LastHeartbeatUtc,
+                    LastDataReceivedUtc: reportedAtUtc));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("telemetry registry projection failed: " + ex.Message);
+            }
+        }
+
+        if (_healthSink is not null)
+        {
+            try
+            {
+                _healthSink.Save(new ClientHealthSnapshotRecord(
+                    SnapshotId: Guid.NewGuid().ToString("N"),
+                    AtmId: atmId,
+                    AgentState: atm.ConnectionStatus.ToString(),
+                    NetworkConnected: atm.ConnectionStatus == ConnectionStatus.Connected,
+                    SessionId: null,
+                    LastHeartbeatUtc: atm.LastHeartbeatUtc == DateTime.MinValue ? null : atm.LastHeartbeatUtc,
+                    LastSyncUtc: atm.LastDataReceivedUtc == DateTime.MinValue ? null : atm.LastDataReceivedUtc,
+                    OutboxCount: 0,
+                    ErrorCount: severity == "error" ? 1 : 0,
+                    LastError: severity == "error" ? packet.Detail : null,
+                    SnapshotUtc: reportedAtUtc));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("telemetry health snapshot projection failed: " + ex.Message);
+            }
+        }
     }
 
     public static void ApplyCashTelemetry(ATMInfo atm, string eventType, string detail, DateTime reportedAtUtc)

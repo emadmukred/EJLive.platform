@@ -44,7 +44,8 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | EJLive.Tests | UnifiedRuntimeTests | 88 | src/EJLive.Tests/UnifiedRuntimeTests.cs |
 | EJLive.Tests | V5EnhancedDifferenceTests | 15 | src/EJLive.Tests/V5EnhancedDifferenceTests.cs |
 | EJLive.Tests | VendorPathRegistryTests | 2 | src/EJLive.Tests/Track08/VendorPathRegistryTests.cs |
+| EJLive.Tests | Wave4ConstantsAndWorkbookTests | 16 | src/EJLive.Tests/Wave4DataPlatformTests.cs |
 | EJLive.Tests | WindowsPolicyEnforcerTests | 10 | src/EJLive.Tests/Track12/WindowsPolicyEnforcerTests.cs |
 | EJLive.Tests | verifies | 8 | src/EJLive.Tests/PlatformRuntimeIntegrationTests.cs |
 
-381 executable cases in 42 files. Acceptance gate: `dotnet test` green AND `EJLive.Verification` probes green (see docs/CI.md).
+397 executable cases in 43 files. Acceptance gate: `dotnet test` green AND `EJLive.Verification` probes green (see docs/CI.md).

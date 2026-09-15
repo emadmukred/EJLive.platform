@@ -1,4 +1,4 @@
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.Windows.Forms;
 using EJLive.Application;
 using EJLive.Business;
@@ -41,7 +41,8 @@ var checks = new List<(string Name, bool Passed, string Detail)>
     RunFileLinkageProbe(),
     RunUnsafeTermScanProbe(),
     RunUiInServicePathProbe(),
-    RunDuplicateTypeProbe()
+    RunDuplicateTypeProbe(),
+    RunDataRootBootstrapProbe()
 };
 
 foreach (var check in checks)
@@ -1323,5 +1324,42 @@ static async Task<(string Name, bool Passed, string Detail)> RunNetworkProbeAsyn
     {
         try { server.Stop(); } catch { }
         return ("Client/server network", false, ex.Message);
+    }
+}
+
+// Wave 4 (SS-20): the central dataroot + platform bootstrap + schema book, exercised on a
+// throwaway root so the probe is hermetic. Runs last in the list: by then the shared
+// DatabaseManager singleton is already bound to the real default path, and this probe only
+// adds its own isolated SQLite book. It fails if any bootstrap step fails, if the fresh
+// book does not reach version 13, or if the root cannot be written.
+static (string Name, bool Passed, string Detail) RunDataRootBootstrapProbe()
+{
+    var tempRoot = Path.Combine(Path.GetTempPath(), "ejlive-verification-bootstrap-" + Guid.NewGuid().ToString("N"));
+    try
+    {
+        var layout = new EJLive.Core.Data.DataRootLayout(tempRoot);
+        var bootstrap = new EJLive.Core.Data.PlatformBootstrap(layout, new EJLive.Core.Data.BootstrapOptions
+        {
+            DatabasePathOverride = Path.Combine(tempRoot, "ejlive.db"),
+            ConfigPath = Path.Combine(tempRoot, "Config", "verify.config.json")
+        });
+        var result = bootstrap.RunAsync().GetAwaiter().GetResult();
+
+        var rootUsable = EJLive.Shared.DataRootPaths.IsUsablePath(EJLive.Shared.DataRootPaths.Root);
+        var runner = EJLive.Core.Data.DatabaseMigrationsRunner.FromDatabaseFile(Path.Combine(tempRoot, "ejlive.db"));
+        var version = runner.GetCurrentVersion();
+
+        var passed = result.Success && rootUsable && bootstrap.MigrationsApplied == 13 && version == 13
+                     && Directory.Exists(layout.LogsDirectory) && Directory.Exists(layout.ConfigDirectory);
+        return ("Data root bootstrap and schema book", passed,
+            $"rootUsable={rootUsable}, steps={result.Steps.Count}, migrationsApplied={bootstrap.MigrationsApplied}, version={version}, resolvedRoot={EJLive.Shared.DataRootPaths.Root}");
+    }
+    catch (Exception ex)
+    {
+        return ("Data root bootstrap and schema book", false, ex.Message);
+    }
+    finally
+    {
+        try { if (Directory.Exists(tempRoot)) Directory.Delete(tempRoot, recursive: true); } catch { }
     }
 }

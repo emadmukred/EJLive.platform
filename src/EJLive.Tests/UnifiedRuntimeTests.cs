@@ -1,4 +1,4 @@
-using EJLive.Application;
+﻿using EJLive.Application;
 using EJLive.Business;
 using EJLive.Client.WinForms.Agent;
 using EJLive.Client.WinForms;
@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading;
 using CoreCommandSigningEngine = EJLive.Core.Services.CommandSigningEngine;
+using AppConstants = EJLive.Core.AppConstants;
 
 namespace EJLive.Tests;
 

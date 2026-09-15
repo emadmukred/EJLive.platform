@@ -18,17 +18,27 @@
 > **SS = section. Reference SS-nn in commit messages when a change implements it.**
 >
 > Measured state of the tree this contract was written against (regenerated, not typed):
-> 14 projects · 301 compiled files / 56 708 lines · 239 linked-reference files / 724 523
+> 15 projects · 320 compiled files / 58 924 lines · 245 linked-reference files / 725 468
 > lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
-> type keys · 14 cross-assembly partial splits (D-01) — RESOLVED in Wave 2 · 10 unparsable dumps archived (D-02)
-> · 19 database tables · 22 wire message types · 23 verification probes · 371 test cases
-> · 99 service-activation rows · 41 gate rules, all PASS.
+> type keys (all-`partial` same-assembly pairs — the WinForms `.Designer.cs` pattern — are
+> merged by the inventory, C-24/C-25; D-01 RESOLVED; 10 unparsable dumps archived (D-02,
+> Wave-5 rewrite backlog); 0 merge-dump signatures in the compiled set (D-08 RESOLVED Wave 4)
+> · 19 database tables, each with a CREATE owner and a DML consumer or repository ·
+> 22 wire message types · 24 verification probes · 397 test cases · 99 service-activation
+> rows · 41 gate rules, all PASS · `tools/gates/check_constant_resolution.py` 0 issues.
 >
 > Wave 1 commits on this branch:
 > - `67db886` (SS-04 / D-08): rebuilt the 8 merge dumps in `EJLive.Core/Models` and `Services/UnifiedOperationalFusion.cs` against real call sites.
 > - `e9607c9` (D-06): unified the SQLite provider on `Microsoft.Data.Sqlite` 8.0.5.
 > Wave 2 commits on this branch:
 > - pending (D-01): archived `BusinessAdapters.cs`, `UnifiedServiceGateway.cs`, `Models/ServerModels.cs`; 14 cross-assembly partial splits collapsed to 0 (`TYPE-2` empty).
+> Wave 4 commits on this branch (SS20):
+> - constants unification + build repair (C-17/C-18); central `dataroot` (C-19); `PlatformBootstrap`
+>   wired into all four hosts; schema book collapsed + Phase-2 migrations applied + newer-schema
+>   refusal guard; `Core/Data/Repositories` with real consumers; SS9 audit chain + verifier (C-20);
+>   web-surface removal (C-21); `ServiceLocator` composition seam (C-22); Studio bulk analysis +
+>   Excel export (C-23); Designer-partial `JournalStudioForm.Designer.cs` (C-24); tooling (C-25);
+>   D-05 and D-08 closed.
 > Wave 3 commits on this branch:
 > - `0f00399` (SS-10.5): built `JournalStudioForm` (vendor-aware load, virtual-mode grid, anomaly + analytics + reconciliation tabs, CSV/JSON export, owner-drawn charts).
 
@@ -397,6 +407,15 @@ Single tool window (`JournalStudioForm`, host: `EJLive.Server.WinForms`, menu *V
 - `anomalyPanel`: gap detection (missing sequence), duplicate receipt, impossible balance jump, unclosed
   session, non-monotone offsets — each anomaly is one row with `explainButton` (rule + evidence).
 - `correlationStrip`: matched XFS trace ⇄ journal ⇄ server archive, with `unmatched` counts per side.
+- **Wave 4 (C-23)**: `exportExcelButton` — `.xlsx` through the dependency-free
+  `ExcelWorkbookWriter` (OOXML via `System.IO.Compression`: inline strings, numeric cells,
+  bold header style, atomic publish; no Office interop, no new package) with a Summary sheet
+  (file/vendor/parser/counts) + Transactions sheet; `bulkFolderButton` — bulk folder analysis
+  via `JournalStudioBulkAnalyzer` (≤ 500 files off the UI thread, progress + cancel, per-file
+  vendor sniff → registry parse → aggregates; `bulkGrid` with double-click-to-load, and
+  `exportBulkCsvButton`/`exportBulkExcelButton` writing Files + ByVendor sheets);
+  `reconciliationLabel` now compares against `journal_archive` totals through
+  `IJournalArchiveRepository`, degrading with an explicit "(local database unavailable)" note.
 - `exportButton` (CSV, JSON, PDF-less print via `PrintDocument`), `redactPreviewCheckBox` (shows the
   `Observer`-safe view), `reparseButton` (re-runs the parser at the current offset window).
 - analytics tabs: throughput/hr, kind histogram, reconciliation delta (terminal total vs archive total),
@@ -417,8 +436,21 @@ Tables (19, code-owned; every one needs a `CREATE` in `DatabaseSchema.cs`/a migr
 `outbox_dead_letters`, `command_audit`, `command_queue`, `correlation_events`, `daily_stats`, `journal_archive`,
 `journal_offsets`, `parser_transactions`, `screenshot_history`, `sync_records`, `telemetry_events`,
 `transfer_sessions`, `users`, `vendor_events`.
-(`DEBT`: `__migrations` and `schema_migrations` are two books for one concern — collapse into
-`schema_migrations(version INTEGER PRIMARY KEY, name, applied_utc, checksum, rolled_back INTEGER)`.)
+(RESOLVED Wave 4, C-20: one book — `schema_migrations(version INTEGER PRIMARY KEY, name,
+applied_utc, checksum, rolled_back INTEGER)`; any legacy `__migrations` rows are backfilled
+and the table dropped; each migration records a SHA-256 checksum; a database whose version is
+beyond this binary's head **refuses to run**.)
+
+Repository layer (Wave 4, `EJLive.Core/Data/Repositories`): `IJournalArchiveRepository`,
+`ICommandAuditRepository`, `IClientHealthSnapshotRepository`, `IParserTransactionRepository`,
+`ITransferSessionRepository`, `IATMRegistryRepository` + SQLite implementations — typed DML
+owners for the tables above, idempotent on the keys shown, `BitArray` codec for resumable
+transfers. Consumers: `IngestionPipeline` (archive record + vendor parse + `parser_transactions`),
+`ServerAuditService` (mirrors every decision into `command_audit`), `ClientTelemetryStateService`
+(`client_health_snapshots` + `atm_registry` projection), `JournalStudioForm` (reconciliation).
+SS9 audit chain is implemented, not promised: `audit_log.prev_hash`/`payload_hash`, chained on
+insert, `DatabaseManager.VerifyAuditChain` surfaced as `AuditLogger.VerifyChain`, pre-chain rows
+counted as legacy rather than broken.
 
 Constraints that must exist (not optional polish; ledger rule **DB-1**):
 
@@ -566,7 +598,8 @@ logs 14 files × 8 MB.
 | 0 — done (this branch) | build graph repair: 654 MB → 68 MB, 29 csproj → 14, curated explicit compile maps, archive `src/_reference/`, ledgers (12), static gate (41 rules), CI, this document | `gate: PASS`, `ledgers fresh`, 0 intra-assembly duplicate keys, 0 stale includes, 0 unparsable files in a map |
 | 1 — restore lost capability | promote archived surface into the compiled tree behind a build gate: `Server.WinForms` 5 → its 44 archived files, `Monitoring`/`Installer`/`Client` companions, `UnifiedLauncher`, `Verification`; rewrite the 10 unparsable dumps (DEBT D-02) and the 8 merge dumps still compiled in `EJLive.Core` (DEBT D-08, `python3 tools/gates/check_merge_dumps.py --report` must end empty) from SS5/SS7/SS9; **build after each file group** | `dotnet build` green; 371 + new tests green; 23 probes green; `orphan` + `reference-only` rows strictly decreasing |
 | 2 — namespace & provider repair | DEBT D-01 (14 cross-assembly partial splits — RESOLVED), D-06 (one SQLite provider — RESOLVED in Wave 1), D-07 (single `MsgType` in `EJLive.Core.Engine.CommunicationProtocol` — RESOLVED in Wave 2, the legacy 10-member `MessageTypes.cs` was removed during L0 curation), remove `ServiceLocator` reflection | `TYPE-2` empty, `DEP-1` clean, protocol ledger maps to one owner |
-| 3 — build the new | Journal Studio (SS10.5 — DELIVERED in `0f00399`), `outbox_dead_letters` + retention job UI, audit-chain verifier UI, adaptive chunking tuning, `active_compile_map` table replacing the CSV dependency | features covered by tests + probes, targets in SS13 measured |
+| 3 — build the new | Journal Studio (SS10.5 — DELIVERED in `0f00399`; bulk analysis + Excel export completed in Wave 4 / C-23), audit-chain *engine* DELIVERED Wave 4 (C-20 — `prev_hash`/`payload_hash` + `VerifyAuditChain` + tamper test; dedicated viewer column remains), `outbox_dead_letters` + retention job UI, adaptive chunking tuning, `active_compile_map` table replacing the CSV dependency | features covered by tests + probes, targets in SS13 measured |
+| 4 — platform spine (this pass, SS20) | build repair (C-17/C-18), central dataroot (C-19), bootstrap + schema-book collapse + repositories + audit chain (C-20), web-surface removal (C-21), composition seam (C-22), Studio bulk/Excel (C-23), Designer-partial pattern (C-24), tooling hardening (C-25); D-05/D-08 closed | `gate 41/41 PASS`, 24 probes and 397 cases green on CI, `check_constant_resolution.py` 0 issues |
 
 Traceability: `docs/TRACEABILITY-MATRIX.md` maps every artefact class of the specification corpus to a file and a
 status (`exists` / `partial` / `missing` / `debt`). Gaps that cannot be closed from the repository alone are
@@ -618,3 +651,16 @@ error.
 When a rule fails, the PR view shows the offending file, the rule ID, and a
 one-line message. There is no override; the repo rule is "fix the tree or
 record named debt in `docs/DEBT-LEDGER.md`".
+
+## SS20 · Dataroot, bootstrap, schema book, repositories (Wave 4 — DELIVERED)
+
+| item | contract |
+|---|---|
+| dataroot | `EJLive.Shared.DataRootPaths` (L0) owns resolution: `EJLIVE_DATAROOT` env override → `%PROGRAMDATA%\EJLive`; fixed sub-tree `Config/ Logs/ Archive/ Reports/ Backups/ Images/ Client/{Outbox,Inbox,Staging}/ Agent/ Watch/ Share/Images/{All,ByType,Staging}`; `EnsureDirectories()` idempotent; `Probe` measures writability, not existence; `EJLive.Core.Data.DataRootLayout` adds the server archive tree `Archive/<atmId>/yyyy-MM`. No runtime assembly may hard-code a root literal (C-19). |
+| bootstrap | `EJLive.Core.Data.PlatformBootstrap`: `dataroot → directories → probe → configuration → database → schema → ready`. One `BootstrapStepResult` per step; the failure detail is the single actionable line (SS-14) shown by the WinForms hosts (degraded start + warning) and logged by the headless service (exit → recovery ladder). Idempotent; the wait is startup-sequential, never a message-loop sync-over-async (SS-12). |
+| schema | single `schema_migrations(version,name,applied_utc,checksum,rolled_back)`; backfill-and-drop of `__migrations`; forward-only v1–13 (six legacy + seven Phase-2 contract migrations aligned to `DatabaseManager`'s canonical shapes — schema fork closed); SHA-256 checksum per applied migration; `PRAGMA foreign_keys=OFF` only across the swap; a newer on-disk version ⇒ refuse to run. |
+| repositories | `EJLive.Core.Data.Repositories` — one interface + one SQLite class per table family (`RepositoryContracts.cs` holds the contracts + entities per this repo's contracts-file convention), bound parameters only, idempotent upserts keyed per SS-11, heartbeat updates move only forward; consumed by ingest/telemetry/audit/Studio (DB-1 closed for the Phase-2 set). |
+| audit chain | SS-9 implemented, not just documented: `payload_hash` = SHA-256 over the row's canonical fields, `prev_hash` links the previous chained row; `DatabaseManager.VerifyAuditChain` surfaced as `AuditLogger.VerifyChain` reports the first broken link; pre-chain rows count as legacy, never false alarms. |
+| UI process | Designer partials: `X.cs` = behaviour + `WireEvents()`; `X.Designer.cs` = `InitializeComponent` (create/property/parent only), `Dispose(bool)`+`components`, DPI autoscale, Anchor/Dock, tab order = visual order, `AccessibleName` on data surfaces. Bindings live outside the designer file ⇒ safe regeneration. Proven on `JournalStudioForm`; Wave 5 replicates it on the three main consoles. |
+| no web | `EJLive.Analysis.Web`, `SmartAnalysisHost` (HttpListener) and `StartSmartAnalysis` removed from the compiled set (C-21); analysis stays in-process (`SmartAnalysisService`) and WinForms (`JournalStudioForm`). |
+

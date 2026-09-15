@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -170,6 +170,15 @@ namespace EJLive.Core.Services
             File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
             return filePath;
         }
+
+        /// <summary>
+        /// SS-9 tamper-evidence entry point: verifies the persisted <c>audit_log</c> chain and
+        /// returns the first broken link (if any). Delegates to <see cref="DatabaseManager.VerifyAuditChain"/>
+        /// so there is exactly one verifier in the platform (Wave 4 — the contract named
+        /// <c>AuditLogger.VerifyChain</c>, which previously did not exist).
+        /// </summary>
+        public static EJLive.Core.Services.AuditChainVerificationResult VerifyChain(int maxRows = 100_000)
+            => DatabaseManager.Instance.VerifyAuditChain(maxRows);
     }
 
     public class AuditEntry

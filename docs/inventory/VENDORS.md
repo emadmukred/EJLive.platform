@@ -6,7 +6,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 |---|---|---|---|
 | CASHWAY | 3 | 2 (`CashwayEjTransactionParser.cs`, `CashwayEjTransactionParserTests.cs`) | VIOLATION (2 compiled parsers) |
 | DIEBOLD | 2 | 1 (`DieboldEjTransactionParser.cs`) | OK |
-| GRG | 3 | 1 (`GrgEjTransactionParser.cs`) | OK |
+| GRG | 4 | 1 (`GrgEjTransactionParser.cs`) | OK |
 | HYOSUNG | 1 | 1 (`HyosungEjTransactionParser.cs`) | OK |
 | NCR | 46 | 8 (`CashDistributionParser.cs`, `EjParserRegistry.cs`, `NcrEjTransactionParser.cs`, `NcrConfigCapabilityParser.cs`) | VIOLATION (6 compiled parsers) |
 | WINCOR | 1 | 1 (`WincorEjTransactionParser.cs`) | OK |
@@ -23,6 +23,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 ### GRG
 - `adapter` [active] `src/EJLive.Core/Xfs/Adapters/GrgJournalAdapter.cs`
 - `adapter` [active] `src/EJLive.Core/Xfs/Adapters/GrgXfsAdapter.cs`
+- `auxiliary` [active] `src/EJLive.Shared/AppConstants.cs`
 - `parser` [active] `src/EJLive.Core/Engine/GrgEjTransactionParser.cs`
 
 ### HYOSUNG
@@ -45,9 +46,9 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 - `adapter` [active] `src/EJLive.Core/Xfs/XfsAdapterRegistry.cs`
 - `adapter` [reference] `src/_reference/uncompiled/EJLive.Core/Xfs/IXfsVendorAdapter.cs`
 - `auxiliary` [active] `src/EJLive.Application/EJLiveApplicationHost.cs`
-- `auxiliary` [active] `src/EJLive.Core/ActiveCore.cs`
 - `auxiliary` [active] `src/EJLive.Core/Communication/Protocol.cs`
 - `auxiliary` [active] `src/EJLive.Core/Constants.cs`
+- `auxiliary` [active] `src/EJLive.Core/Data/Repositories/ATMRegistryRepository.cs`
 - `auxiliary` [active] `src/EJLive.Core/Engine/RegressionVerificationGate.cs`
 - `auxiliary` [active] `src/EJLive.Core/Engine/ReleaseReadinessChecker.cs`
 - `auxiliary` [active] `src/EJLive.Core/Journal/JournalContracts.cs`

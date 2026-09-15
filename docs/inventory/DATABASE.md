@@ -22,12 +22,12 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | agent_heartbeats | table | reference |
 | alerts | table | reference |
 | atm_agents | table | reference |
-| atm_registry | table | active |
+| atm_registry | dml, table | active |
 | atms | table | reference |
 | audit_log | dml, table | active, reference |
 | client_health_snapshots | table | active, reference |
 | client_outbox | dml, table | active |
-| command_audit | table | active, reference |
+| command_audit | dml, table | active, reference |
 | command_queue | table | active, reference |
 | commands | table | reference |
 | correlation_events | table | active, reference |
@@ -60,27 +60,26 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | ix_audit_log_created_at | index | active |
 | ix_client_outbox_atm | index | active |
 | ix_client_outbox_ready | index | active |
+| ix_cmd_audit_actor_time | index | active |
 | ix_command_queue_atm | index | active |
 | ix_command_queue_state | index | active |
 | ix_journal_archive_atm | index | active |
+| ix_parser_txn_ingestion | index | active |
 | ix_screenshot_atm | index | active |
 | ix_stats_atm_date | index | active, reference |
 | ix_sync_atm_state | index | active, reference |
-| ix_sync_records_atm | index | active |
 | ix_sync_records_updated | index | active |
-| ix_telemetry_atm | index | active |
 | ix_telemetry_atm_time | index | active |
-| ix_telemetry_type | index | active |
 | ix_telemetry_type_time | index | active |
-| journal_archive | table | active, reference |
+| journal_archive | dml, table | active, reference |
 | journal_offsets | dml, table | active |
 | journal_sync | table | reference |
 | network_disconnects | table | reference |
 | outbox_dead_letters | table | reference |
-| parser_transactions | table | active, reference |
+| parser_transactions | dml, table | active, reference |
 | remote_session_audit | table | reference |
 | reports | table | reference |
-| schema_migrations | table | active |
+| schema_migrations | dml, table | active |
 | screenshot_history | table | active |
 | screenshots | table | reference |
 | security_policy_snapshots | table | reference |
@@ -88,7 +87,7 @@ Source: `tools/inventory/ejlive_inventory.py`. Regenerate with `python3 tools/in
 | sync_records | dml, table | active, reference |
 | telemetry_events | dml, table | active, reference |
 | transactions | table | reference |
-| transfer_sessions | table | active, reference |
+| transfer_sessions | dml, table | active, reference |
 | users | table | active |
 | ux_daily_stats_atm_date | index | active, reference |
 | ux_sync_idempotency | index | active, reference |

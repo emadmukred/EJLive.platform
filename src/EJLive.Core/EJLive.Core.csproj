@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <!-- Moved in from EJLive.Shared (E-17): Shared is the L0 primitives assembly and must not
          depend upward, so the files that use EJLive.Core types or WinForms live here instead.
@@ -45,10 +45,19 @@
          or linked reference under src/_reference/. -->
     <Compile Include="ActiveCore.cs" />
     <Compile Include="Communication\Protocol.cs" />
-    <Compile Include="Config\AgentConfiguration.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Data\DatabaseMigrationContracts.cs" />
+    <Compile Include="Data\DataRootLayout.cs" />
     <Compile Include="Data\DatabaseMigrationsRunner.cs" />
+    <Compile Include="Data\PlatformBootstrap.cs" />
+    <Compile Include="Data\Repositories\RepositoryContracts.cs" />
+    <Compile Include="Data\Repositories\SqliteRepositoryBase.cs" />
+    <Compile Include="Data\Repositories\JournalArchiveRepository.cs" />
+    <Compile Include="Data\Repositories\CommandAuditRepository.cs" />
+    <Compile Include="Data\Repositories\ClientHealthSnapshotRepository.cs" />
+    <Compile Include="Data\Repositories\ParserTransactionRepository.cs" />
+    <Compile Include="Data\Repositories\TransferSessionRepository.cs" />
+    <Compile Include="Data\Repositories\ATMRegistryRepository.cs" />
     <Compile Include="Data\JournalOffsetStore.cs" />
     <Compile Include="Engine\ATMRealTimeStatusReducer.cs" />
     <Compile Include="Engine\CashDistributionParser.cs" />
@@ -60,6 +69,7 @@
     <Compile Include="Engine\CompleteLineReadWindow.cs" />
     <Compile Include="Engine\CorrelationEngine.cs" />
     <Compile Include="Engine\DashboardSnapshotService.cs" />
+    <Compile Include="Engine\ExcelWorkbookWriter.cs" />
     <Compile Include="Engine\DeploymentRollbackGuard.cs" />
     <Compile Include="Engine\DieboldEjTransactionParser.cs" />
     <Compile Include="Engine\EjParserRegistry.cs" />
@@ -182,7 +192,6 @@
     <Compile Include="Services\SecurityService.cs" />
     <Compile Include="Services\ServiceLocator.cs" />
     <Compile Include="Services\SmartAnalysisService.cs" />
-    <Compile Include="Services\SmartAnalysisHost.cs" />
     <Compile Include="Services\SovereignEngineCompatibility.cs" />
     <Compile Include="Services\UnifiedOperationalFusion.cs" />
     <Compile Include="Services\UnifiedOperationalReportingService.cs" />

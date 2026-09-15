@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """EJLIVE.PLATFORM static gate -- repository rules that must hold before a push.
 
 Exit 0 = PASS, 1 = FAIL. Every rule prints `RULE <id> <status> <detail>`.
@@ -140,7 +140,7 @@ def check_files(tracked: list[str], projects) -> None:
         (".bak", ".orig", ".user", ".suo", ".log", ".tmp")) or os.path.basename(p) == "nuget.exe"]
     junk = [p for p in junk if "/Samples/" not in p]        # vendored journal fixtures are source
     rule("FILE-1", not junk, f"{len(junk)} transient files tracked: {junk[:4]}")
-    copies = [p for p in tracked if re.search(r" \(\d+\)\.(cs|resx|config|csproj|xaml)$", p)
+    copies = [p for p in tracked if re.search(r" \(\d+\)\.(cs|resx|config|csproj|xaml|sql|json|manifest|props|targets)$", p)
               and not p.startswith("src/_reference/")]
     rule("FILE-2", not copies, f"{len(copies)} Visual Studio copy artefacts outside the archive: {copies[:3]}")
     xaml = [p for p in tracked if p.endswith(".xaml") and p.startswith("src/") and "_reference" not in p]

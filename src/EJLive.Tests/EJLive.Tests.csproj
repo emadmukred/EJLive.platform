@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
@@ -83,6 +83,7 @@
     <Compile Include="Track44\RegressionVerificationGateTests.cs" />
     <Compile Include="Track45\ReleaseReadinessCheckerTests.cs" />
     <Compile Include="Track46\SmartAnalysisServiceTests.cs" />
+    <Compile Include="Wave4DataPlatformTests.cs" />
     <Compile Include="UnifiedRuntimeTests.cs" />
     <Compile Include="V5EnhancedDifferenceTests.cs" />
   </ItemGroup>

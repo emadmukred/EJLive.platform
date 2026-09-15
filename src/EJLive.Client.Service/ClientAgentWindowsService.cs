@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -95,9 +95,8 @@ public sealed class ClientAgentWindowsService : BackgroundService
 
             _agent.StartAll();
 
-            var healthFile = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "EJLive", "Agent", "health.json");
+            // Central dataroot (SS-20): the companion and the NOC read exactly this path.
+            var healthFile = EJLive.Shared.DataRootPaths.HealthSnapshotFile;
 
             _health = new AgentHealthReporter(_agent, TimeSpan.FromSeconds(30), healthFile);
             _health.Publish();

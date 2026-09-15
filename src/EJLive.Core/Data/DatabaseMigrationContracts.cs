@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -190,9 +190,9 @@ CREATE TABLE IF NOT EXISTS parser_transactions (
     confidence TEXT NOT NULL,
     raw_start_line INTEGER,
     raw_end_line INTEGER,
-    evidence TEXT,
-    FOREIGN KEY (ingestion_id) REFERENCES journal_archive(ingestion_id)
-);"
+    evidence TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_parser_txn_ingestion ON parser_transactions(ingestion_id);"
                 },
                 new DbMigration
                 {
@@ -247,8 +247,12 @@ CREATE TABLE IF NOT EXISTS command_audit (
     action TEXT NOT NULL,
     details_json TEXT,
     timestamp_utc TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (command_id) REFERENCES command_queue(command_id)
+    atm_id TEXT,
+    args_hash TEXT,
+    outcome TEXT NOT NULL DEFAULT 'Allowed',
+    latency_ms INTEGER
 );
+CREATE INDEX IF NOT EXISTS ix_cmd_audit_actor_time ON command_audit(operator_id, timestamp_utc);
 
 CREATE TABLE IF NOT EXISTS telemetry_events (
     event_id TEXT PRIMARY KEY,

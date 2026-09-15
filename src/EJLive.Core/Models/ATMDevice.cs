@@ -1,4 +1,4 @@
-using EJLive.Core.Enums;
+﻿using EJLive.Core.Enums;
 
 namespace EJLive.Core.Models
 {
@@ -12,7 +12,7 @@ namespace EJLive.Core.Models
     /// <c>RetainedCardInfo</c> and <c>ComponentStatus</c> interleaved with provenance
     /// comments. <c>HealthScore</c> body was repeated as loose statements (orphan <c>if</c>
     /// expressions without the enclosing <c>get { }</c>), and <c>ComponentStatus</c> was
-    /// declared twice (once as a real <c>enum</c>, once as <c>partial enum</c>, which is not
+    /// declared twice (once as a real <c>enum</c>, marked <c>partial</c> before <c>enum</c>, which is not
     /// a C# construct). Members kept the union set the variants agreed on. Health-score
     /// formula is the one every variant carried; vendor-aware <c>SyncStatusText</c> entries
     /// for <c>Storing</c> and <c>Paused</c> were present in two copies and are kept (SS-15:

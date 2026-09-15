@@ -1,4 +1,5 @@
-using System.Data;
+﻿using System.Data;
+using EJLive.Core.Data.Repositories;
 using EJLive.Core.Models;
 using EJLive.Core.Services;
 
@@ -10,10 +11,18 @@ namespace EJLive.Server.Services;
 public sealed class ServerAuditService
 {
     private readonly DatabaseManager _database;
+    private readonly ICommandAuditRepository? _commandAudit;
 
-    public ServerAuditService(DatabaseManager? database = null)
+    /// <summary>
+    /// <paramref name="commandAudit"/> is the SS9 command ledger sink. When supplied (server
+    /// host with a bootstrapped database), every decision ALSO lands in <c>command_audit</c>
+    /// with operator, command id, args hash and outcome; <c>audit_log</c> stays written for
+    /// the historical audit viewer and the chain verifier.
+    /// </summary>
+    public ServerAuditService(DatabaseManager? database = null, ICommandAuditRepository? commandAudit = null)
     {
         _database = database ?? DatabaseManager.Instance;
+        _commandAudit = commandAudit;
     }
 
     public void WriteCommandAudit(string action, string atmId, string detail)
@@ -23,6 +32,27 @@ public sealed class ServerAuditService
             "ServerDashboard",
             string.IsNullOrWhiteSpace(atmId) ? null : atmId,
             detail);
+
+        if (_commandAudit is not null)
+        {
+            var commandId = Guid.NewGuid().ToString("N");
+            _commandAudit.Append(new CommandAuditRecord(
+                AuditId: Guid.NewGuid().ToString("N"),
+                CommandId: commandId,
+                OperatorId: "ServerDashboard",
+                Action: action,
+                DetailsJson: detail,
+                TimestampUtc: DateTime.UtcNow,
+                AtmId: string.IsNullOrWhiteSpace(atmId) ? null : atmId,
+                ArgsHash: HashArgs(atmId + "|" + detail),
+                Outcome: "Logged"));
+        }
+    }
+
+    private static string HashArgs(string value)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value ?? string.Empty));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
     public IReadOnlyList<AuditLogEntry> LoadAuditEntries(int lookbackHours, int maxRows = 5000)
