@@ -18,11 +18,14 @@
 > **SS = section. Reference SS-nn in commit messages when a change implements it.**
 >
 > Measured state of the tree this contract was written against (regenerated, not typed):
-> 15 projects · 320 compiled files / 58 924 lines · 245 linked-reference files / 725 468
+> 15 projects · 324 compiled files / 60 879 lines · 245 linked-reference files / 725 468
 > lines · 0 stale includes · 0 sources outside a compile map · 0 intra-assembly duplicate
 > type keys (all-`partial` same-assembly pairs — the WinForms `.Designer.cs` pattern — are
 > merged by the inventory, C-24/C-25; D-01 RESOLVED; 10 unparsable dumps archived (D-02,
-> Wave-5 rewrite backlog); 0 merge-dump signatures in the compiled set (D-08 RESOLVED Wave 4)
+> rewrite backlog deferred pending a consumer-driven design); 0 merge-dump signatures in
+> the compiled set (D-08 RESOLVED Wave 4); the C-24 Designer-partial process delivered on
+> all four main consoles — `JournalStudioForm`, `ClientMainForm`, `MainDashboardForm`,
+> `ServerMainForm` (C-28/C-29/C-30)
 > · 19 database tables, each with a CREATE owner and a DML consumer or repository ·
 > 22 wire message types · 24 verification probes · 397 test cases · 99 service-activation
 > rows · 41 gate rules, all PASS · `tools/gates/check_constant_resolution.py` 0 issues.
@@ -661,6 +664,6 @@ record named debt in `docs/DEBT-LEDGER.md`".
 | schema | single `schema_migrations(version,name,applied_utc,checksum,rolled_back)`; backfill-and-drop of `__migrations`; forward-only v1–13 (six legacy + seven Phase-2 contract migrations aligned to `DatabaseManager`'s canonical shapes — schema fork closed); SHA-256 checksum per applied migration; `PRAGMA foreign_keys=OFF` only across the swap; a newer on-disk version ⇒ refuse to run. |
 | repositories | `EJLive.Core.Data.Repositories` — one interface + one SQLite class per table family (`RepositoryContracts.cs` holds the contracts + entities per this repo's contracts-file convention), bound parameters only, idempotent upserts keyed per SS-11, heartbeat updates move only forward; consumed by ingest/telemetry/audit/Studio (DB-1 closed for the Phase-2 set). |
 | audit chain | SS-9 implemented, not just documented: `payload_hash` = SHA-256 over the row's canonical fields, `prev_hash` links the previous chained row; `DatabaseManager.VerifyAuditChain` surfaced as `AuditLogger.VerifyChain` reports the first broken link; pre-chain rows count as legacy, never false alarms. |
-| UI process | Designer partials: `X.cs` = behaviour + `WireEvents()`; `X.Designer.cs` = `InitializeComponent` (create/property/parent only), `Dispose(bool)`+`components`, DPI autoscale, Anchor/Dock, tab order = visual order, `AccessibleName` on data surfaces. Bindings live outside the designer file ⇒ safe regeneration. Proven on `JournalStudioForm`; Wave 5 replicates it on the three main consoles. |
+| UI process | Designer partials: `X.cs` = behaviour + `WireEvents()`; `X.Designer.cs` = `InitializeComponent` (create/property/parent only), `Dispose(bool)`+`components`, DPI autoscale, Anchor/Dock, tab order = visual order, `AccessibleName` on data surfaces. Bindings live outside the designer file ⇒ safe regeneration. Proven on `JournalStudioForm`; **Wave 5 DELIVERED (C-28/C-29/C-30) on the three main consoles** — `ClientMainForm` (36 designer fields), `MainDashboardForm` (104), `ServerMainForm` (199 + 16 menu items); the `UiHelpers.Grid()` theme is inlined as designer-settable properties and the reflection-only double-buffering pass stays behaviour-side (`PrepareGrids`). |
 | no web | `EJLive.Analysis.Web`, `SmartAnalysisHost` (HttpListener) and `StartSmartAnalysis` removed from the compiled set (C-21); analysis stays in-process (`SmartAnalysisService`) and WinForms (`JournalStudioForm`). |
 

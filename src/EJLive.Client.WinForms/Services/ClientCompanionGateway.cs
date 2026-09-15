@@ -50,127 +50,76 @@ public sealed class ClientGatewayContext
 }
 
 /// <summary>
-/// Read-only boundary used by the interactive companion. Implementations may
-/// inspect an agent health snapshot, but cannot start work, mutate paths, ping
-/// a remote endpoint, or submit an operational request.
+/// Parsed view of the agent health file (<c>%PROGRAMDATA%\EJLive\Agent\health.json</c>,
+/// SS-3). Wave 5 / C-31: promoted from a private nested record of
+/// <see cref="InProcessClientServiceGateway"/> to the canonical public model of the
+/// endpoint health surface, and given the one JSON parse seam
+/// (<see cref="TryParseJson"/>): the gateway reads the file, the form exposes the
+/// reflection-tested bridge <c>ClientMainForm.TryParseServiceHealthSnapshot</c>, and
+/// both delegate here — one owner for the health-file schema.
+///
+/// Wire keys (case-insensitive): <c>atmId</c>, <c>timestampUtc</c>, <c>state</c>
+/// (string, or the agent's numeric state: 0=Stopped, 1=Starting, 2=Running,
+/// 3=Paused, 4=Failed), <c>connected</c>, <c>handshakeComplete</c>,
+/// <c>pendingOutboxItems</c>, <c>totalBytesSent</c>, <c>totalBytesReceived</c>,
+/// <c>lastHeartbeatUtc</c>, <c>lastJournalSyncUtc</c>, <c>sessionId</c>,
+/// <c>lastError</c>, <c>uptimeSeconds</c>.
 /// </summary>
-public interface IClientServiceGateway
+public sealed record ServiceHealthSnapshot(
+    string AtmId,
+    DateTime TimestampUtc,
+    string State,
+    bool Connected,
+    bool HandshakeComplete,
+    int PendingOutboxItems,
+    long TotalBytesSent,
+    long TotalBytesReceived,
+    DateTime? LastHeartbeatUtc,
+    DateTime? LastJournalSyncUtc,
+    string SessionId,
+    string LastError,
+    double UptimeSeconds)
 {
-    Task<ClientRuntimeSnapshot> GetRuntimeSnapshotAsync(
-        CancellationToken cancellationToken = default);
+    public static ServiceHealthSnapshot Empty { get; } = new(
+        AtmId: string.Empty,
+        TimestampUtc: DateTime.MinValue,
+        State: "Unknown",
+        Connected: false,
+        HandshakeComplete: false,
+        PendingOutboxItems: 0,
+        TotalBytesSent: 0,
+        TotalBytesReceived: 0,
+        LastHeartbeatUtc: null,
+        LastJournalSyncUtc: null,
+        SessionId: string.Empty,
+        LastError: string.Empty,
+        UptimeSeconds: 0);
 
-    Task<ClientServiceQueryResult> QueryLocalServiceAsync(
-        CancellationToken cancellationToken = default);
-}
-
-public sealed class InProcessClientServiceGateway : IClientServiceGateway
-{
-    private readonly Func<ClientGatewayContext> _contextProvider;
-    private readonly string _serviceHealthFilePath;
-
-    public InProcessClientServiceGateway(
-        Func<ClientGatewayContext> contextProvider,
-        string? serviceHealthFilePath = null)
+    /// <summary>
+    /// The single JSON → snapshot parse (C-31). Returns false (and leaves
+    /// <paramref name="snapshot"/> as <see cref="Empty"/>) for anything that is not
+    /// a JSON object: malformed JSON, non-object roots and empty payloads are all
+    /// "no snapshot yet", never an exception on the companion's UI thread.
+    /// </summary>
+    public static bool TryParseJson(string? json, out ServiceHealthSnapshot snapshot)
     {
-        _contextProvider = contextProvider ?? throw new ArgumentNullException(nameof(contextProvider));
-        _serviceHealthFilePath = string.IsNullOrWhiteSpace(serviceHealthFilePath)
-            ? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "EJLive",
-                "Agent",
-                "health.json")
-            : serviceHealthFilePath;
-    }
+        snapshot = Empty;
 
-    public Task<ClientRuntimeSnapshot> GetRuntimeSnapshotAsync(
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var context = _contextProvider();
-
-        if (TryReadServiceSnapshot(_serviceHealthFilePath, out var serviceSnapshot))
-        {
-            return Task.FromResult(new ClientRuntimeSnapshot(
-                CapturedAtUtc: serviceSnapshot.TimestampUtc,
-                SnapshotSource: "ServiceHealthFile",
-                AtmId: Coalesce(serviceSnapshot.AtmId, context.AtmId),
-                AgentState: serviceSnapshot.State,
-                Connected: serviceSnapshot.Connected,
-                HandshakeComplete: serviceSnapshot.HandshakeComplete,
-                PendingOutboxItems: Math.Max(0, serviceSnapshot.PendingOutboxItems),
-                TotalBytesSent: Math.Max(0, serviceSnapshot.TotalBytesSent),
-                TotalBytesReceived: Math.Max(0, serviceSnapshot.TotalBytesReceived),
-                LastHeartbeatUtc: serviceSnapshot.LastHeartbeatUtc,
-                LastJournalSyncUtc: serviceSnapshot.LastJournalSyncUtc,
-                SessionId: serviceSnapshot.SessionId,
-                LastError: serviceSnapshot.LastError,
-                UptimeSeconds: Math.Max(0, serviceSnapshot.UptimeSeconds),
-                Components: CopyComponents(context.Components)));
-        }
-
-        return Task.FromResult(new ClientRuntimeSnapshot(
-            CapturedAtUtc: DateTime.UtcNow,
-            SnapshotSource: "InProcessFallback",
-            AtmId: context.AtmId,
-            AgentState: context.AgentState,
-            Connected: context.Connected,
-            HandshakeComplete: context.HandshakeComplete,
-            PendingOutboxItems: Math.Max(0, context.PendingOutboxItems),
-            TotalBytesSent: Math.Max(0, context.TotalBytesSent),
-            TotalBytesReceived: Math.Max(0, context.TotalBytesReceived),
-            LastHeartbeatUtc: context.LastHeartbeatUtc,
-            LastJournalSyncUtc: context.LastJournalSyncUtc,
-            SessionId: context.SessionId,
-            LastError: context.LastError,
-            UptimeSeconds: Math.Max(0, context.UptimeSeconds),
-            Components: CopyComponents(context.Components)));
-    }
-
-    public Task<ClientServiceQueryResult> QueryLocalServiceAsync(
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!TryReadServiceSnapshot(_serviceHealthFilePath, out var snapshot))
-        {
-            return Task.FromResult(new ClientServiceQueryResult(
-                Available: false,
-                Message: "Agent health snapshot is not available.",
-                CapturedAtUtc: null,
-                State: "Unknown"));
-        }
-
-        return Task.FromResult(new ClientServiceQueryResult(
-            Available: true,
-            Message: $"Agent health is available; state={snapshot.State}, captured={snapshot.TimestampUtc:O}.",
-            CapturedAtUtc: snapshot.TimestampUtc,
-            State: snapshot.State));
-    }
-
-    private static IReadOnlyList<ClientComponentSnapshot> CopyComponents(
-        IReadOnlyList<ClientComponentSnapshot>? components)
-        => components is null || components.Count == 0
-            ? Array.Empty<ClientComponentSnapshot>()
-            : components.ToArray();
-
-    private static string Coalesce(string? primary, string fallback)
-        => string.IsNullOrWhiteSpace(primary) ? fallback : primary.Trim();
-
-    private static bool TryReadServiceSnapshot(string filePath, out ServiceHealthSnapshot snapshot)
-    {
-        snapshot = ServiceHealthSnapshot.Empty;
-
-        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        if (string.IsNullOrWhiteSpace(json))
             return false;
 
+        JsonDocument document;
         try
         {
-            using var stream = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete);
-            using var document = JsonDocument.Parse(stream);
+            document = JsonDocument.Parse(json);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        using (document)
+        {
             if (document.RootElement.ValueKind != JsonValueKind.Object)
                 return false;
 
@@ -190,18 +139,6 @@ public sealed class InProcessClientServiceGateway : IClientServiceGateway
                 LastError: ReadJsonString(root, "lastError"),
                 UptimeSeconds: ReadJsonDouble(root, "uptimeSeconds"));
             return true;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return false;
-        }
-        catch (JsonException)
-        {
-            return false;
         }
     }
 
@@ -341,35 +278,148 @@ public sealed class InProcessClientServiceGateway : IClientServiceGateway
         value = default;
         return false;
     }
+}
 
-    private sealed record ServiceHealthSnapshot(
-        string AtmId,
-        DateTime TimestampUtc,
-        string State,
-        bool Connected,
-        bool HandshakeComplete,
-        int PendingOutboxItems,
-        long TotalBytesSent,
-        long TotalBytesReceived,
-        DateTime? LastHeartbeatUtc,
-        DateTime? LastJournalSyncUtc,
-        string SessionId,
-        string LastError,
-        double UptimeSeconds)
+/// <summary>
+/// Read-only boundary used by the interactive companion. Implementations may
+/// inspect an agent health snapshot, but cannot start work, mutate paths, ping
+/// a remote endpoint, or submit an operational request.
+/// </summary>
+public interface IClientServiceGateway
+{
+    Task<ClientRuntimeSnapshot> GetRuntimeSnapshotAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<ClientServiceQueryResult> QueryLocalServiceAsync(
+        CancellationToken cancellationToken = default);
+}
+
+public sealed class InProcessClientServiceGateway : IClientServiceGateway
+{
+    private readonly Func<ClientGatewayContext> _contextProvider;
+    private readonly string _serviceHealthFilePath;
+
+    public InProcessClientServiceGateway(
+        Func<ClientGatewayContext> contextProvider,
+        string? serviceHealthFilePath = null)
     {
-        public static ServiceHealthSnapshot Empty { get; } = new(
-            AtmId: string.Empty,
-            TimestampUtc: DateTime.MinValue,
-            State: "Unknown",
-            Connected: false,
-            HandshakeComplete: false,
-            PendingOutboxItems: 0,
-            TotalBytesSent: 0,
-            TotalBytesReceived: 0,
-            LastHeartbeatUtc: null,
-            LastJournalSyncUtc: null,
-            SessionId: string.Empty,
-            LastError: string.Empty,
-            UptimeSeconds: 0);
+        _contextProvider = contextProvider ?? throw new ArgumentNullException(nameof(contextProvider));
+        _serviceHealthFilePath = string.IsNullOrWhiteSpace(serviceHealthFilePath)
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "EJLive",
+                "Agent",
+                "health.json")
+            : serviceHealthFilePath;
+    }
+
+    public Task<ClientRuntimeSnapshot> GetRuntimeSnapshotAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var context = _contextProvider();
+
+        if (TryReadServiceSnapshot(_serviceHealthFilePath, out var serviceSnapshot))
+        {
+            return Task.FromResult(new ClientRuntimeSnapshot(
+                CapturedAtUtc: serviceSnapshot.TimestampUtc,
+                SnapshotSource: "ServiceHealthFile",
+                AtmId: Coalesce(serviceSnapshot.AtmId, context.AtmId),
+                AgentState: serviceSnapshot.State,
+                Connected: serviceSnapshot.Connected,
+                HandshakeComplete: serviceSnapshot.HandshakeComplete,
+                PendingOutboxItems: Math.Max(0, serviceSnapshot.PendingOutboxItems),
+                TotalBytesSent: Math.Max(0, serviceSnapshot.TotalBytesSent),
+                TotalBytesReceived: Math.Max(0, serviceSnapshot.TotalBytesReceived),
+                LastHeartbeatUtc: serviceSnapshot.LastHeartbeatUtc,
+                LastJournalSyncUtc: serviceSnapshot.LastJournalSyncUtc,
+                SessionId: serviceSnapshot.SessionId,
+                LastError: serviceSnapshot.LastError,
+                UptimeSeconds: Math.Max(0, serviceSnapshot.UptimeSeconds),
+                Components: CopyComponents(context.Components)));
+        }
+
+        return Task.FromResult(new ClientRuntimeSnapshot(
+            CapturedAtUtc: DateTime.UtcNow,
+            SnapshotSource: "InProcessFallback",
+            AtmId: context.AtmId,
+            AgentState: context.AgentState,
+            Connected: context.Connected,
+            HandshakeComplete: context.HandshakeComplete,
+            PendingOutboxItems: Math.Max(0, context.PendingOutboxItems),
+            TotalBytesSent: Math.Max(0, context.TotalBytesSent),
+            TotalBytesReceived: Math.Max(0, context.TotalBytesReceived),
+            LastHeartbeatUtc: context.LastHeartbeatUtc,
+            LastJournalSyncUtc: context.LastJournalSyncUtc,
+            SessionId: context.SessionId,
+            LastError: context.LastError,
+            UptimeSeconds: Math.Max(0, context.UptimeSeconds),
+            Components: CopyComponents(context.Components)));
+    }
+
+    public Task<ClientServiceQueryResult> QueryLocalServiceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!TryReadServiceSnapshot(_serviceHealthFilePath, out var snapshot))
+        {
+            return Task.FromResult(new ClientServiceQueryResult(
+                Available: false,
+                Message: "Agent health snapshot is not available.",
+                CapturedAtUtc: null,
+                State: "Unknown"));
+        }
+
+        return Task.FromResult(new ClientServiceQueryResult(
+            Available: true,
+            Message: $"Agent health is available; state={snapshot.State}, captured={snapshot.TimestampUtc:O}.",
+            CapturedAtUtc: snapshot.TimestampUtc,
+            State: snapshot.State));
+    }
+
+    private static IReadOnlyList<ClientComponentSnapshot> CopyComponents(
+        IReadOnlyList<ClientComponentSnapshot>? components)
+        => components is null || components.Count == 0
+            ? Array.Empty<ClientComponentSnapshot>()
+            : components.ToArray();
+
+    private static string Coalesce(string? primary, string fallback)
+        => string.IsNullOrWhiteSpace(primary) ? fallback : primary.Trim();
+
+    /// <summary>
+    /// Live-agent file read: the service keeps writing health.json while the
+    /// companion is reading it, so the handle is shared (read/write/delete) and
+    /// transient I/O errors mean "no snapshot yet" rather than a fault. The JSON
+    /// interpretation itself is <see cref="ServiceHealthSnapshot.TryParseJson"/>.
+    /// </summary>
+    private static bool TryReadServiceSnapshot(string filePath, out ServiceHealthSnapshot snapshot)
+    {
+        snapshot = ServiceHealthSnapshot.Empty;
+
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return false;
+
+        string json;
+        try
+        {
+            using var stream = new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            json = reader.ReadToEnd();
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        return ServiceHealthSnapshot.TryParseJson(json, out snapshot);
     }
 }
