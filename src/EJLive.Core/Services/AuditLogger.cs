@@ -9,8 +9,8 @@ using Microsoft.Data.Sqlite;
 namespace EJLive.Core.Services
 {
     /// <summary>
-    /// سجل التدقيق غير القابل للتعديل
-    /// يطبق: S-03 (Immutable Audit Log) — كل أمر حساس مُسجَّل بتوقيت UTC
+    /// Immutable audit logger for every sensitive command, recorded with a UTC timestamp.
+    /// Implements S-03 (Immutable Audit Log) from the engineering contract.
     /// </summary>
     public sealed class AuditLogger
     {
@@ -50,7 +50,7 @@ namespace EJLive.Core.Services
         }
 
         // ==========================================
-        // الدوال الرئيسية
+        // Core operations
         // ==========================================
 
         public static void Log(AuditAction action, string userId, string? targetAtmId,
@@ -93,7 +93,7 @@ namespace EJLive.Core.Services
             => Log(AuditAction.ConfigChange, userId, null, $"Setting '{setting}': '{oldVal}' → '{newVal}'", true);
 
         // ==========================================
-        // الكتابة والحفظ
+        // Write and persistence
         // ==========================================
 
         private static void WriteEntry(AuditEntry entry)
@@ -102,14 +102,14 @@ namespace EJLive.Core.Services
 
             lock (_fileLock)
             {
-                // تدوير الملف يوميًا
+                // Daily file rotation
                 if (!Path.GetFileName(_currentLogFile).Contains(DateTime.UtcNow.ToString("yyyyMMdd")))
                     RotateLogFile();
 
-                // كتابة فورية للملف
+                // Immediate flush to file
                 File.AppendAllText(_currentLogFile, line + Environment.NewLine, Encoding.UTF8);
 
-                // الحفاظ على Buffer في الذاكرة
+                // Keep the in-memory buffer in sync
                 _memoryBuffer.Add(entry);
                 if (_memoryBuffer.Count > MAX_BUFFER)
                     _memoryBuffer.RemoveAt(0);
@@ -122,7 +122,7 @@ namespace EJLive.Core.Services
             $"User:{e.UserId} | ATM:{e.TargetAtmId} | IP:{e.IpAddress} | {e.Details}";
 
         // ==========================================
-        // القراءة والتصفية
+        // Read and filtering
         // ==========================================
 
         public static List<AuditEntry> GetRecentEntries(int count = 100)
@@ -192,4 +192,4 @@ namespace EJLive.Core.Services
         public bool Success { get; set; }
         public string IpAddress { get; set; } = string.Empty;
     }
-
+}

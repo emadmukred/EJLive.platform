@@ -165,6 +165,18 @@
 - **Fix**: `FILE-2` extended to `.sql/.json/.manifest/.props/.targets` (both copies archived to `_reference/exact-duplicates/`); `duplicate_keys` merges all-`partial` same-assembly pairs, keeps cross-assembly splits as debt, and still fails a non-partial twin (CS0260/CS0101).
 - **Status**: **CLOSED** (this wave's split form is the live proof: 41/41 gate PASS with two owner files for one partial type).
 
+## C-26 — CI fix-up: AuditLogger brace closure and a Roslyn-faithful gate lexer
+
+- **Finding**: `E-28`. The first real compile (Windows CI after the Wave-4 push) failed with `CS1513` in
+  `src/EJLive.Core/Services/AuditLogger.cs` — the Wave-4 `VerifyChain` addition truncated the file tail and the
+  block-scoped namespace stayed open. Gate `SYN-1` had passed that revision because its literal-stripping pass
+  does not parse interpolation holes: escaped quotes inside one hole netted the missing brace away.
+- **Fix**: namespace closed at the file tail; `tools/gates/ejlive_static_gate.py:strip_literals` rebuilt as an
+  interpolation-aware lexer (holes containing nested strings, `{{`/`}}` literal braces, verbatim `""` escapes,
+  char literals). The previously broken revision now fails with delta `(+1)`; the fixed tree is balanced. The
+  file's Arabic comments were converted to English in the same pass (documentation rule).
+- **Status**: **CLOSED** (41/41 gate PASS locally with regenerated ledgers; CI re-run is the authority).
+
 ## Wave resolutions
 
 - `67db886` — D-08 (8 merge dumps in `EJLive.Core/Models` + `Services/UnifiedOperationalFusion`).
@@ -188,3 +200,4 @@
 ### Wave 4 (this branch)
 
 - C-17…C-25 — constants/build repair, central dataroot + bootstrap, schema book + repositories + audit chain, web removal, Studio bulk/Excel, Designer partials, tooling. Gate 41/41 PASS · 24 verification probes · 397 test cases · `check_constant_resolution.py` 0 issues.
+- C-26 — CI fix-up after the first Windows compile: `AuditLogger.cs` namespace closure (CS1513), `SYN-1` gate lexer made interpolation-faithful, touched-file comments anglicized. Gate 41/41 PASS.

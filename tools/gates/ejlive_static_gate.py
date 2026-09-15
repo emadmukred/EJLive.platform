@@ -240,23 +240,110 @@ def check_security(projects, tracked) -> None:
 
 
 def strip_literals(text: str) -> str:
+    """Remove comments and literal content so brace counting mirrors Roslyn.
+
+    Handles the cases the naive scanner got wrong and the gate must not:
+    escaped quotes inside $"..." strings, `""` escapes in verbatim strings,
+    and interpolation holes (`{expr}`) whose nested quotes must NOT flip the
+    outer-string parity; `{{`/`}}` are literal braces, not block tokens.
+    Without hole awareness a missing '}' can hide behind an unbalanced
+    quote (the false negative that reached CI in Wave 4, AuditLogger.cs)."""
     out, i, n = [], 0, len(text)
+
+    def verbatim(j: int) -> int:
+        # j at opening quote of a @"..." string; "" is the embedded quote
+        j += 1
+        while j < n:
+            if text[j] == '"':
+                if j + 1 < n and text[j + 1] == '"':
+                    j += 2
+                    continue
+                return j + 1
+            j += 1
+        return j
+
+    def hole(j: int) -> int:
+        # j just after an interpolation '{'; returns index after the matching '}'
+        depth = 1
+        while j < n:
+            c = text[j]
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    return j + 1
+            elif c == '"':
+                j = literal(j)
+                continue
+            elif c == "'":
+                j += 1
+                while j < n and text[j] != "'":
+                    j += 1 if text[j] != "\\" else 2
+                j += 1
+                continue
+            elif c == "/" and j + 1 < n and text[j + 1] == "/":
+                k = text.find("\n", j)
+                j = n if k < 0 else k
+                continue
+            elif c == "/" and j + 1 < n and text[j + 1] == "*":
+                k = text.find("*/", j + 2)
+                j = n if k < 0 else k + 2
+                continue
+            j += 1
+        return j
+
+    def interpolated(j: int, verbatim_style: bool) -> int:
+        # j at opening quote of a $"..." or $@"..." string
+        j += 1
+        while j < n:
+            c = text[j]
+            if c == "\\" and not verbatim_style:
+                j += 2
+                continue
+            if c == '"':
+                if verbatim_style and j + 1 < n and text[j + 1] == '"':
+                    j += 2
+                    continue
+                return j + 1
+            if c == "{":
+                if j + 1 < n and text[j + 1] == "{":
+                    j += 2
+                    continue
+                j = hole(j + 1)
+                continue
+            if c == "}":
+                if j + 1 < n and text[j + 1] == "}":
+                    j += 2
+                    continue
+            j += 1
+        return j
+
+    def literal(j: int) -> int:
+        # j at an opening double quote; dispatch on the prefix
+        if text.startswith("\"\"\"", j):
+            k = text.find("\"\"\"", j + 3)
+            return n if k < 0 else k + 6
+        if j >= 2 and text[j - 2 : j] in ("$@", "@$"):
+            return interpolated(j, True)
+        if j >= 1 and text[j - 1] == "$":
+            return interpolated(j, False)
+        if j >= 1 and text[j - 1] == "@":
+            return verbatim(j)
+        j += 1
+        while j < n:
+            if text[j] == "\\":
+                j += 2
+                continue
+            if text[j] == '"':
+                return j + 1
+            if text[j] == "\n":
+                return j
+            j += 1
+        return j
+
     while i < n:
         c = text[i]
-        if c in "\"'" and not text.startswith("\"\"\"", i):
-            q = c
-            i += 1
-            while i < n:
-                if text[i] == "\\":
-                    i += 2
-                    continue
-                if text[i] == q:
-                    i += 1
-                    break
-                if text[i] == "\n" and q == "\"":
-                    break
-                i += 1
-            continue
         if text.startswith("//", i):
             j = text.find("\n", i)
             i = n if j < 0 else j
@@ -264,6 +351,20 @@ def strip_literals(text: str) -> str:
         if text.startswith("/*", i):
             j = text.find("*/", i + 2)
             i = n if j < 0 else j + 2
+            continue
+        if c == '"':
+            i = literal(i)
+            continue
+        if c == "'":
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == "'" or text[j] == "\n":
+                    break
+                j += 1
+            i = j + 1
             continue
         out.append(c)
         i += 1
